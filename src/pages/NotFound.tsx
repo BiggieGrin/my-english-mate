@@ -1,21 +1,23 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { Home } from 'lucide-react';
 
 const NotFound = () => {
-  const location = useLocation();
-
-  useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-  }, [location.pathname]);
+  const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-gray-600">Oops! Page not found</p>
-        <a href="/" className="text-blue-500 underline hover:text-blue-700">
-          Return to Home
-        </a>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
+      <div className="text-center bounce-in">
+        <div className="text-9xl mb-4">🤔</div>
+        <h1 className="text-6xl font-bold mb-4">404</h1>
+        <p className="text-2xl text-muted-foreground mb-8">אופס! הדף לא נמצא</p>
+        <p className="text-lg text-muted-foreground mb-8">
+          נראה שהדף שחיפשתם לא קיים או הועבר למקום אחר
+        </p>
+        <Button size="lg" onClick={() => navigate('/')}>
+          <Home className="ml-2" />
+          חזרה לעמוד הבית
+        </Button>
       </div>
     </div>
   );
