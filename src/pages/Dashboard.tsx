@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Home, Trophy, Sparkles, Star, Award } from 'lucide-react';
+import { BookOpen, Home, Trophy, Sparkles, Star, Award, User, LogOut, TrendingUp } from 'lucide-react';
 
 type AgeGroup = 'young' | 'middle' | 'high';
 
@@ -34,31 +34,46 @@ const Dashboard = () => {
   // Young (grades 1-3) version
   if (ageGroup === 'young') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-young-bg to-purple-100 theme-young">
+      <div className="min-h-screen bg-gradient-to-br from-young-bg via-purple-50 to-pink-50 theme-young">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-10">
+        <header className="bg-white/90 backdrop-blur-md shadow-lg border-b-4 border-primary/20 sticky top-0 z-10">
           <div className="container mx-auto px-4 py-4">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-8 h-8 text-primary" />
-                <h1 className="text-2xl font-bold">שלום {studentData?.name}! 🎉</h1>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 bg-warning/20 px-4 py-2 rounded-full">
-                  <Star className="w-5 h-5 text-warning fill-warning" />
-                  <span className="font-bold">250</span>
+              <div className="flex items-center gap-3">
+                <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-2xl shadow-lg">
+                  <Sparkles className="w-7 h-7 text-white" />
                 </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    שלום {studentData?.name}! 🎉
+                  </h1>
+                  <p className="text-xs text-muted-foreground">בואו נלמד משהו חדש!</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-gradient-to-r from-warning/20 to-warning/10 px-4 py-2 rounded-full border-2 border-warning/30 shadow-md">
+                  <Star className="w-5 h-5 text-warning fill-warning animate-pulse" />
+                  <span className="font-bold text-lg">250</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/profile')} className="rounded-full">
+                  <User className="w-5 h-5" />
+                </Button>
               </div>
             </div>
           </div>
         </header>
 
         <div className="container mx-auto px-4 py-8">
-          {/* Main Question Bubble */}
-          <div className="bg-white rounded-3xl shadow-xl p-8 mb-8 bounce-in">
-            <h2 className="text-3xl font-bold text-center mb-4">
-              איזה נושא נלמד היום? 🚀
-            </h2>
+          {/* Hero Title with Animation */}
+          <div className="relative mb-12">
+            <div className="bg-gradient-to-r from-primary via-accent to-secondary rounded-3xl shadow-2xl p-1 bounce-in">
+              <div className="bg-white rounded-3xl p-8">
+                <h2 className="text-4xl md:text-5xl font-bold text-center mb-4 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+                  מה לומדים היום? ✨
+                </h2>
+                <p className="text-center text-lg text-muted-foreground">בחרו נושא והתחילו להנות!</p>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -116,29 +131,40 @@ const Dashboard = () => {
   // Middle (grades 4-6) version
   if (ageGroup === 'middle') {
     return (
-      <div className="min-h-screen bg-background theme-middle">
+      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 theme-middle">
         {/* Header */}
-        <header className="bg-card shadow-sm border-b sticky top-0 z-10">
+        <header className="bg-card/80 backdrop-blur-lg shadow-md border-b sticky top-0 z-10">
           <div className="container mx-auto px-4 py-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <Sparkles className="w-7 h-7 text-primary" />
+                <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-xl shadow-md">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
                 <div>
                   <h1 className="text-xl font-bold">שלום, {studentData?.name}!</h1>
-                  <p className="text-sm text-muted-foreground">מוכנים להמשיך?</p>
+                  <p className="text-sm text-muted-foreground">בואו נמשיך ללמוד 🚀</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-primary">5</p>
-                  <p className="text-xs text-muted-foreground">רמה</p>
+                <div className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-accent/10 px-3 py-2 rounded-lg border border-primary/20">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-primary">5</p>
+                    <p className="text-xs text-muted-foreground">רמה</p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-warning">1,250</p>
-                  <p className="text-xs text-muted-foreground">נקודות</p>
+                <div className="flex items-center gap-2 bg-gradient-to-r from-warning/10 to-warning/5 px-3 py-2 rounded-lg border border-warning/20">
+                  <Star className="w-5 h-5 text-warning fill-warning" />
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-warning">1,250</p>
+                    <p className="text-xs text-muted-foreground">נקודות</p>
+                  </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => navigate('/achievements')}>
+                <Button size="sm" variant="outline" onClick={() => navigate('/achievements')} className="rounded-lg">
                   <Trophy className="w-4 h-4" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => navigate('/profile')} className="rounded-lg">
+                  <User className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -146,7 +172,20 @@ const Dashboard = () => {
         </header>
 
         <div className="container mx-auto px-4 py-8">
-          <h2 className="text-2xl font-bold mb-6">הנושאים שלי</h2>
+          {/* Modern Hero Section */}
+          <div className="mb-10">
+            <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 rounded-2xl p-8 border border-primary/20 shadow-lg">
+              <h2 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                מה לומדים היום? 💡
+              </h2>
+              <p className="text-muted-foreground">המשיכו את המסע שלכם לשליטה באנגלית</p>
+            </div>
+          </div>
+          
+          <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-primary" />
+            הנושאים שלי
+          </h3>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {topics.map((topic) => (
@@ -181,20 +220,29 @@ const Dashboard = () => {
 
   // High (grades 7-12) version
   return (
-    <div className="min-h-screen bg-background theme-high">
-      <header className="bg-card shadow-sm border-b sticky top-0 z-10 backdrop-blur-sm bg-card/95">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background theme-high">
+      <header className="bg-card/90 shadow-md border-b sticky top-0 z-10 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-xl font-semibold">לוח הלימוד שלי</h1>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-32 bg-muted rounded-full h-2">
-                  <div className="bg-primary h-2 rounded-full" style={{ width: '65%' }} />
+            <div>
+              <h1 className="text-xl font-bold">לוח הלימוד שלי</h1>
+              <p className="text-sm text-muted-foreground">המשך את התקדמות הלימודים שלך</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 bg-muted/50 px-4 py-2 rounded-lg border">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                <div className="flex items-center gap-2">
+                  <div className="w-32 bg-muted rounded-full h-2">
+                    <div className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all" style={{ width: '65%' }} />
+                  </div>
+                  <span className="text-sm font-medium">Level 6</span>
                 </div>
-                <span className="text-sm font-medium">Level 6</span>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/achievements')}>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/achievements')} className="rounded-lg">
                 <Trophy className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/profile')} className="rounded-lg">
+                <User className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -202,13 +250,28 @@ const Dashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Hero Question */}
+        <div className="mb-10">
+          <Card className="p-8 bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/5 border-primary/20 shadow-xl">
+            <h2 className="text-3xl md:text-4xl font-bold mb-3 bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
+              מה לומדים היום?
+            </h2>
+            <p className="text-muted-foreground text-lg">המשך את המסע האקדמי שלך לשליטה מושלמת באנגלית</p>
+          </Card>
+        </div>
+
         {/* Last Lesson Summary */}
-        <Card className="p-6 mb-8 bg-gradient-to-r from-primary/5 to-accent/5">
-          <h2 className="text-lg font-semibold mb-2">השיעור האחרון</h2>
-          <p className="text-muted-foreground mb-4">
-            סיימת את Present Simple - Unit 3 עם ציון 92%
-          </p>
-          <Button>המשך ללמוד</Button>
+        <Card className="p-6 mb-8 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">השיעור האחרון שלך</h3>
+              <p className="text-muted-foreground mb-4">
+                סיימת את Present Simple - Unit 3 עם ציון 92%
+              </p>
+              <Button>המשך ללמוד</Button>
+            </div>
+            <div className="text-6xl">🎯</div>
+          </div>
         </Card>
 
         {/* Topics List */}
