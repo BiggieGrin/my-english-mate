@@ -6,28 +6,65 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     grade: '',
     level: '',
-    parentEmail: ''
+    parentEmail: '',
+    email: '',
+    password: ''
   });
 
-  const handleNext = () => {
-    if (step < 4) {
+  const handleNext = async () => {
+    if (step < 5) {
       setStep(step + 1);
     } else {
-      // Save to localStorage and navigate to dashboard
-      localStorage.setItem('studentData', JSON.stringify(formData));
-      const ageGroup = 
-        parseInt(formData.grade) <= 3 ? 'young' :
-        parseInt(formData.grade) <= 6 ? 'middle' : 'high';
-      localStorage.setItem('ageGroup', ageGroup);
-      navigate('/dashboard');
+      setIsLoading(true);
+      try {
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+            data: {
+              full_name: formData.name,
+              grade: parseInt(formData.grade),
+              english_level: formData.level,
+              parent_email: formData.parentEmail,
+            }
+          }
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Registration successful!",
+          description: "Welcome to your learning journey!",
+        });
+        
+        const ageGroup = 
+          parseInt(formData.grade) <= 3 ? 'young' :
+          parseInt(formData.grade) <= 6 ? 'middle' : 'high';
+        localStorage.setItem('ageGroup', ageGroup);
+        
+        navigate('/dashboard');
+      } catch (error: any) {
+        toast({
+          title: "Registration failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -37,6 +74,7 @@ const Register = () => {
       case 2: return formData.grade.length > 0;
       case 3: return formData.level.length > 0;
       case 4: return formData.parentEmail.length > 0;
+      case 5: return formData.email.length > 0 && formData.password.length >= 6;
       default: return false;
     }
   };
@@ -51,7 +89,7 @@ const Register = () => {
 
         {/* Progress Bar */}
         <div className="flex gap-2 mb-8">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <div
               key={s}
               className={`h-2 flex-1 rounded-full transition-colors ${
@@ -153,13 +191,46 @@ const Register = () => {
             </div>
           )}
 
+          {step === 5 && (
+            <div className="fade-in-up space-y-4">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold mb-2">פרטי כניסה</h2>
+                <p className="text-muted-foreground">בחרו מייל וסיסמה לכניסה למערכת</p>
+              </div>
+              <div>
+                <Label htmlFor="email">המייל שלך</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="text-lg"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">סיסמה</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="לפחות 6 תווים"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="text-lg"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+          )}
+
           <Button
             className="w-full"
             size="lg"
             onClick={handleNext}
-            disabled={!isStepValid()}
+            disabled={!isStepValid() || isLoading}
           >
-            {step === 4 ? 'בואו נתחיל ללמוד!' : 'המשך'}
+            {isLoading ? 'יוצר חשבון...' : (step === 5 ? 'בואו נתחיל ללמוד!' : 'המשך')}
             <ArrowRight className="mr-2" />
           </Button>
 
@@ -168,6 +239,7 @@ const Register = () => {
               variant="ghost"
               className="w-full"
               onClick={() => setStep(step - 1)}
+              disabled={isLoading}
             >
               חזרה
             </Button>

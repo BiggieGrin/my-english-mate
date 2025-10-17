@@ -26,9 +26,14 @@ const Index = () => {
             <Sparkles className="w-8 h-8 text-primary" />
             <h1 className="text-2xl font-bold text-primary">המורה לאנגלית שלי</h1>
           </div>
-          <Button variant="outline" onClick={() => navigate('/parent')}>
-            כניסת הורים
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => navigate('/auth')}>
+              התחברות
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/parent')}>
+              כניסת הורים
+            </Button>
+          </div>
         </div>
       </header>
 
