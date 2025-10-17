@@ -8,12 +8,42 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { z } from 'zod';
+
+const registerSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(2, 'השם חייב להיות לפחות 2 תווים')
+    .max(100, 'השם חייב להיות פחות מ-100 תווים')
+    .regex(/^[a-zA-Zא-ת\s]+$/, 'השם יכול להכיל רק אותיות'),
+  grade: z.string()
+    .refine((val) => {
+      const num = parseInt(val);
+      return !isNaN(num) && num >= 1 && num <= 12;
+    }, 'יש לבחור כיתה תקינה'),
+  level: z.enum(['beginner', 'intermediate', 'advanced'], {
+    errorMap: () => ({ message: 'יש לבחור רמת אנגלית' })
+  }),
+  parentEmail: z.string()
+    .trim()
+    .email('כתובת מייל הורה לא תקינה')
+    .max(255, 'כתובת מייל ארוכה מדי'),
+  email: z.string()
+    .trim()
+    .email('כתובת מייל לא תקינה')
+    .max(255, 'כתובת מייל ארוכה מדי'),
+  password: z.string()
+    .min(8, 'הסיסמה חייבת להיות לפחות 8 תווים')
+    .regex(/[A-Z]/, 'הסיסמה חייבת להכיל לפחות אות גדולה אחת באנגלית')
+    .regex(/[0-9]/, 'הסיסמה חייבת להכיל לפחות ספרה אחת')
+});
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: '',
     grade: '',
@@ -23,7 +53,50 @@ const Register = () => {
     password: ''
   });
 
+  const validateCurrentStep = () => {
+    setValidationErrors({});
+    
+    try {
+      switch (step) {
+        case 1:
+          registerSchema.pick({ name: true }).parse({ name: formData.name });
+          break;
+        case 2:
+          registerSchema.pick({ grade: true }).parse({ grade: formData.grade });
+          break;
+        case 3:
+          registerSchema.pick({ level: true }).parse({ level: formData.level });
+          break;
+        case 4:
+          registerSchema.pick({ parentEmail: true }).parse({ parentEmail: formData.parentEmail });
+          break;
+        case 5:
+          registerSchema.pick({ email: true, password: true }).parse({ 
+            email: formData.email, 
+            password: formData.password 
+          });
+          break;
+      }
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0] as string] = err.message;
+          }
+        });
+        setValidationErrors(errors);
+      }
+      return false;
+    }
+  };
+
   const handleNext = async () => {
+    if (!validateCurrentStep()) {
+      return;
+    }
+
     if (step < 5) {
       setStep(step + 1);
     } else {
@@ -46,8 +119,8 @@ const Register = () => {
         if (error) throw error;
 
         toast({
-          title: "Registration successful!",
-          description: "Welcome to your learning journey!",
+          title: "ההרשמה הצליחה!",
+          description: "ברוכים הבאים למסע הלמידה שלכם!",
         });
         
         const ageGroup = 
@@ -58,8 +131,8 @@ const Register = () => {
         navigate('/dashboard');
       } catch (error: any) {
         toast({
-          title: "Registration failed",
-          description: error.message,
+          title: "ההרשמה נכשלה",
+          description: "אנא נסו שוב או פנו לתמיכה",
           variant: "destructive",
         });
       } finally {
@@ -112,10 +185,16 @@ const Register = () => {
                   id="name"
                   placeholder="לדוגמה: יואב"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    setValidationErrors({ ...validationErrors, name: '' });
+                  }}
                   className="text-lg"
                   autoFocus
                 />
+                {validationErrors.name && (
+                  <p className="text-sm text-destructive mt-1">{validationErrors.name}</p>
+                )}
               </div>
             </div>
           )}
@@ -183,10 +262,16 @@ const Register = () => {
                   type="email"
                   placeholder="parent@example.com"
                   value={formData.parentEmail}
-                  onChange={(e) => setFormData({ ...formData, parentEmail: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, parentEmail: e.target.value });
+                    setValidationErrors({ ...validationErrors, parentEmail: '' });
+                  }}
                   className="text-lg"
                   dir="ltr"
                 />
+                {validationErrors.parentEmail && (
+                  <p className="text-sm text-destructive mt-1">{validationErrors.parentEmail}</p>
+                )}
               </div>
             </div>
           )}
@@ -204,22 +289,34 @@ const Register = () => {
                   type="email"
                   placeholder="you@example.com"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    setValidationErrors({ ...validationErrors, email: '' });
+                  }}
                   className="text-lg"
                   dir="ltr"
                 />
+                {validationErrors.email && (
+                  <p className="text-sm text-destructive mt-1">{validationErrors.email}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="password">סיסמה</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="לפחות 6 תווים"
+                  placeholder="לפחות 8 תווים, אות גדולה וספרה"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value });
+                    setValidationErrors({ ...validationErrors, password: '' });
+                  }}
                   className="text-lg"
                   dir="ltr"
                 />
+                {validationErrors.password && (
+                  <p className="text-sm text-destructive mt-1">{validationErrors.password}</p>
+                )}
               </div>
             </div>
           )}
