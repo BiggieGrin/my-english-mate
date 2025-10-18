@@ -1,38 +1,133 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, Send, Mic, Star } from 'lucide-react';
+import { ArrowRight, Send, Mic, Star, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Lesson = () => {
   const navigate = useNavigate();
   const { lessonId } = useParams();
-  const [messages, setMessages] = useState([
-    { 
-      role: 'assistant', 
-      content: 'שלום! אני המורה החכמה שלך לאנגלית 😊 היום נלמד על Present Simple. מוכנים להתחיל?' 
-    }
-  ]);
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
   const [input, setInput] = useState('');
   const [points, setPoints] = useState(150);
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const streamChat = async (userMessage: string) => {
+    const newMessages = [...messages, { role: 'user', content: userMessage }];
+    setMessages(newMessages);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-chat`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ messages: newMessages }),
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          toast({
+            title: 'שימו לב',
+            description: 'יש יותר מדי בקשות. נסו שוב בעוד כמה רגעים.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        if (response.status === 402) {
+          toast({
+            title: 'שימו לב',
+            description: 'נגמר הזמן החינמי. אנא הוסיפו זיכוי להמשך.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        throw new Error('Failed to get response');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader available');
+
+      const decoder = new TextDecoder();
+      let assistantMessage = '';
+      let buffer = '';
+
+      // Add empty assistant message to update
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                assistantMessage += content;
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  newMsgs[newMsgs.length - 1] = {
+                    role: 'assistant',
+                    content: assistantMessage,
+                  };
+                  return newMsgs;
+                });
+              }
+            } catch (e) {
+              console.error('Parse error:', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו לקבל תשובה מהמורה. נסו שוב.',
+        variant: 'destructive',
+      });
+      setMessages(prev => prev.slice(0, -1)); // Remove failed message
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSend = () => {
-    if (!input.trim()) return;
-
-    // Add user message
-    setMessages([...messages, { role: 'user', content: input }]);
-    
-    // Simulate AI response
-    setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'מצוין! עכשיו בואו ננסה להבין מתי משתמשים ב-Present Simple. זה הזמן שמדבר על דברים שקורים כל הזמן, כמו "I play football" (אני משחק כדורגל).' 
-      }]);
-      setPoints(prev => prev + 10);
-    }, 1000);
-
-    setInput('');
+    if (!input.trim() || isLoading) return;
+    streamChat(input);
   };
 
   return (
@@ -56,6 +151,11 @@ const Lesson = () => {
       {/* Chat Area */}
       <div className="flex-1 container mx-auto px-4 py-6 max-w-4xl overflow-y-auto">
         <div className="space-y-4">
+          {messages.length === 0 && (
+            <div className="flex justify-center items-center h-full text-muted-foreground">
+              <p className="text-lg">שלחו הודעה כדי להתחיל את השיעור...</p>
+            </div>
+          )}
           {messages.map((message, index) => (
             <div
               key={index}
@@ -68,10 +168,18 @@ const Lesson = () => {
                     : 'bg-card'
                 }`}
               >
-                <p className="text-lg">{message.content}</p>
+                <p className="text-lg whitespace-pre-wrap">{message.content}</p>
               </Card>
             </div>
           ))}
+          {isLoading && (
+            <div className="flex justify-end">
+              <Card className="p-4 max-w-[80%] bg-card">
+                <Loader2 className="w-5 h-5 animate-spin" />
+              </Card>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
       </div>
 
@@ -96,7 +204,7 @@ const Lesson = () => {
             <Button 
               size="icon"
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isLoading}
             >
               <Send className="w-5 h-5" />
             </Button>

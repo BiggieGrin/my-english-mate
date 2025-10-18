@@ -1,1 +1,4 @@
 project_id = "xcavskemiejsjgsnahht"
+
+[functions.ai-teacher-chat]
+verify_jwt = true
