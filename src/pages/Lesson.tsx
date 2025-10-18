@@ -2,20 +2,25 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowRight, Send, Mic, Star, Loader2 } from 'lucide-react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ArrowRight, Send, Mic, Star, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const Lesson = () => {
   const navigate = useNavigate();
   const { lessonId } = useParams();
+  const location = useLocation();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
   const [input, setInput] = useState('');
   const [points, setPoints] = useState(150);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  
+  const topic = location.state?.topic || 'English';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -25,16 +30,73 @@ const Lesson = () => {
     scrollToBottom();
   }, [messages]);
 
-  const streamChat = async (userMessage: string) => {
+  // Load chat history and send initial message
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Load existing messages for this topic
+        const { data: existingMessages, error } = await supabase
+          .from('lesson_messages')
+          .select('role, content')
+          .eq('user_id', user.id)
+          .eq('topic', topic)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (existingMessages && existingMessages.length > 0) {
+          // Load existing chat
+          setMessages(existingMessages);
+          setIsInitialized(true);
+        } else {
+          // Send initial message for new chat
+          const initialMessage = `היי, אני רוצה ללמוד/לעשות שיעורי בית ${topic}`;
+          await streamChat(initialMessage, true);
+          setIsInitialized(true);
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+        toast({
+          title: 'שגיאה',
+          description: 'לא הצלחנו לטעון את ההיסטוריה של השיחה.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    if (!isInitialized) {
+      loadChatHistory();
+    }
+  }, [isInitialized, topic]);
+
+  const streamChat = async (userMessage: string, isInitial: boolean = false) => {
     const newMessages = [...messages, { role: 'user', content: userMessage }];
     setMessages(newMessages);
     setInput('');
     setIsLoading(true);
 
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('Not authenticated');
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Save user message to database
+      if (user) {
+        await supabase.from('lesson_messages').insert({
+          user_id: user.id,
+          topic: topic,
+          role: 'user',
+          content: userMessage,
+        });
       }
 
       const response = await fetch(
@@ -45,7 +107,8 @@ const Lesson = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ messages: newMessages }),
+          body: JSON.stringify({ messages: newMessages, topic }),
+          signal: abortControllerRef.current.signal,
         }
       );
 
@@ -112,7 +175,21 @@ const Lesson = () => {
           }
         }
       }
-    } catch (error) {
+
+      // Save assistant message to database
+      if (user && assistantMessage) {
+        await supabase.from('lesson_messages').insert({
+          user_id: user.id,
+          topic: topic,
+          role: 'assistant',
+          content: assistantMessage,
+        });
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Request was aborted');
+        return;
+      }
       console.error('Chat error:', error);
       toast({
         title: 'שגיאה',
@@ -122,6 +199,18 @@ const Lesson = () => {
       setMessages(prev => prev.slice(0, -1)); // Remove failed message
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIsLoading(false);
+      toast({
+        title: 'השיעור הופסק',
+        description: 'השיעור הופסק בהצלחה.',
+      });
     }
   };
 
@@ -151,9 +240,9 @@ const Lesson = () => {
       {/* Chat Area */}
       <div className="flex-1 container mx-auto px-4 py-6 max-w-4xl overflow-y-auto">
         <div className="space-y-4">
-          {messages.length === 0 && (
+          {!isInitialized && (
             <div className="flex justify-center items-center h-full text-muted-foreground">
-              <p className="text-lg">שלחו הודעה כדי להתחיל את השיעור...</p>
+              <Loader2 className="w-8 h-8 animate-spin" />
             </div>
           )}
           {messages.map((message, index) => (
@@ -200,17 +289,28 @@ const Lesson = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               className="flex-1 text-lg"
+              disabled={isLoading}
             />
-            <Button 
-              size="icon"
-              onClick={handleSend}
-              disabled={!input.trim() || isLoading}
-            >
-              <Send className="w-5 h-5" />
-            </Button>
+            {isLoading ? (
+              <Button 
+                size="icon"
+                variant="destructive"
+                onClick={handleStop}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            ) : (
+              <Button 
+                size="icon"
+                onClick={handleSend}
+                disabled={!input.trim() || isLoading}
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            )}
           </div>
           <p className="text-sm text-muted-foreground text-center mt-2">
-            השתמשו במיקרופון או כתבו את התשובה
+            {isLoading ? 'לחצו על X כדי להפסיק את השיעור' : 'השתמשו במיקרופון או כתבו את התשובה'}
           </p>
         </div>
       </div>

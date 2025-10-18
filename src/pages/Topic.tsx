@@ -52,7 +52,7 @@ const Topic = () => {
           <Button 
             size="lg" 
             className="h-20"
-            onClick={() => navigate(`/lesson/${topicId}`)}
+            onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: topicData.title } })}
           >
             <BookOpen className="ml-2 w-6 h-6" />
             ללמוד את הנושא
@@ -61,7 +61,7 @@ const Topic = () => {
             size="lg" 
             variant="secondary"
             className="h-20"
-            onClick={() => navigate(`/lesson/${topicId}`)}
+            onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: `שיעורי בית - ${topicData.title}` } })}
           >
             <Home className="ml-2 w-6 h-6" />
             שיעורי בית
@@ -70,7 +70,7 @@ const Topic = () => {
             size="lg" 
             variant="outline"
             className="h-20"
-            onClick={() => navigate(`/lesson/${topicId}`)}
+            onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: `הכנה למבחן - ${topicData.title}` } })}
           >
             <Brain className="ml-2 w-6 h-6" />
             הכנה למבחן
