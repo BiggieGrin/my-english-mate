@@ -94,17 +94,22 @@ const Dashboard = () => {
             {topics.map((topic) => (
               <Card 
                 key={topic.id}
-                className="overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-purple-200"
+                className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-purple-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                 onClick={() => navigate(`/topic/${topic.id}`)}
               >
-                <div className="p-8">
+                <div className="p-8 pt-10">
                   <div className="flex items-center gap-4 mb-6">
                     <span className="text-5xl">{topic.icon}</span>
                     <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                   </div>
                   <p className="text-sm text-slate-500 mb-3">הושלם</p>
-                  <Progress value={topic.progress} className="mb-4 h-2" />
-                  <p className="text-4xl font-bold text-purple-600">{topic.progress}%</p>
+                  <div className="relative w-full h-2 bg-slate-200 rounded-full mb-4 overflow-hidden">
+                    <div 
+                      className="absolute top-0 right-0 h-full bg-blue-500 rounded-full transition-all duration-300"
+                      style={{ width: `${topic.progress}%` }}
+                    />
+                  </div>
+                  <p className="text-4xl font-bold text-blue-500">{topic.progress}%</p>
                 </div>
               </Card>
             ))}
@@ -179,17 +184,22 @@ const Dashboard = () => {
             {topics.map((topic) => (
               <Card 
                 key={topic.id}
-                className="overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200"
+                className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                 onClick={() => navigate(`/topic/${topic.id}`)}
               >
-                <div className="p-8">
+                <div className="p-8 pt-10">
                   <div className="flex items-center gap-4 mb-6">
                     <span className="text-5xl">{topic.icon}</span>
                     <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                   </div>
                   <p className="text-sm text-slate-500 mb-3">הושלם</p>
-                  <Progress value={topic.progress} className="mb-4 h-2" />
-                  <p className="text-4xl font-bold text-blue-600">{topic.progress}%</p>
+                  <div className="relative w-full h-2 bg-slate-200 rounded-full mb-4 overflow-hidden">
+                    <div 
+                      className="absolute top-0 right-0 h-full bg-blue-500 rounded-full transition-all duration-300"
+                      style={{ width: `${topic.progress}%` }}
+                    />
+                  </div>
+                  <p className="text-4xl font-bold text-blue-500">{topic.progress}%</p>
                 </div>
               </Card>
             ))}
@@ -262,17 +272,22 @@ const Dashboard = () => {
           {topics.map((topic) => (
             <Card 
               key={topic.id}
-              className="overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200"
+              className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-600 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
               onClick={() => navigate(`/topic/${topic.id}`)}
             >
-              <div className="p-8">
+              <div className="p-8 pt-10">
                 <div className="flex items-center gap-4 mb-6">
                   <span className="text-5xl">{topic.icon}</span>
                   <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                 </div>
                 <p className="text-sm text-slate-500 mb-3">הושלם</p>
-                <Progress value={topic.progress} className="mb-4 h-2" />
-                <p className="text-4xl font-bold text-blue-700">{topic.progress}%</p>
+                <div className="relative w-full h-2 bg-slate-200 rounded-full mb-4 overflow-hidden">
+                  <div 
+                    className="absolute top-0 right-0 h-full bg-blue-600 rounded-full transition-all duration-300"
+                    style={{ width: `${topic.progress}%` }}
+                  />
+                </div>
+                <p className="text-4xl font-bold text-blue-600">{topic.progress}%</p>
               </div>
             </Card>
           ))}
