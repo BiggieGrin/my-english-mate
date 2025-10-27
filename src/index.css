@@ -14,46 +14,46 @@ All colors MUST be HSL.
     --young-accent: 45 95% 60%;
     --young-bg: 280 25% 97%;
     
-    /* חטיבה - כחול-ירוק רענן */
-    --middle-primary: 180 60% 50%;
-    --middle-secondary: 25 85% 60%;
-    --middle-accent: 160 50% 55%;
-    --middle-bg: 180 20% 97%;
+    /* חטיבה - כחול מודרני */
+    --middle-primary: 217 91% 60%;
+    --middle-secondary: 221 83% 53%;
+    --middle-accent: 224 76% 48%;
+    --middle-bg: 210 20% 98%;
     
     /* תיכון - כחול מקצועי */
-    --high-primary: 210 80% 45%;
-    --high-secondary: 185 70% 50%;
-    --high-accent: 210 60% 60%;
+    --high-primary: 221 83% 53%;
+    --high-secondary: 224 76% 48%;
+    --high-accent: 217 91% 60%;
     --high-bg: 210 20% 98%;
     
-    /* ברירת מחדל - חטיבה */
-    --background: 180 20% 97%;
-    --foreground: 210 20% 15%;
+    /* ברירת מחדל - כחול */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 15%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 15%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 180 60% 50%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 25 85% 60%;
+    --secondary: 221 83% 53%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 180 15% 92%;
-    --muted-foreground: 210 10% 45%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 160 50% 55%;
+    --accent: 224 76% 48%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 75% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 180 20% 88%;
-    --input: 180 20% 90%;
-    --ring: 180 60% 50%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 91% 60%;
 
     --radius: 1rem;
     
@@ -67,19 +67,19 @@ All colors MUST be HSL.
 
     --sidebar-background: 0 0% 98%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-foreground: 222 47% 11%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary: 217 91% 60%;
 
     --sidebar-primary-foreground: 0 0% 98%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent: 210 40% 96%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-accent-foreground: 222 47% 11%;
 
-    --sidebar-border: 220 13% 91%;
+    --sidebar-border: 214 32% 91%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 217 91% 60%;
   }
   
   /* Age group themes */
