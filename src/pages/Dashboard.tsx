@@ -47,10 +47,10 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="rounded-full bg-purple-100">
+                <Button variant="ghost" size="icon" className="rounded-full bg-purple-100" onClick={() => navigate('/achievements')}>
                   <Trophy className="w-5 h-5 text-purple-600" />
                 </Button>
-                <Button variant="ghost" size="icon" className="rounded-full bg-purple-100">
+                <Button variant="ghost" size="icon" className="rounded-full bg-purple-100" onClick={() => navigate('/profile')}>
                   <User className="w-5 h-5 text-purple-600" />
                 </Button>
               </div>
@@ -137,10 +137,10 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="rounded-full bg-slate-100">
+                <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate('/achievements')}>
                   <Trophy className="w-5 h-5 text-slate-600" />
                 </Button>
-                <Button variant="ghost" size="icon" className="rounded-full bg-slate-100">
+                <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate('/profile')}>
                   <User className="w-5 h-5 text-slate-600" />
                 </Button>
               </div>
@@ -225,10 +225,10 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="rounded-full bg-slate-100">
+              <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate('/achievements')}>
                 <Trophy className="w-5 h-5 text-slate-600" />
               </Button>
-              <Button variant="ghost" size="icon" className="rounded-full bg-slate-100">
+              <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate('/profile')}>
                 <User className="w-5 h-5 text-slate-600" />
               </Button>
             </div>
