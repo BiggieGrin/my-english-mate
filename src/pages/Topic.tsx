@@ -8,18 +8,75 @@ const Topic = () => {
   const navigate = useNavigate();
   const { topicId } = useParams();
 
-  const topicData = {
-    title: 'Present Simple',
-    description: 'היום נלמד על Present Simple - הזמן שמתאר הרגלים ופעולות קבועות',
-    icon: '📚',
-    progress: 65,
-    lessons: [
-      { id: 1, title: 'מה זה Present Simple?', completed: true },
-      { id: 2, title: 'מתי משתמשים בו?', completed: true },
-      { id: 3, title: 'תרגול - משפטים חיוביים', completed: false },
-      { id: 4, title: 'תרגול - שאלות', completed: false },
-    ]
-  };
+  const allTopics = [
+    { 
+      id: 1, 
+      title: 'Present Simple', 
+      description: 'היום נלמד על Present Simple - הזמן שמתאר הרגלים ופעולות קבועות',
+      icon: '📚', 
+      progress: 65,
+      lessons: [
+        { id: 1, title: 'מה זה Present Simple?', completed: true },
+        { id: 2, title: 'מתי משתמשים בו?', completed: true },
+        { id: 3, title: 'תרגול - משפטים חיוביים', completed: false },
+        { id: 4, title: 'תרגול - שאלות', completed: false },
+      ]
+    },
+    { 
+      id: 2, 
+      title: 'Colors', 
+      description: 'היום נלמד על צבעים באנגלית ואיך להשתמש בהם',
+      icon: '🎨', 
+      progress: 90,
+      lessons: [
+        { id: 1, title: 'צבעים בסיסיים', completed: true },
+        { id: 2, title: 'גוונים ושילובים', completed: true },
+        { id: 3, title: 'תרגול - תיאור צבעים', completed: true },
+        { id: 4, title: 'משחק זיכרון צבעים', completed: false },
+      ]
+    },
+    { 
+      id: 3, 
+      title: 'Animals', 
+      description: 'היום נלמד על בעלי חיים באנגלית והצלילים שלהם',
+      icon: '🦁', 
+      progress: 45,
+      lessons: [
+        { id: 1, title: 'חיות בית', completed: true },
+        { id: 2, title: 'חיות בר', completed: false },
+        { id: 3, title: 'צלילי בעלי חיים', completed: false },
+        { id: 4, title: 'משחק ניחושים', completed: false },
+      ]
+    },
+    { 
+      id: 4, 
+      title: 'Family', 
+      description: 'היום נלמד על המשפחה והקרבה המשפחתית באנגלית',
+      icon: '👨‍👩‍👧‍👦', 
+      progress: 30,
+      lessons: [
+        { id: 1, title: 'חברי משפחה קרובים', completed: true },
+        { id: 2, title: 'חברי משפחה רחוקים', completed: false },
+        { id: 3, title: 'תיאור המשפחה שלי', completed: false },
+        { id: 4, title: 'עץ משפחה', completed: false },
+      ]
+    },
+    { 
+      id: 5, 
+      title: 'Food', 
+      description: 'היום נלמד על אוכל ומשקאות באנגלית',
+      icon: '🍕', 
+      progress: 0,
+      lessons: [
+        { id: 1, title: 'פירות וירקות', completed: false },
+        { id: 2, title: 'ארוחות ומזון', completed: false },
+        { id: 3, title: 'משקאות', completed: false },
+        { id: 4, title: 'תרגול - הזמנה במסעדה', completed: false },
+      ]
+    },
+  ];
+
+  const topicData = allTopics.find(t => t.id === Number(topicId)) || allTopics[0];
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,12 +115,11 @@ const Topic = () => {
         <div className="grid grid-cols-3 gap-4 mb-12 max-w-4xl mx-auto">
           <Button 
             size="lg" 
-            variant="outline"
-            className="h-16 text-base border-blue-200 hover:bg-blue-50"
-            onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: `הכנה למבחן - ${topicData.title}` } })}
+            className="h-16 text-base bg-blue-500 hover:bg-blue-600 text-white"
+            onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: `שיעורי בית - ${topicData.title}` } })}
           >
-            <Brain className="ml-2 w-5 h-5" />
-            הכנה למבחן
+            <Home className="ml-2 w-5 h-5" />
+            שיעורי בית
           </Button>
           <Button 
             size="lg" 
@@ -76,11 +132,12 @@ const Topic = () => {
           </Button>
           <Button 
             size="lg" 
-            className="h-16 text-base bg-blue-500 hover:bg-blue-600 text-white"
-            onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: `שיעורי בית - ${topicData.title}` } })}
+            variant="outline"
+            className="h-16 text-base border-blue-200 hover:bg-blue-50"
+            onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: `הכנה למבחן - ${topicData.title}` } })}
           >
-            <Home className="ml-2 w-5 h-5" />
-            שיעורי בית
+            <Brain className="ml-2 w-5 h-5" />
+            הכנה למבחן
           </Button>
         </div>
 
@@ -91,7 +148,7 @@ const Topic = () => {
             {topicData.lessons.map((lesson, index) => (
               <Card 
                 key={lesson.id}
-                className={`transition-all duration-300 hover:-translate-x-2 hover:border-blue-500 cursor-pointer ${
+                className={`transition-all duration-300 hover:-translate-x-2 hover:border-blue-500 pointer-events-none ${
                   lesson.completed 
                     ? 'border-2 border-green-500/30 bg-green-50/50' 
                     : index === 2 
@@ -120,7 +177,7 @@ const Topic = () => {
                       <Button 
                         size="default"
                         variant={lesson.completed ? 'outline' : 'default'}
-                        className={lesson.completed ? 'border-blue-200' : 'bg-blue-500 hover:bg-blue-600 text-white'}
+                        className={`pointer-events-auto ${lesson.completed ? 'border-blue-200' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
                         onClick={() => navigate(`/lesson/${lesson.id}`)}
                       >
                         {lesson.completed ? 'חזור על השיעור' : 'התחל'}
