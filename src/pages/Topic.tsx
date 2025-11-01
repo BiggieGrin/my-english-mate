@@ -43,15 +43,15 @@ const Topic = () => {
           <p className="text-lg text-muted-foreground mb-8">{topicData.description}</p>
           
           {/* Progress Bar */}
-          <div className="max-w-3xl mx-auto mb-2">
-            <div className="relative h-3 w-full overflow-hidden rounded-full bg-slate-200">
+          <div className="max-w-3xl mx-auto bg-slate-100 rounded-2xl p-6">
+            <div className="relative h-3 w-full overflow-hidden rounded-full bg-slate-200 mb-2">
               <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
+                className="h-full bg-blue-500 transition-all duration-500"
                 style={{ width: `${topicData.progress}%` }}
               />
             </div>
+            <p className="text-sm text-muted-foreground">התקדמות הקורס: {topicData.progress}%</p>
           </div>
-          <p className="text-sm text-muted-foreground">התקדמות הקורס: {topicData.progress}%</p>
         </div>
 
         {/* Action Buttons */}
@@ -59,7 +59,7 @@ const Topic = () => {
           <Button 
             size="lg" 
             variant="outline"
-            className="h-16 text-base"
+            className="h-16 text-base border-blue-200 hover:bg-blue-50"
             onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: `הכנה למבחן - ${topicData.title}` } })}
           >
             <Brain className="ml-2 w-5 h-5" />
@@ -68,7 +68,7 @@ const Topic = () => {
           <Button 
             size="lg" 
             variant="outline"
-            className="h-16 text-base"
+            className="h-16 text-base border-blue-200 hover:bg-blue-50"
             onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: topicData.title } })}
           >
             <BookOpen className="ml-2 w-5 h-5" />
@@ -76,7 +76,7 @@ const Topic = () => {
           </Button>
           <Button 
             size="lg" 
-            className="h-16 text-base bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+            className="h-16 text-base bg-blue-500 hover:bg-blue-600 text-white"
             onClick={() => navigate(`/lesson/${topicId}`, { state: { topic: `שיעורי בית - ${topicData.title}` } })}
           >
             <Home className="ml-2 w-5 h-5" />
@@ -91,12 +91,12 @@ const Topic = () => {
             {topicData.lessons.map((lesson, index) => (
               <Card 
                 key={lesson.id}
-                className={`transition-all duration-200 ${
+                className={`transition-all duration-300 hover:-translate-x-2 hover:border-blue-500 cursor-pointer ${
                   lesson.completed 
                     ? 'border-2 border-green-500/30 bg-green-50/50' 
                     : index === 2 
-                    ? 'border-2 border-primary/30 bg-card shadow-sm' 
-                    : 'border border-border hover:border-primary/50'
+                    ? 'border-2 border-blue-500/30 bg-card shadow-sm' 
+                    : 'border border-border'
                 }`}
               >
                 <div className="p-6">
@@ -107,7 +107,7 @@ const Topic = () => {
                           <CheckCircle2 className="w-6 h-6 text-white" />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-full border-2 border-primary/30 flex-shrink-0" />
+                        <div className="w-10 h-10 rounded-full border-2 border-blue-500/30 flex-shrink-0" />
                       )}
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{lesson.title}</h3>
@@ -120,7 +120,7 @@ const Topic = () => {
                       <Button 
                         size="default"
                         variant={lesson.completed ? 'outline' : 'default'}
-                        className={lesson.completed ? '' : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600'}
+                        className={lesson.completed ? 'border-blue-200' : 'bg-blue-500 hover:bg-blue-600 text-white'}
                         onClick={() => navigate(`/lesson/${lesson.id}`)}
                       >
                         {lesson.completed ? 'חזור על השיעור' : 'התחל'}
