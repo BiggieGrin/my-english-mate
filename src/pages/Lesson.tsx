@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Lesson = () => {
   const navigate = useNavigate();
-  const { lessonId } = useParams();
+  const { lessonId } = useParams(); // This is actually the conversation ID now
   const location = useLocation();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
@@ -20,7 +20,9 @@ const Lesson = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
+  const conversationId = location.state?.conversationId || lessonId;
   const topic = location.state?.topic || 'English';
+  const mode = location.state?.mode || '';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,12 +39,21 @@ const Lesson = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Load existing messages for this topic
+        if (!conversationId) {
+          toast({
+            title: 'שגיאה',
+            description: 'לא נמצא מזהה שיחה.',
+            variant: 'destructive',
+          });
+          navigate('/dashboard');
+          return;
+        }
+
+        // Load existing messages for this conversation
         const { data: existingMessages, error } = await supabase
           .from('lesson_messages')
           .select('role, content')
-          .eq('user_id', user.id)
-          .eq('topic', topic)
+          .eq('conversation_id', conversationId)
           .order('created_at', { ascending: true });
 
         if (error) throw error;
@@ -53,7 +64,7 @@ const Lesson = () => {
           setIsInitialized(true);
         } else {
           // Send initial message for new chat
-          const initialMessage = `היי, אני רוצה ללמוד/לעשות שיעורי בית ${topic}`;
+          const initialMessage = `היי, אני רוצה ${mode} בנושא ${topic}`;
           await streamChat(initialMessage, true);
           setIsInitialized(true);
         }
@@ -70,7 +81,7 @@ const Lesson = () => {
     if (!isInitialized) {
       loadChatHistory();
     }
-  }, [isInitialized, topic]);
+  }, [isInitialized, conversationId]);
 
   const streamChat = async (userMessage: string, isInitial: boolean = false) => {
     const newMessages = [...messages, { role: 'user', content: userMessage }];
@@ -90,9 +101,10 @@ const Lesson = () => {
       const { data: { user } } = await supabase.auth.getUser();
 
       // Save user message to database
-      if (user) {
+      if (user && conversationId) {
         await supabase.from('lesson_messages').insert({
           user_id: user.id,
+          conversation_id: conversationId,
           topic: topic,
           role: 'user',
           content: userMessage,
@@ -177,9 +189,10 @@ const Lesson = () => {
       }
 
       // Save assistant message to database
-      if (user && assistantMessage) {
+      if (user && assistantMessage && conversationId) {
         await supabase.from('lesson_messages').insert({
           user_id: user.id,
+          conversation_id: conversationId,
           topic: topic,
           role: 'assistant',
           content: assistantMessage,

@@ -1,16 +1,33 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Home, Trophy, Sparkles, Star, Award, User, LogOut, TrendingUp } from 'lucide-react';
+import { Trophy, Star, User, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type AgeGroup = 'young' | 'middle' | 'high';
 
+interface Topic {
+  id: string;
+  title: string;
+  icon: string;
+  description: string | null;
+  conversationCount: number;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [studentData, setStudentData] = useState<any>(null);
   const [ageGroup, setAgeGroup] = useState<AgeGroup>('middle');
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newTopic, setNewTopic] = useState({ title: '', icon: '📚', description: '' });
 
   useEffect(() => {
     const data = localStorage.getItem('studentData');
@@ -23,13 +40,99 @@ const Dashboard = () => {
     }
   }, []);
 
-  const topics = [
-    { id: 1, title: 'Present Simple', progress: 65, icon: '📚' },
-    { id: 2, title: 'Colors', progress: 90, icon: '🎨' },
-    { id: 3, title: 'Animals', progress: 45, icon: '🦁' },
-    { id: 4, title: 'Family', progress: 30, icon: '👨‍👩‍👧‍👦' },
-    { id: 5, title: 'Food', progress: 0, icon: '🍕' },
-  ];
+  useEffect(() => {
+    loadTopics();
+  }, []);
+
+  const loadTopics = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      // Fetch topics with conversation count
+      const { data: topicsData, error: topicsError } = await supabase
+        .from('topics')
+        .select('id, title, icon, description')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (topicsError) throw topicsError;
+
+      // For each topic, count conversations
+      const topicsWithCount = await Promise.all(
+        (topicsData || []).map(async (topic) => {
+          const { count } = await supabase
+            .from('conversations')
+            .select('*', { count: 'exact', head: true })
+            .eq('topic_id', topic.id);
+
+          return {
+            ...topic,
+            conversationCount: count || 0,
+          };
+        })
+      );
+
+      setTopics(topicsWithCount);
+    } catch (error) {
+      console.error('Error loading topics:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו לטעון את הנושאים.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateTopic = async () => {
+    if (!newTopic.title.trim()) {
+      toast({
+        title: 'שגיאה',
+        description: 'אנא הזן כותרת לנושא.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('topics')
+        .insert({
+          user_id: user.id,
+          title: newTopic.title,
+          icon: newTopic.icon || '📚',
+          description: newTopic.description || null,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: 'הצלחה',
+        description: 'הנושא נוצר בהצלחה!',
+      });
+
+      setIsDialogOpen(false);
+      setNewTopic({ title: '', icon: '📚', description: '' });
+      loadTopics();
+    } catch (error) {
+      console.error('Error creating topic:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו ליצור את הנושא.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   // Young (grades 1-3) version
   if (ageGroup === 'young') {
@@ -91,28 +194,81 @@ const Dashboard = () => {
 
           {/* Topics Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {topics.map((topic) => (
-              <Card 
-                key={topic.id}
-                className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-purple-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
-                onClick={() => navigate(`/topic/${topic.id}`)}
-              >
-                <div className="p-8 pt-10">
-                  <div className="flex items-center gap-4 mb-6">
-                    <span className="text-5xl">{topic.icon}</span>
-                    <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
+            {/* Add New Topic Card */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Card className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 border-2 border-dashed">
+                  <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
+                    <Plus className="w-12 h-12 text-purple-500 mb-4" />
+                    <h3 className="text-xl font-bold text-purple-600">נושא חדש</h3>
+                    <p className="text-sm text-purple-400 mt-2">צור נושא חדש ללמידה</p>
                   </div>
-                  <p className="text-sm text-slate-500 mb-3">הושלם</p>
-                  <div className="relative w-full h-2 bg-slate-200 rounded-full mb-4 overflow-hidden">
-                    <div 
-                      className="absolute top-0 right-0 h-full bg-blue-500 rounded-full transition-all duration-300"
-                      style={{ width: `${topic.progress}%` }}
+                </Card>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>צור נושא חדש</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">כותרת הנושא</Label>
+                    <Input
+                      id="title"
+                      value={newTopic.title}
+                      onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
+                      placeholder="לדוגמה: Present Simple"
                     />
                   </div>
-                  <p className="text-4xl font-bold text-blue-500">{topic.progress}%</p>
+                  <div>
+                    <Label htmlFor="icon">אייקון (אימוג'י)</Label>
+                    <Input
+                      id="icon"
+                      value={newTopic.icon}
+                      onChange={(e) => setNewTopic({ ...newTopic, icon: e.target.value })}
+                      placeholder="📚"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">תיאור (אופציונלי)</Label>
+                    <Input
+                      id="description"
+                      value={newTopic.description}
+                      onChange={(e) => setNewTopic({ ...newTopic, description: e.target.value })}
+                      placeholder="תיאור קצר של הנושא"
+                    />
+                  </div>
+                  <Button onClick={handleCreateTopic} className="w-full">
+                    צור נושא
+                  </Button>
                 </div>
-              </Card>
-            ))}
+              </DialogContent>
+            </Dialog>
+
+            {isLoading ? (
+              <div className="col-span-full text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+              </div>
+            ) : (
+              topics.map((topic) => (
+                <Card 
+                  key={topic.id}
+                  className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-purple-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
+                  onClick={() => navigate(`/topic/${topic.id}`)}
+                >
+                  <div className="p-8 pt-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <span className="text-5xl">{topic.icon}</span>
+                      <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
+                    </div>
+                    {topic.description && (
+                      <p className="text-sm text-slate-600 mb-4">{topic.description}</p>
+                    )}
+                    <p className="text-sm text-slate-500 mb-3">שיחות</p>
+                    <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -181,28 +337,81 @@ const Dashboard = () => {
 
           {/* Topics Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {topics.map((topic) => (
-              <Card 
-                key={topic.id}
-                className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
-                onClick={() => navigate(`/topic/${topic.id}`)}
-              >
-                <div className="p-8 pt-10">
-                  <div className="flex items-center gap-4 mb-6">
-                    <span className="text-5xl">{topic.icon}</span>
-                    <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
+            {/* Add New Topic Card */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Card className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed">
+                  <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
+                    <Plus className="w-12 h-12 text-blue-500 mb-4" />
+                    <h3 className="text-xl font-bold text-blue-600">נושא חדש</h3>
+                    <p className="text-sm text-blue-400 mt-2">צור נושא חדש ללמידה</p>
                   </div>
-                  <p className="text-sm text-slate-500 mb-3">הושלם</p>
-                  <div className="relative w-full h-2 bg-slate-200 rounded-full mb-4 overflow-hidden">
-                    <div 
-                      className="absolute top-0 right-0 h-full bg-blue-500 rounded-full transition-all duration-300"
-                      style={{ width: `${topic.progress}%` }}
+                </Card>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>צור נושא חדש</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">כותרת הנושא</Label>
+                    <Input
+                      id="title"
+                      value={newTopic.title}
+                      onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
+                      placeholder="לדוגמה: Present Simple"
                     />
                   </div>
-                  <p className="text-4xl font-bold text-blue-500">{topic.progress}%</p>
+                  <div>
+                    <Label htmlFor="icon">אייקון (אימוג'י)</Label>
+                    <Input
+                      id="icon"
+                      value={newTopic.icon}
+                      onChange={(e) => setNewTopic({ ...newTopic, icon: e.target.value })}
+                      placeholder="📚"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">תיאור (אופציונלי)</Label>
+                    <Input
+                      id="description"
+                      value={newTopic.description}
+                      onChange={(e) => setNewTopic({ ...newTopic, description: e.target.value })}
+                      placeholder="תיאור קצר של הנושא"
+                    />
+                  </div>
+                  <Button onClick={handleCreateTopic} className="w-full">
+                    צור נושא
+                  </Button>
                 </div>
-              </Card>
-            ))}
+              </DialogContent>
+            </Dialog>
+
+            {isLoading ? (
+              <div className="col-span-full text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+              </div>
+            ) : (
+              topics.map((topic) => (
+                <Card 
+                  key={topic.id}
+                  className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
+                  onClick={() => navigate(`/topic/${topic.id}`)}
+                >
+                  <div className="p-8 pt-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <span className="text-5xl">{topic.icon}</span>
+                      <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
+                    </div>
+                    {topic.description && (
+                      <p className="text-sm text-slate-600 mb-4">{topic.description}</p>
+                    )}
+                    <p className="text-sm text-slate-500 mb-3">שיחות</p>
+                    <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -269,28 +478,81 @@ const Dashboard = () => {
 
         {/* Topics Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {topics.map((topic) => (
-            <Card 
-              key={topic.id}
-              className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-600 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
-              onClick={() => navigate(`/topic/${topic.id}`)}
-            >
-              <div className="p-8 pt-10">
-                <div className="flex items-center gap-4 mb-6">
-                  <span className="text-5xl">{topic.icon}</span>
-                  <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
+          {/* Add New Topic Card */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Card className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed">
+                <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
+                  <Plus className="w-12 h-12 text-blue-600 mb-4" />
+                  <h3 className="text-xl font-bold text-blue-700">נושא חדש</h3>
+                  <p className="text-sm text-blue-500 mt-2">צור נושא חדש ללמידה</p>
                 </div>
-                <p className="text-sm text-slate-500 mb-3">הושלם</p>
-                <div className="relative w-full h-2 bg-slate-200 rounded-full mb-4 overflow-hidden">
-                  <div 
-                    className="absolute top-0 right-0 h-full bg-blue-600 rounded-full transition-all duration-300"
-                    style={{ width: `${topic.progress}%` }}
+              </Card>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>צור נושא חדש</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="title">כותרת הנושא</Label>
+                  <Input
+                    id="title"
+                    value={newTopic.title}
+                    onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
+                    placeholder="לדוגמה: Present Simple"
                   />
                 </div>
-                <p className="text-4xl font-bold text-blue-600">{topic.progress}%</p>
+                <div>
+                  <Label htmlFor="icon">אייקון (אימוג'י)</Label>
+                  <Input
+                    id="icon"
+                    value={newTopic.icon}
+                    onChange={(e) => setNewTopic({ ...newTopic, icon: e.target.value })}
+                    placeholder="📚"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">תיאור (אופציונלי)</Label>
+                  <Input
+                    id="description"
+                    value={newTopic.description}
+                    onChange={(e) => setNewTopic({ ...newTopic, description: e.target.value })}
+                    placeholder="תיאור קצר של הנושא"
+                  />
+                </div>
+                <Button onClick={handleCreateTopic} className="w-full">
+                  צור נושא
+                </Button>
               </div>
-            </Card>
-          ))}
+            </DialogContent>
+          </Dialog>
+
+          {isLoading ? (
+            <div className="col-span-full text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            </div>
+          ) : (
+            topics.map((topic) => (
+              <Card 
+                key={topic.id}
+                className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-600 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
+                onClick={() => navigate(`/topic/${topic.id}`)}
+              >
+                <div className="p-8 pt-10">
+                  <div className="flex items-center gap-4 mb-6">
+                    <span className="text-5xl">{topic.icon}</span>
+                    <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
+                  </div>
+                  {topic.description && (
+                    <p className="text-sm text-slate-600 mb-4">{topic.description}</p>
+                  )}
+                  <p className="text-sm text-slate-500 mb-3">שיחות</p>
+                  <p className="text-4xl font-bold text-blue-600">{topic.conversationCount}</p>
+                </div>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>
