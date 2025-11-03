@@ -6,33 +6,105 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, User, Mail, GraduationCap, Award, Settings, LogOut, Star, TrendingUp, Trophy } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 type AgeGroup = 'young' | 'middle' | 'high';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const [studentData, setStudentData] = useState<any>(null);
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<any>(null);
   const [ageGroup, setAgeGroup] = useState<AgeGroup>('middle');
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    parent_email: '',
+    grade: 0
+  });
 
   useEffect(() => {
-    const data = localStorage.getItem('studentData');
+    fetchProfile();
     const group = localStorage.getItem('ageGroup') as AgeGroup;
-    if (data) {
-      setStudentData(JSON.parse(data));
-    }
     if (group) {
       setAgeGroup(group);
     }
   }, []);
 
-  const stats = {
-    totalPoints: 1250,
-    level: 5,
-    lessonsCompleted: 23,
-    averageScore: 87,
-    streak: 7
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      setProfile(data);
+      setEditForm({
+        full_name: data.full_name,
+        parent_email: data.parent_email,
+        grade: data.grade
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לטעון את הפרופיל",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSaveProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name,
+          parent_email: editForm.parent_email,
+          grade: editForm.grade
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      await fetchProfile();
+      setIsEditing(false);
+      toast({
+        title: "הצלחה",
+        description: "הפרופיל עודכן בהצלחה"
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא ניתן לעדכן את הפרופיל",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
+  }
+
+  if (!profile) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
@@ -61,30 +133,30 @@ const Profile = () => {
                 {ageGroup === 'young' ? '🎈' : ageGroup === 'middle' ? '🎓' : '🎯'}
               </div>
               <div className="absolute -bottom-2 -right-2 bg-warning text-white rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-lg border-2 border-white">
-                {stats.level}
+                {profile.level}
               </div>
             </div>
             <div className="flex-1 text-center md:text-right">
               <h2 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                {studentData?.name || 'תלמיד'}
+                {profile.full_name}
               </h2>
               <p className="text-lg text-muted-foreground mb-4">
-                {studentData?.grade ? `כיתה ${studentData.grade}` : 'כיתה ד׳'} | {studentData?.level || 'מתחיל'}
+                כיתה {profile.grade} | {profile.english_level}
               </p>
               <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                 <div className="bg-white/80 px-4 py-2 rounded-lg shadow-md flex items-center gap-2">
                   <Star className="w-5 h-5 text-warning fill-warning" />
-                  <span className="font-bold">{stats.totalPoints}</span>
+                  <span className="font-bold">{profile.total_points}</span>
                   <span className="text-sm text-muted-foreground">נקודות</span>
                 </div>
                 <div className="bg-white/80 px-4 py-2 rounded-lg shadow-md flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-primary" />
-                  <span className="font-bold">{stats.streak}</span>
+                  <span className="font-bold">{profile.current_streak}</span>
                   <span className="text-sm text-muted-foreground">ימים רצופים</span>
                 </div>
                 <div className="bg-white/80 px-4 py-2 rounded-lg shadow-md flex items-center gap-2">
                   <Award className="w-5 h-5 text-accent" />
-                  <span className="font-bold">{stats.lessonsCompleted}</span>
+                  <span className="font-bold">{profile.lessons_completed}</span>
                   <span className="text-sm text-muted-foreground">שיעורים</span>
                 </div>
               </div>
@@ -103,7 +175,13 @@ const Profile = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={() => {
+                  if (isEditing) {
+                    handleSaveProfile();
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
               >
                 {isEditing ? 'שמור' : 'ערוך'}
               </Button>
@@ -117,7 +195,8 @@ const Profile = () => {
                 </Label>
                 <Input 
                   id="name" 
-                  value={studentData?.name || ''} 
+                  value={editForm.full_name} 
+                  onChange={(e) => setEditForm({...editForm, full_name: e.target.value})}
                   disabled={!isEditing}
                   className="text-lg"
                 />
@@ -125,12 +204,13 @@ const Profile = () => {
               <div>
                 <Label htmlFor="email" className="flex items-center gap-2 mb-2">
                   <Mail className="w-4 h-4" />
-                  אימייל
+                  אימייל הורה
                 </Label>
                 <Input 
                   id="email" 
                   type="email" 
-                  value={studentData?.email || 'student@example.com'} 
+                  value={editForm.parent_email} 
+                  onChange={(e) => setEditForm({...editForm, parent_email: e.target.value})}
                   disabled={!isEditing}
                   className="text-lg"
                 />
@@ -142,7 +222,9 @@ const Profile = () => {
                 </Label>
                 <Input 
                   id="grade" 
-                  value={studentData?.grade ? `כיתה ${studentData.grade}` : 'כיתה ד׳'} 
+                  type="number"
+                  value={editForm.grade} 
+                  onChange={(e) => setEditForm({...editForm, grade: parseInt(e.target.value) || 0})}
                   disabled={!isEditing}
                   className="text-lg"
                 />
@@ -165,19 +247,7 @@ const Profile = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">רמה נוכחית</p>
-                    <p className="text-2xl font-bold text-primary">{stats.level}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-accent/5 to-accent/10 rounded-lg border border-accent/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-accent/20 rounded-lg flex items-center justify-center">
-                    <GraduationCap className="w-6 h-6 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">ממוצע ציונים</p>
-                    <p className="text-2xl font-bold text-accent">{stats.averageScore}%</p>
+                    <p className="text-2xl font-bold text-primary">{profile.level}</p>
                   </div>
                 </div>
               </div>
@@ -189,7 +259,7 @@ const Profile = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">סה"כ נקודות</p>
-                    <p className="text-2xl font-bold text-warning">{stats.totalPoints}</p>
+                    <p className="text-2xl font-bold text-warning">{profile.total_points}</p>
                   </div>
                 </div>
               </div>
@@ -201,7 +271,7 @@ const Profile = () => {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">רצף ימי לימוד</p>
-                    <p className="text-2xl font-bold text-success">{stats.streak} ימים</p>
+                    <p className="text-2xl font-bold text-success">{profile.current_streak} ימים</p>
                   </div>
                 </div>
               </div>
