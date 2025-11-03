@@ -5,9 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { Trophy, Star, User, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CardContent } from '@/components/ui/card';
 
 type AgeGroup = 'young' | 'middle' | 'high';
 
@@ -27,7 +26,8 @@ const Dashboard = () => {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newTopic, setNewTopic] = useState({ title: '', icon: '📚', description: '' });
+  const [suggestedTopics, setSuggestedTopics] = useState<Topic[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     const data = localStorage.getItem('studentData');
@@ -89,27 +89,54 @@ const Dashboard = () => {
     }
   };
 
-  const handleCreateTopic = async () => {
-    if (!newTopic.title.trim()) {
-      toast({
-        title: 'שגיאה',
-        description: 'אנא הזן כותרת לנושא.',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const fetchTopicSuggestions = async () => {
+    if (!studentData) return;
+    
+    setIsLoadingSuggestions(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/suggest-topics`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            grade: studentData.grade,
+            englishLevel: studentData.englishLevel
+          }),
+        }
+      );
 
+      if (!response.ok) throw new Error('Failed to fetch suggestions');
+
+      const { topics: suggested } = await response.json();
+      setSuggestedTopics(suggested);
+    } catch (error) {
+      console.error('Error fetching topic suggestions:', error);
+      toast({
+        title: "שגיאה",
+        description: "לא הצלחנו לטעון הצעות נושאים",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleCreateTopic = async (topic: { title: string; icon: string; description: string | null }) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) throw new Error("No user found");
 
       const { data, error } = await supabase
         .from('topics')
         .insert({
           user_id: user.id,
-          title: newTopic.title,
-          icon: newTopic.icon || '📚',
-          description: newTopic.description || null,
+          title: topic.title,
+          icon: topic.icon,
+          description: topic.description
         })
         .select()
         .single();
@@ -117,21 +144,25 @@ const Dashboard = () => {
       if (error) throw error;
 
       toast({
-        title: 'הצלחה',
-        description: 'הנושא נוצר בהצלחה!',
+        title: "הצלחה!",
+        description: "הנושא נוסף בהצלחה",
       });
 
+      setTopics([...topics, { ...data, conversationCount: 0 }]);
       setIsDialogOpen(false);
-      setNewTopic({ title: '', icon: '📚', description: '' });
-      loadTopics();
     } catch (error) {
       console.error('Error creating topic:', error);
       toast({
-        title: 'שגיאה',
-        description: 'לא הצלחנו ליצור את הנושא.',
-        variant: 'destructive',
+        title: "שגיאה",
+        description: "לא הצלחנו ליצור את הנושא",
+        variant: "destructive",
       });
     }
+  };
+
+  const handleOpenDialog = () => {
+    setIsDialogOpen(true);
+    fetchTopicSuggestions();
   };
 
   // Young (grades 1-3) version
@@ -195,52 +226,43 @@ const Dashboard = () => {
           {/* Topics Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Add New Topic Card */}
+            <Card 
+              className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 border-2 border-dashed"
+              onClick={handleOpenDialog}
+            >
+              <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
+                <Plus className="w-12 h-12 text-purple-500 mb-4" />
+                <h3 className="text-xl font-bold text-purple-600">נושא חדש</h3>
+                <p className="text-sm text-purple-400 mt-2">צור נושא חדש ללמידה</p>
+              </div>
+            </Card>
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Card className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 border-2 border-dashed">
-                  <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
-                    <Plus className="w-12 h-12 text-purple-500 mb-4" />
-                    <h3 className="text-xl font-bold text-purple-600">נושא חדש</h3>
-                    <p className="text-sm text-purple-400 mt-2">צור נושא חדש ללמידה</p>
-                  </div>
-                </Card>
-              </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>צור נושא חדש</DialogTitle>
+                  <DialogTitle className="text-right">בחר נושא למידה</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">כותרת הנושא</Label>
-                    <Input
-                      id="title"
-                      value={newTopic.title}
-                      onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
-                      placeholder="לדוגמה: Present Simple"
-                    />
+                {isLoadingSuggestions ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
                   </div>
-                  <div>
-                    <Label htmlFor="icon">אייקון (אימוג'י)</Label>
-                    <Input
-                      id="icon"
-                      value={newTopic.icon}
-                      onChange={(e) => setNewTopic({ ...newTopic, icon: e.target.value })}
-                      placeholder="📚"
-                    />
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {suggestedTopics.map((topic, index) => (
+                      <Card 
+                        key={index}
+                        className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-300"
+                        onClick={() => handleCreateTopic(topic)}
+                      >
+                        <div className="p-4 text-center">
+                          <div className="text-4xl mb-2">{topic.icon}</div>
+                          <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
+                          <p className="text-sm text-muted-foreground">{topic.description}</p>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                  <div>
-                    <Label htmlFor="description">תיאור (אופציונלי)</Label>
-                    <Input
-                      id="description"
-                      value={newTopic.description}
-                      onChange={(e) => setNewTopic({ ...newTopic, description: e.target.value })}
-                      placeholder="תיאור קצר של הנושא"
-                    />
-                  </div>
-                  <Button onClick={handleCreateTopic} className="w-full">
-                    צור נושא
-                  </Button>
-                </div>
+                )}
               </DialogContent>
             </Dialog>
 
@@ -338,52 +360,43 @@ const Dashboard = () => {
           {/* Topics Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Add New Topic Card */}
+            <Card 
+              className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
+              onClick={handleOpenDialog}
+            >
+              <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
+                <Plus className="w-12 h-12 text-blue-500 mb-4" />
+                <h3 className="text-xl font-bold text-blue-600">נושא חדש</h3>
+                <p className="text-sm text-blue-400 mt-2">צור נושא חדש ללמידה</p>
+              </div>
+            </Card>
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Card className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed">
-                  <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
-                    <Plus className="w-12 h-12 text-blue-500 mb-4" />
-                    <h3 className="text-xl font-bold text-blue-600">נושא חדש</h3>
-                    <p className="text-sm text-blue-400 mt-2">צור נושא חדש ללמידה</p>
-                  </div>
-                </Card>
-              </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>צור נושא חדש</DialogTitle>
+                  <DialogTitle className="text-right">בחר נושא למידה</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">כותרת הנושא</Label>
-                    <Input
-                      id="title"
-                      value={newTopic.title}
-                      onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
-                      placeholder="לדוגמה: Present Simple"
-                    />
+                {isLoadingSuggestions ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
-                  <div>
-                    <Label htmlFor="icon">אייקון (אימוג'י)</Label>
-                    <Input
-                      id="icon"
-                      value={newTopic.icon}
-                      onChange={(e) => setNewTopic({ ...newTopic, icon: e.target.value })}
-                      placeholder="📚"
-                    />
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {suggestedTopics.map((topic, index) => (
+                      <Card 
+                        key={index}
+                        className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-300"
+                        onClick={() => handleCreateTopic(topic)}
+                      >
+                        <div className="p-4 text-center">
+                          <div className="text-4xl mb-2">{topic.icon}</div>
+                          <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
+                          <p className="text-sm text-muted-foreground">{topic.description}</p>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                  <div>
-                    <Label htmlFor="description">תיאור (אופציונלי)</Label>
-                    <Input
-                      id="description"
-                      value={newTopic.description}
-                      onChange={(e) => setNewTopic({ ...newTopic, description: e.target.value })}
-                      placeholder="תיאור קצר של הנושא"
-                    />
-                  </div>
-                  <Button onClick={handleCreateTopic} className="w-full">
-                    צור נושא
-                  </Button>
-                </div>
+                )}
               </DialogContent>
             </Dialog>
 
@@ -479,52 +492,43 @@ const Dashboard = () => {
         {/* Topics Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Add New Topic Card */}
+          <Card 
+            className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
+            onClick={handleOpenDialog}
+          >
+            <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
+              <Plus className="w-12 h-12 text-blue-600 mb-4" />
+              <h3 className="text-xl font-bold text-blue-700">נושא חדש</h3>
+              <p className="text-sm text-blue-500 mt-2">צור נושא חדש ללמידה</p>
+            </div>
+          </Card>
+
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Card className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed">
-                <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
-                  <Plus className="w-12 h-12 text-blue-600 mb-4" />
-                  <h3 className="text-xl font-bold text-blue-700">נושא חדש</h3>
-                  <p className="text-sm text-blue-500 mt-2">צור נושא חדש ללמידה</p>
-                </div>
-              </Card>
-            </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>צור נושא חדש</DialogTitle>
+                <DialogTitle className="text-right">בחר נושא למידה</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="title">כותרת הנושא</Label>
-                  <Input
-                    id="title"
-                    value={newTopic.title}
-                    onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
-                    placeholder="לדוגמה: Present Simple"
-                  />
+              {isLoadingSuggestions ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
-                <div>
-                  <Label htmlFor="icon">אייקון (אימוג'י)</Label>
-                  <Input
-                    id="icon"
-                    value={newTopic.icon}
-                    onChange={(e) => setNewTopic({ ...newTopic, icon: e.target.value })}
-                    placeholder="📚"
-                  />
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {suggestedTopics.map((topic, index) => (
+                    <Card 
+                      key={index}
+                      className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-300"
+                      onClick={() => handleCreateTopic(topic)}
+                    >
+                      <div className="p-4 text-center">
+                        <div className="text-4xl mb-2">{topic.icon}</div>
+                        <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
+                        <p className="text-sm text-muted-foreground">{topic.description}</p>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-                <div>
-                  <Label htmlFor="description">תיאור (אופציונלי)</Label>
-                  <Input
-                    id="description"
-                    value={newTopic.description}
-                    onChange={(e) => setNewTopic({ ...newTopic, description: e.target.value })}
-                    placeholder="תיאור קצר של הנושא"
-                  />
-                </div>
-                <Button onClick={handleCreateTopic} className="w-full">
-                  צור נושא
-                </Button>
-              </div>
+              )}
             </DialogContent>
           </Dialog>
 
