@@ -153,11 +153,11 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 bounce-in">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4" dir="rtl">
+      <Card className="w-full max-w-md p-8 bounce-in"  dir="rtl">
         <div className="flex items-center justify-center mb-8">
-          <Sparkles className="w-8 h-8 text-primary ml-2" />
           <h1 className="text-2xl font-bold">בואו נכיר!</h1>
+          <Sparkles className="w-8 h-8 text-primary mr-2" />
         </div>
 
         {/* Progress Bar */}
@@ -327,8 +327,8 @@ const Register = () => {
             onClick={handleNext}
             disabled={!isStepValid() || isLoading}
           >
+            <ArrowRight className="ml-2" />
             {isLoading ? 'יוצר חשבון...' : (step === 5 ? 'בואו נתחיל ללמוד!' : 'המשך')}
-            <ArrowRight className="mr-2" />
           </Button>
 
           {step > 1 && (
