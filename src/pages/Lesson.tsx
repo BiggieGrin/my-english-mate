@@ -6,6 +6,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowRight, Send, Mic, Star, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { MultipleChoiceButtons } from '@/components/MultipleChoiceButtons';
 
 const Lesson = () => {
   const navigate = useNavigate();
@@ -270,7 +271,15 @@ const Lesson = () => {
                     : 'bg-card'
                 }`}
               >
-                <p className="text-lg whitespace-pre-wrap">{message.content}</p>
+                {message.role === 'assistant' ? (
+                  <MultipleChoiceButtons
+                    content={message.content}
+                    onSelect={(choice) => streamChat(choice)}
+                    disabled={isLoading || index !== messages.length - 1}
+                  />
+                ) : (
+                  <p className="text-lg whitespace-pre-wrap">{message.content}</p>
+                )}
               </Card>
             </div>
           ))}
