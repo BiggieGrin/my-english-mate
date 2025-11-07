@@ -117,25 +117,28 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
               disabled={disabled || selectedChoice !== null}
               variant="outline"
               className={cn(
-                "h-auto min-h-[4rem] py-4 px-4 hover:bg-primary/10 hover:border-primary transition-all",
+                "h-auto min-h-[4.5rem] py-4 px-4 hover:bg-primary/10 hover:border-primary transition-all",
                 "disabled:opacity-50 disabled:cursor-not-allowed",
-                "w-full text-left",
+                "w-full justify-start items-start",
                 selectedChoice === choice.letter && "bg-primary/20 border-primary font-semibold ring-2 ring-primary/30"
               )}
             >
               <span 
                 className={cn(
-                  "flex items-center gap-3 w-full",
+                  "flex items-start gap-3 w-full",
                   choiceDir === 'rtl' ? "flex-row-reverse" : "flex-row"
                 )}
                 dir={choiceDir}
               >
-                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary mt-0.5">
                   {choice.letter}
                 </span>
                 <span 
-                  className="flex-1 text-base leading-relaxed break-words"
-                  style={{ textAlign: choiceDir === 'rtl' ? 'right' : 'left' }}
+                  className="flex-1 text-base leading-relaxed break-words whitespace-normal overflow-wrap-anywhere"
+                  style={{ 
+                    textAlign: choiceDir === 'rtl' ? 'right' : 'left',
+                    direction: choiceDir 
+                  }}
                 >
                   {choice.text}
                 </span>
