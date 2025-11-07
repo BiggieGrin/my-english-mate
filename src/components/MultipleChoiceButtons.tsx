@@ -14,6 +14,17 @@ interface Choice {
   fullOption: string;
 }
 
+// Detect if text is primarily Hebrew (RTL) or English (LTR)
+const detectTextDirection = (text: string): 'rtl' | 'ltr' => {
+  const hebrewPattern = /[\u0590-\u05FF]/;
+  const englishPattern = /[a-zA-Z]/;
+  
+  const hebrewCount = (text.match(new RegExp(hebrewPattern, 'g')) || []).length;
+  const englishCount = (text.match(new RegExp(englishPattern, 'g')) || []).length;
+  
+  return hebrewCount > englishCount ? 'rtl' : 'ltr';
+};
+
 export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleChoiceButtonsProps) => {
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
 
@@ -58,39 +69,67 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
     onSelect(letter);
   };
 
+  const beforeTextDir = beforeText ? detectTextDirection(beforeText) : 'rtl';
+  const afterTextDir = afterText ? detectTextDirection(afterText) : 'rtl';
+
   return (
     <div className="space-y-4">
       {beforeText && (
-        <p className="text-lg whitespace-pre-wrap">{beforeText}</p>
+        <p 
+          className="text-lg whitespace-pre-wrap leading-relaxed"
+          dir={beforeTextDir}
+          style={{ textAlign: beforeTextDir === 'rtl' ? 'right' : 'left' }}
+        >
+          {beforeText}
+        </p>
       )}
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {choices.map((choice) => (
-          <Button
-            key={choice.letter}
-            onClick={() => handleChoiceClick(choice.letter)}
-            disabled={disabled || selectedChoice !== null}
-            variant="outline"
-            className={cn(
-              "h-auto py-4 px-4 text-right justify-start hover:bg-primary/10 hover:border-primary transition-all",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              selectedChoice === choice.letter && "bg-primary/20 border-primary font-semibold"
-            )}
-          >
-            <span className="flex items-start gap-3 w-full">
-              <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                {choice.letter}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+        {choices.map((choice) => {
+          const choiceDir = detectTextDirection(choice.text);
+          return (
+            <Button
+              key={choice.letter}
+              onClick={() => handleChoiceClick(choice.letter)}
+              disabled={disabled || selectedChoice !== null}
+              variant="outline"
+              className={cn(
+                "h-auto min-h-[4rem] py-4 px-4 hover:bg-primary/10 hover:border-primary transition-all",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                "w-full text-left",
+                selectedChoice === choice.letter && "bg-primary/20 border-primary font-semibold ring-2 ring-primary/30"
+              )}
+            >
+              <span 
+                className={cn(
+                  "flex items-center gap-3 w-full",
+                  choiceDir === 'rtl' ? "flex-row-reverse" : "flex-row"
+                )}
+                dir={choiceDir}
+              >
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                  {choice.letter}
+                </span>
+                <span 
+                  className="flex-1 text-base leading-relaxed break-words"
+                  style={{ textAlign: choiceDir === 'rtl' ? 'right' : 'left' }}
+                >
+                  {choice.text}
+                </span>
               </span>
-              <span className="flex-1 text-base leading-relaxed">
-                {choice.text}
-              </span>
-            </span>
-          </Button>
-        ))}
+            </Button>
+          );
+        })}
       </div>
 
       {afterText && (
-        <p className="text-lg whitespace-pre-wrap">{afterText}</p>
+        <p 
+          className="text-lg whitespace-pre-wrap leading-relaxed"
+          dir={afterTextDir}
+          style={{ textAlign: afterTextDir === 'rtl' ? 'right' : 'left' }}
+        >
+          {afterText}
+        </p>
       )}
     </div>
   );
