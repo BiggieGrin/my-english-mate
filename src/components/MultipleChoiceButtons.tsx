@@ -25,21 +25,32 @@ const detectTextDirection = (text: string): 'rtl' | 'ltr' => {
   return hebrewCount > englishCount ? 'rtl' : 'ltr';
 };
 
+// Remove markdown symbols from text
+const stripMarkdown = (text: string): string => {
+  return text
+    .replace(/\*\*/g, '') // Remove bold
+    .replace(/\*/g, '')   // Remove italic
+    .replace(/_{2}/g, '') // Remove underline
+    .replace(/_/g, '')    // Remove single underscore
+    .replace(/~~(.*?)~~/g, '$1') // Remove strikethrough
+    .trim();
+};
+
 export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleChoiceButtonsProps) => {
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
 
   // Parse multiple-choice options from the content
   const parseChoices = (text: string): { choices: Choice[], beforeText: string, afterText: string } | null => {
-    // Match patterns like "A) text", "B) text", etc.
+    // Match patterns like "A) text", "A. text", "B) text", "B. text", etc.
     // Support both English and Hebrew letters
-    const choicePattern = /([A-D])\)\s*([^\n]+)/g;
+    const choicePattern = /([A-D])[\)\.]\s*([^\n]+)/g;
     const matches = Array.from(text.matchAll(choicePattern));
     
     if (matches.length < 2) return null;
 
     const choices: Choice[] = matches.map(match => ({
       letter: match[1],
-      text: match[2].trim(),
+      text: stripMarkdown(match[2].trim()),
       fullOption: match[0]
     }));
 
@@ -58,7 +69,17 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
   const parsed = parseChoices(content);
 
   if (!parsed) {
-    return <p className="text-lg whitespace-pre-wrap">{content}</p>;
+    const cleanContent = stripMarkdown(content);
+    const contentDir = detectTextDirection(cleanContent);
+    return (
+      <p 
+        className="text-lg whitespace-pre-wrap leading-relaxed"
+        dir={contentDir}
+        style={{ textAlign: contentDir === 'rtl' ? 'right' : 'left' }}
+      >
+        {cleanContent}
+      </p>
+    );
   }
 
   const { choices, beforeText, afterText } = parsed;
@@ -69,18 +90,20 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
     onSelect(letter);
   };
 
-  const beforeTextDir = beforeText ? detectTextDirection(beforeText) : 'rtl';
-  const afterTextDir = afterText ? detectTextDirection(afterText) : 'rtl';
+  const cleanBeforeText = beforeText ? stripMarkdown(beforeText) : '';
+  const cleanAfterText = afterText ? stripMarkdown(afterText) : '';
+  const beforeTextDir = cleanBeforeText ? detectTextDirection(cleanBeforeText) : 'rtl';
+  const afterTextDir = cleanAfterText ? detectTextDirection(cleanAfterText) : 'rtl';
 
   return (
     <div className="space-y-4">
-      {beforeText && (
+      {cleanBeforeText && (
         <p 
           className="text-lg whitespace-pre-wrap leading-relaxed"
           dir={beforeTextDir}
           style={{ textAlign: beforeTextDir === 'rtl' ? 'right' : 'left' }}
         >
-          {beforeText}
+          {cleanBeforeText}
         </p>
       )}
       
@@ -122,13 +145,13 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
         })}
       </div>
 
-      {afterText && (
+      {cleanAfterText && (
         <p 
           className="text-lg whitespace-pre-wrap leading-relaxed"
           dir={afterTextDir}
           style={{ textAlign: afterTextDir === 'rtl' ? 'right' : 'left' }}
         >
-          {afterText}
+          {cleanAfterText}
         </p>
       )}
     </div>

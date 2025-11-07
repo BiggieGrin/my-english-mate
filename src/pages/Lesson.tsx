@@ -8,6 +8,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MultipleChoiceButtons } from '@/components/MultipleChoiceButtons';
 
+// Detect if text is primarily Hebrew (RTL) or English (LTR)
+const detectTextDirection = (text: string): 'rtl' | 'ltr' => {
+  const hebrewPattern = /[\u0590-\u05FF]/;
+  const englishPattern = /[a-zA-Z]/;
+  
+  const hebrewCount = (text.match(new RegExp(hebrewPattern, 'g')) || []).length;
+  const englishCount = (text.match(new RegExp(englishPattern, 'g')) || []).length;
+  
+  return hebrewCount > englishCount ? 'rtl' : 'ltr';
+};
+
 const Lesson = () => {
   const navigate = useNavigate();
   const { lessonId } = useParams(); // This is actually the conversation ID now
@@ -278,7 +289,13 @@ const Lesson = () => {
                     disabled={isLoading || index !== messages.length - 1}
                   />
                 ) : (
-                  <p className="text-lg whitespace-pre-wrap">{message.content}</p>
+                  <p 
+                    className="text-lg whitespace-pre-wrap leading-relaxed"
+                    dir={detectTextDirection(message.content)}
+                    style={{ textAlign: detectTextDirection(message.content) === 'rtl' ? 'right' : 'left' }}
+                  >
+                    {message.content}
+                  </p>
                 )}
               </Card>
             </div>
