@@ -34,6 +34,7 @@ const Lesson = () => {
   
   const conversationId = location.state?.conversationId || lessonId;
   const topic = location.state?.topic || 'English';
+  const topicId = location.state?.topicId;
   const mode = location.state?.mode || '';
 
   const scrollToBottom = () => {
@@ -250,7 +251,7 @@ const Lesson = () => {
       <header className="bg-card shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <Button variant="ghost" onClick={() => navigate('/dashboard')}>
+            <Button variant="ghost" onClick={() => navigate(topicId ? `/topic/${topicId}` : '/dashboard')}>
               <ArrowRight className="ml-2" />
               חזרה
             </Button>

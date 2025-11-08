@@ -113,6 +113,7 @@ const Topic = () => {
       navigate(`/lesson/${conversation.id}`, { 
         state: { 
           topic: topic.title,
+          topicId: topic.id,
           mode: mode,
           conversationId: conversation.id 
         } 
@@ -248,6 +249,7 @@ const Topic = () => {
                         onClick={() => navigate(`/lesson/${conversation.id}`, { 
                           state: { 
                             topic: topic.title,
+                            topicId: topic.id,
                             conversationId: conversation.id 
                           } 
                         })}
