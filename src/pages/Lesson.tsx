@@ -3,10 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowRight, Send, Mic, Star, Loader2, X } from 'lucide-react';
+import { ArrowRight, Send, Mic, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MultipleChoiceButtons } from '@/components/MultipleChoiceButtons';
+import { XpGainAnimation } from '@/components/XpGainAnimation';
+import { LevelUpAnimation } from '@/components/LevelUpAnimation';
+import { XpProgressBar } from '@/components/XpProgressBar';
 
 // Detect if text is primarily Hebrew (RTL) or English (LTR)
 const detectTextDirection = (text: string): 'rtl' | 'ltr' => {
@@ -24,9 +27,10 @@ const Lesson = () => {
   const { lessonId } = useParams(); // This is actually the conversation ID now
   const location = useLocation();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
+  const [messages, setMessages] = useState<Array<{ role: string; content: string; xpGain?: number; levelUp?: number }>>([]);
   const [input, setInput] = useState('');
-  const [points, setPoints] = useState(150);
+  const [level, setLevel] = useState(1);
+  const [currentXp, setCurrentXp] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -60,6 +64,18 @@ const Lesson = () => {
           });
           navigate('/dashboard');
           return;
+        }
+
+        // Load user's level and XP
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('level, total_points')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          setLevel(profile.level || 1);
+          setCurrentXp(profile.total_points || 0);
         }
 
         // Load existing messages for this conversation
@@ -185,11 +201,53 @@ const Lesson = () => {
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) {
                 assistantMessage += content;
+                
+                // Parse XP gains and level ups from the message
+                const xpMatch = assistantMessage.match(/\+(\d+)\s*XP/);
+                const levelMatch = assistantMessage.match(/עלית לרמה (\d+)/);
+                const progressMatch = assistantMessage.match(/רמה (\d+) — (\d+)\/(\d+) XP/);
+                
+                let xpGain = undefined;
+                let levelUp = undefined;
+                
+                if (xpMatch && !assistantMessage.includes('xp_detected')) {
+                  xpGain = parseInt(xpMatch[1]);
+                  const newXp = currentXp + xpGain;
+                  setCurrentXp(newXp);
+                  assistantMessage += ' xp_detected'; // Mark as processed
+                  
+                  // Update in database
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (user) {
+                    await supabase
+                      .from('profiles')
+                      .update({ total_points: newXp })
+                      .eq('id', user.id);
+                  }
+                }
+                
+                if (levelMatch && !assistantMessage.includes('level_detected')) {
+                  levelUp = parseInt(levelMatch[1]);
+                  setLevel(levelUp);
+                  assistantMessage += ' level_detected'; // Mark as processed
+                  
+                  // Update in database
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (user) {
+                    await supabase
+                      .from('profiles')
+                      .update({ level: levelUp })
+                      .eq('id', user.id);
+                  }
+                }
+                
                 setMessages(prev => {
                   const newMsgs = [...prev];
                   newMsgs[newMsgs.length - 1] = {
                     role: 'assistant',
-                    content: assistantMessage,
+                    content: assistantMessage.replace(' xp_detected', '').replace(' level_detected', ''),
+                    xpGain,
+                    levelUp,
                   };
                   return newMsgs;
                 });
@@ -255,10 +313,11 @@ const Lesson = () => {
               <ArrowRight className="ml-2" />
               חזרה
             </Button>
-            <div className="flex items-center gap-2 bg-warning/20 px-4 py-2 rounded-full">
-              <Star className="w-5 h-5 text-warning fill-warning" />
-              <span className="font-bold">{points}</span>
-            </div>
+            <XpProgressBar 
+              currentXp={currentXp % (level * 100)} 
+              requiredXp={level * 100} 
+              level={level} 
+            />
           </div>
         </div>
       </header>
@@ -284,11 +343,19 @@ const Lesson = () => {
                 }`}
               >
                 {message.role === 'assistant' ? (
-                  <MultipleChoiceButtons
-                    content={message.content}
-                    onSelect={(choice) => streamChat(choice)}
-                    disabled={isLoading || index !== messages.length - 1}
-                  />
+                  <div className="space-y-3">
+                    <MultipleChoiceButtons
+                      content={message.content}
+                      onSelect={(choice) => streamChat(choice)}
+                      disabled={isLoading || index !== messages.length - 1}
+                    />
+                    {message.xpGain && (
+                      <XpGainAnimation amount={message.xpGain} />
+                    )}
+                    {message.levelUp && (
+                      <LevelUpAnimation level={message.levelUp} />
+                    )}
+                  </div>
                 ) : (
                   <p 
                     className="text-lg whitespace-pre-wrap leading-relaxed"
