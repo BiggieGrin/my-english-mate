@@ -42,17 +42,28 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
   // Parse multiple-choice options from the content
   const parseChoices = (text: string): { choices: Choice[], beforeText: string, afterText: string } | null => {
     // Match patterns like "A) text", "A. text", "B) text", "B. text", etc.
-    // Support both English and Hebrew letters
-    const choicePattern = /([A-D])[\)\.]\s*([^\n]+)/g;
+    const choicePattern = /^([A-D])[\)\.]\s*(.+?)$/gm;
     const matches = Array.from(text.matchAll(choicePattern));
     
     if (matches.length < 2) return null;
 
-    const choices: Choice[] = matches.map(match => ({
-      letter: match[1],
-      text: stripMarkdown(match[2].trim()),
-      fullOption: match[0]
-    }));
+    // Extract choices - ONLY the answer text, nothing else
+    const choices: Choice[] = matches.map(match => {
+      let answerText = match[2].trim();
+      
+      // Remove any question marks or question-like content from choices
+      // If the answer text contains a question mark, only keep text after it
+      const questionMarkIndex = answerText.indexOf('?');
+      if (questionMarkIndex !== -1) {
+        answerText = answerText.substring(questionMarkIndex + 1).trim();
+      }
+      
+      return {
+        letter: match[1],
+        text: stripMarkdown(answerText),
+        fullOption: match[0]
+      };
+    });
 
     // Split the text into before choices, choices, and after choices
     const firstMatch = matches[0];
