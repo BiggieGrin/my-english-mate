@@ -54,12 +54,13 @@ const Dashboard = () => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('level')
+        .select('level, current_xp')
         .eq('id', user.id)
         .single();
 
       if (profile) {
         setUserLevel(profile.level || 1);
+        // current_xp is available if needed for future features
       }
     } catch (error) {
       console.error('Error loading user level:', error);

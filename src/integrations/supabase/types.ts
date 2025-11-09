@@ -91,6 +91,7 @@ export type Database = {
         Row: {
           created_at: string | null
           current_streak: number | null
+          current_xp: number | null
           english_level: string
           full_name: string
           grade: number
@@ -104,6 +105,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           current_streak?: number | null
+          current_xp?: number | null
           english_level: string
           full_name: string
           grade: number
@@ -117,6 +119,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           current_streak?: number | null
+          current_xp?: number | null
           english_level?: string
           full_name?: string
           grade?: number

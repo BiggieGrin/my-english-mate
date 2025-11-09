@@ -30,11 +30,14 @@ const Lesson = () => {
   const [messages, setMessages] = useState<Array<{ role: string; content: string; xpGain?: number; levelUp?: number }>>([]);
   const [input, setInput] = useState('');
   const [level, setLevel] = useState(1);
-  const [currentXp, setCurrentXp] = useState(0);
+  const [currentXp, setCurrentXp] = useState(0); // XP towards next level
+  const [totalPoints, setTotalPoints] = useState(0); // Total lifetime XP
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  const getXpToNextLevel = (lvl: number) => lvl * 100;
   
   const conversationId = location.state?.conversationId || lessonId;
   const topic = location.state?.topic || 'English';
@@ -69,13 +72,14 @@ const Lesson = () => {
         // Load user's level and XP
         const { data: profile } = await supabase
           .from('profiles')
-          .select('level, total_points')
+          .select('level, current_xp, total_points')
           .eq('id', user.id)
           .single();
 
         if (profile) {
           setLevel(profile.level || 1);
-          setCurrentXp(profile.total_points || 0);
+          setCurrentXp(profile.current_xp || 0);
+          setTotalPoints(profile.total_points || 0);
         }
 
         // Load existing messages for this conversation
@@ -202,18 +206,30 @@ const Lesson = () => {
               if (content) {
                 assistantMessage += content;
                 
-                // Parse XP gains and level ups from the message
+                // Parse XP gains from the message
                 const xpMatch = assistantMessage.match(/\+(\d+)\s*XP/);
-                const levelMatch = assistantMessage.match(/עלית לרמה (\d+)/);
-                const progressMatch = assistantMessage.match(/רמה (\d+) — (\d+)\/(\d+) XP/);
                 
                 let xpGain = undefined;
                 let levelUp = undefined;
                 
                 if (xpMatch && !assistantMessage.includes('xp_detected')) {
                   xpGain = parseInt(xpMatch[1]);
-                  const newXp = currentXp + xpGain;
-                  setCurrentXp(newXp);
+                  
+                  // Calculate new XP with proper leveling logic
+                  let newCurrentXp = currentXp + xpGain;
+                  let newTotalPoints = totalPoints + xpGain;
+                  let newLevel = level;
+                  
+                  // Handle level ups with XP rollover
+                  while (newCurrentXp >= getXpToNextLevel(newLevel)) {
+                    newCurrentXp -= getXpToNextLevel(newLevel);
+                    newLevel++;
+                    levelUp = newLevel;
+                  }
+                  
+                  setCurrentXp(newCurrentXp);
+                  setTotalPoints(newTotalPoints);
+                  setLevel(newLevel);
                   assistantMessage += ' xp_detected'; // Mark as processed
                   
                   // Update in database
@@ -221,22 +237,11 @@ const Lesson = () => {
                   if (user) {
                     await supabase
                       .from('profiles')
-                      .update({ total_points: newXp })
-                      .eq('id', user.id);
-                  }
-                }
-                
-                if (levelMatch && !assistantMessage.includes('level_detected')) {
-                  levelUp = parseInt(levelMatch[1]);
-                  setLevel(levelUp);
-                  assistantMessage += ' level_detected'; // Mark as processed
-                  
-                  // Update in database
-                  const { data: { user } } = await supabase.auth.getUser();
-                  if (user) {
-                    await supabase
-                      .from('profiles')
-                      .update({ level: levelUp })
+                      .update({ 
+                        current_xp: newCurrentXp,
+                        total_points: newTotalPoints,
+                        level: newLevel
+                      })
                       .eq('id', user.id);
                   }
                 }
@@ -308,8 +313,8 @@ const Lesson = () => {
       {/* XP Progress Bar - Fixed Top Left */}
       <div className="fixed top-4 left-4 z-50 w-64 max-w-[calc(100vw-2rem)]">
         <XpProgressBar 
-          currentXp={currentXp % (level * 100)} 
-          requiredXp={level * 100} 
+          currentXp={currentXp} 
+          requiredXp={getXpToNextLevel(level)} 
           level={level} 
         />
       </div>
