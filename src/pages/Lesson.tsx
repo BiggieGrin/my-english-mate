@@ -34,10 +34,21 @@ const Lesson = () => {
   const [totalPoints, setTotalPoints] = useState(0); // Total lifetime XP
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [displayedText, setDisplayedText] = useState<{ [key: number]: string }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
+
+  // Clean XP-related text from message content
+  const cleanMessageContent = (content: string): string => {
+    return content
+      .replace(/\+\d+\s*XP\s*✨?/gi, '') // Remove "+20 XP ✨"
+      .replace(/\d+\/\d+\s*XP/gi, '') // Remove "20/100 XP"
+      .replace(/רמה \d+ — \d+\/\d+ XP/g, '') // Remove Hebrew XP progress
+      .replace(/עלית לרמה \d+!/g, '') // Remove level up text
+      .trim();
+  };
   
   const conversationId = location.state?.conversationId || lessonId;
   const topic = location.state?.topic || 'English';
@@ -51,6 +62,17 @@ const Lesson = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Complete typewriter animation when loading finishes
+  useEffect(() => {
+    if (!isLoading && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant') {
+        const cleanContent = cleanMessageContent(lastMessage.content);
+        setDisplayedText(prev => ({ ...prev, [messages.length - 1]: cleanContent }));
+      }
+    }
+  }, [isLoading, messages]);
 
   // Load chat history and send initial message
   useEffect(() => {
@@ -94,6 +116,14 @@ const Lesson = () => {
         if (existingMessages && existingMessages.length > 0) {
           // Load existing chat
           setMessages(existingMessages);
+          // Initialize displayed text for existing messages (no typewriter)
+          const initialDisplayed: { [key: number]: string } = {};
+          existingMessages.forEach((msg, idx) => {
+            if (msg.role === 'assistant') {
+              initialDisplayed[idx] = cleanMessageContent(msg.content);
+            }
+          });
+          setDisplayedText(initialDisplayed);
           setIsInitialized(true);
         } else {
           // Send initial message for new chat
@@ -183,9 +213,11 @@ const Lesson = () => {
       const decoder = new TextDecoder();
       let assistantMessage = '';
       let buffer = '';
+      const messageIndex = newMessages.length; // Index for the new assistant message
 
       // Add empty assistant message to update
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+      setDisplayedText(prev => ({ ...prev, [messageIndex]: '' }));
 
       while (true) {
         const { done, value } = await reader.read();
@@ -246,11 +278,23 @@ const Lesson = () => {
                   }
                 }
                 
+                const cleanedMessage = assistantMessage.replace(' xp_detected', '').replace(' level_detected', '');
+                const cleanedContent = cleanMessageContent(cleanedMessage);
+                
+                // Typewriter effect - add characters gradually
+                setDisplayedText(prev => {
+                  const currentDisplay = prev[messageIndex] || '';
+                  if (currentDisplay.length < cleanedContent.length) {
+                    return { ...prev, [messageIndex]: cleanedContent.slice(0, currentDisplay.length + 3) };
+                  }
+                  return prev;
+                });
+                
                 setMessages(prev => {
                   const newMsgs = [...prev];
                   newMsgs[newMsgs.length - 1] = {
                     role: 'assistant',
-                    content: assistantMessage.replace(' xp_detected', '').replace(' level_detected', ''),
+                    content: cleanedMessage,
                     xpGain,
                     levelUp,
                   };
@@ -339,44 +383,50 @@ const Lesson = () => {
               <Loader2 className="w-8 h-8 animate-spin" />
             </div>
           )}
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}
-            >
-              <Card 
-                className={`p-4 max-w-[80%] ${
-                  message.role === 'user' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-card'
-                }`}
+          {messages.map((message, index) => {
+            const cleanContent = message.role === 'assistant' ? cleanMessageContent(message.content) : message.content;
+            const isStreamingMessage = message.role === 'assistant' && index === messages.length - 1 && isLoading;
+            const textToShow = message.role === 'assistant' ? (displayedText[index] || cleanContent) : cleanContent;
+            
+            return (
+              <div
+                key={index}
+                className={`flex ${message.role === 'user' ? 'justify-start' : 'justify-end'}`}
               >
-                {message.role === 'assistant' ? (
-                  <div className="space-y-3">
-                    <MultipleChoiceButtons
-                      content={message.content}
-                      onSelect={(choice) => streamChat(choice)}
-                      disabled={isLoading || index !== messages.length - 1}
-                    />
-                    {message.xpGain && (
-                      <XpGainAnimation amount={message.xpGain} />
-                    )}
-                    {message.levelUp && (
-                      <LevelUpAnimation level={message.levelUp} />
-                    )}
-                  </div>
-                ) : (
-                  <p 
-                    className="text-lg whitespace-pre-wrap leading-relaxed"
-                    dir={detectTextDirection(message.content)}
-                    style={{ textAlign: detectTextDirection(message.content) === 'rtl' ? 'right' : 'left' }}
-                  >
-                    {message.content}
-                  </p>
-                )}
-              </Card>
-            </div>
-          ))}
+                <Card 
+                  className={`p-4 max-w-[80%] ${
+                    message.role === 'user' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-card'
+                  }`}
+                >
+                  {message.role === 'assistant' ? (
+                    <div className="space-y-3">
+                      <MultipleChoiceButtons
+                        content={textToShow}
+                        onSelect={(choice) => streamChat(choice)}
+                        disabled={isLoading || index !== messages.length - 1}
+                      />
+                      {message.xpGain && !isStreamingMessage && (
+                        <XpGainAnimation amount={message.xpGain} />
+                      )}
+                      {message.levelUp && !isStreamingMessage && (
+                        <LevelUpAnimation level={message.levelUp} />
+                      )}
+                    </div>
+                  ) : (
+                    <p 
+                      className="text-lg whitespace-pre-wrap leading-relaxed"
+                      dir={detectTextDirection(message.content)}
+                      style={{ textAlign: detectTextDirection(message.content) === 'rtl' ? 'right' : 'left' }}
+                    >
+                      {message.content}
+                    </p>
+                  )}
+                </Card>
+              </div>
+            );
+          })}
           {isLoading && (
             <div className="flex justify-end">
               <Card className="p-4 max-w-[80%] bg-card">
