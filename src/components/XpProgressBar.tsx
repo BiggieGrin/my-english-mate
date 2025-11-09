@@ -10,21 +10,26 @@ export const XpProgressBar = ({ currentXp, requiredXp, level }: XpProgressBarPro
   const percentage = Math.min((currentXp / requiredXp) * 100, 100);
 
   return (
-    <div className="flex items-center gap-3 bg-card/50 backdrop-blur-sm px-4 py-2 rounded-full border border-border/50">
-      <div className="flex items-center gap-2 min-w-[80px]">
-        <span className="text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          רמה {level}
-        </span>
+    <div className="flex items-center gap-0 relative" dir="ltr">
+      <div 
+        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg z-10 shadow-lg relative"
+        style={{
+          background: 'linear-gradient(135deg, #5392f5 0%, #4287f5 100%)',
+          boxShadow: '0 4px 20px rgba(66, 135, 245, 0.4)'
+        }}
+      >
+        {level}
       </div>
-      <div className="flex-1 min-w-[120px]">
-        <Progress 
-          value={percentage} 
-          className="h-2 bg-muted"
+      <div className="flex-1 h-8 rounded-full overflow-hidden -ml-6 pl-8 relative" style={{ background: '#3a4a5c' }}>
+        <div 
+          className="h-full rounded-full transition-all duration-500 ease-out"
+          style={{
+            width: `${percentage}%`,
+            background: 'linear-gradient(90deg, #5392f5 0%, #4287f5 100%)',
+            boxShadow: '0 0 15px rgba(83, 146, 245, 0.5)'
+          }}
         />
       </div>
-      <span className="text-xs text-muted-foreground whitespace-nowrap">
-        {currentXp}/{requiredXp} XP
-      </span>
     </div>
   );
 };
