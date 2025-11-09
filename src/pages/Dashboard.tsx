@@ -29,6 +29,8 @@ const Dashboard = () => {
   const [availableTopics, setAvailableTopics] = useState<TopicOption[]>([]);
   const [recentConversation, setRecentConversation] = useState<any>(null);
   const [userLevel, setUserLevel] = useState(1);
+  const [currentXp, setCurrentXp] = useState(0);
+  const [xpProgress, setXpProgress] = useState(0);
 
   useEffect(() => {
     const data = localStorage.getItem('studentData');
@@ -59,8 +61,14 @@ const Dashboard = () => {
         .single();
 
       if (profile) {
-        setUserLevel(profile.level || 1);
-        // current_xp is available if needed for future features
+        const level = profile.level || 1;
+        const xp = profile.current_xp || 0;
+        const xpToNext = level * 100;
+        const progress = Math.min((xp / xpToNext) * 100, 100);
+        
+        setUserLevel(level);
+        setCurrentXp(xp);
+        setXpProgress(progress);
       }
     } catch (error) {
       console.error('Error loading user level:', error);
@@ -339,7 +347,7 @@ const Dashboard = () => {
                 <div className="w-10 h-10 bg-gradient-to-r from-slate-200 to-slate-300 rounded-lg"></div>
                 <div className="flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 rounded-full shadow-lg">
                   <div className="w-20 bg-white/30 rounded-full h-1.5">
-                    <div className="bg-white h-1.5 rounded-full transition-all" style={{ width: '60%' }} />
+                    <div className="bg-white h-1.5 rounded-full transition-all" style={{ width: `${xpProgress}%` }} />
                   </div>
                   <span className="text-white font-semibold text-sm">Level {userLevel}</span>
                 </div>
@@ -467,7 +475,7 @@ const Dashboard = () => {
               <div className="w-10 h-10 bg-gradient-to-r from-blue-200 to-blue-300 rounded-lg"></div>
               <div className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2 rounded-full shadow-lg">
                 <div className="w-20 bg-white/30 rounded-full h-1.5">
-                  <div className="bg-white h-1.5 rounded-full transition-all" style={{ width: '65%' }} />
+                  <div className="bg-white h-1.5 rounded-full transition-all" style={{ width: `${xpProgress}%` }} />
                 </div>
                 <span className="text-white font-semibold text-sm">Level {userLevel}</span>
               </div>
