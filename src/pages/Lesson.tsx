@@ -305,23 +305,23 @@ const Lesson = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* XP Progress Bar - Fixed Top Left */}
+      <div className="fixed top-4 left-4 z-50 w-64 max-w-[calc(100vw-2rem)]">
+        <XpProgressBar 
+          currentXp={currentXp % (level * 100)} 
+          requiredXp={level * 100} 
+          level={level} 
+        />
+      </div>
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card shadow-sm border-b backdrop-blur-sm">
+      <header className="sticky top-0 z-40 bg-card/80 shadow-sm border-b backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col gap-3">
-            <div className="flex justify-between items-center">
-              <Button variant="ghost" onClick={() => navigate(topicId ? `/topic/${topicId}` : '/dashboard')}>
-                <ArrowRight className="ml-2" />
-                חזרה
-              </Button>
-            </div>
-            <div className="w-full">
-              <XpProgressBar 
-                currentXp={currentXp % (level * 100)} 
-                requiredXp={level * 100} 
-                level={level} 
-              />
-            </div>
+          <div className="flex justify-between items-center">
+            <Button variant="ghost" onClick={() => navigate(topicId ? `/topic/${topicId}` : '/dashboard')}>
+              <ArrowRight className="ml-2" />
+              חזרה
+            </Button>
           </div>
         </div>
       </header>
