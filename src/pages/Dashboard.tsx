@@ -28,6 +28,7 @@ const Dashboard = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [availableTopics, setAvailableTopics] = useState<TopicOption[]>([]);
   const [recentConversation, setRecentConversation] = useState<any>(null);
+  const [userLevel, setUserLevel] = useState(1);
 
   useEffect(() => {
     const data = localStorage.getItem('studentData');
@@ -43,7 +44,27 @@ const Dashboard = () => {
   useEffect(() => {
     loadTopics();
     loadRecentConversation();
+    loadUserLevel();
   }, []);
+
+  const loadUserLevel = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('level')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setUserLevel(profile.level || 1);
+      }
+    } catch (error) {
+      console.error('Error loading user level:', error);
+    }
+  };
 
   const loadTopics = async () => {
     try {
@@ -189,7 +210,7 @@ const Dashboard = () => {
                 <div className="w-10 h-10 bg-gradient-to-r from-purple-200 to-pink-200 rounded-xl"></div>
                 <div className="flex items-center gap-3 bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 rounded-full shadow-lg">
                   <Star className="w-4 h-4 text-white fill-white" />
-                  <span className="text-white font-semibold text-sm">Level 3</span>
+                  <span className="text-white font-semibold text-sm">Level {userLevel}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -319,7 +340,7 @@ const Dashboard = () => {
                   <div className="w-20 bg-white/30 rounded-full h-1.5">
                     <div className="bg-white h-1.5 rounded-full transition-all" style={{ width: '60%' }} />
                   </div>
-                  <span className="text-white font-semibold text-sm">Level 6</span>
+                  <span className="text-white font-semibold text-sm">Level {userLevel}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -447,7 +468,7 @@ const Dashboard = () => {
                 <div className="w-20 bg-white/30 rounded-full h-1.5">
                   <div className="bg-white h-1.5 rounded-full transition-all" style={{ width: '65%' }} />
                 </div>
-                <span className="text-white font-semibold text-sm">Level 8</span>
+                <span className="text-white font-semibold text-sm">Level {userLevel}</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
