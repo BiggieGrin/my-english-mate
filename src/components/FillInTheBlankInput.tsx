@@ -27,18 +27,53 @@ const stripMarkdown = (text: string): string => {
 };
 
 export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
-  // Parse fill-in-the-blank pattern: _____ or _______ or similar
-  const parseFillInTheBlank = (text: string): { parts: string[], blanks: number } | null => {
-    // Match patterns like _____, ______, etc. (3 or more underscores)
+  // Parse fill-in-the-blank pattern with optional hints: _____ (hint) or just _____
+  const parseFillInTheBlank = (text: string): { elements: Array<{ type: 'text' | 'blank', content: string, hint?: string }> } | null => {
+    // Match patterns like _____ (word) or just _____
+    const blankWithHintPattern = /_{3,}\s*\([^)]+\)/g;
     const blankPattern = /_{3,}/g;
-    const matches = text.match(blankPattern);
     
-    if (!matches || matches.length === 0) return null;
+    // Check if there are any blanks at all
+    if (!blankWithHintPattern.test(text) && !blankPattern.test(text)) {
+      return null;
+    }
 
-    // Split by blanks
-    const parts = text.split(blankPattern);
+    const elements: Array<{ type: 'text' | 'blank', content: string, hint?: string }> = [];
+    let lastIndex = 0;
     
-    return { parts, blanks: matches.length };
+    // First try to match blanks with hints
+    const combinedPattern = /_{3,}(?:\s*\([^)]+\))?/g;
+    let match;
+    
+    while ((match = combinedPattern.exec(text)) !== null) {
+      // Add text before the blank
+      if (match.index > lastIndex) {
+        elements.push({
+          type: 'text',
+          content: text.slice(lastIndex, match.index)
+        });
+      }
+      
+      // Extract hint if present
+      const hintMatch = match[0].match(/\(([^)]+)\)/);
+      elements.push({
+        type: 'blank',
+        content: match[0],
+        hint: hintMatch ? hintMatch[1] : undefined
+      });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      elements.push({
+        type: 'text',
+        content: text.slice(lastIndex)
+      });
+    }
+    
+    return { elements };
   };
 
   const parsed = parseFillInTheBlank(content);
@@ -58,30 +93,41 @@ export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
     );
   }
 
-  const { parts } = parsed;
-
-  // Detect direction of the sentence parts
-  const sentenceDir = detectTextDirection(parts.join(' '));
+  const { elements } = parsed;
+  
+  // Detect direction based on all text elements
+  const allText = elements.filter(e => e.type === 'text').map(e => e.content).join(' ');
+  const sentenceDir = detectTextDirection(allText);
 
   return (
     <div 
       className={cn(
-        "text-lg leading-relaxed flex flex-wrap items-center gap-2",
+        "text-lg leading-relaxed inline-flex flex-wrap items-center gap-1",
         sentenceDir === 'rtl' ? 'flex-row-reverse' : 'flex-row'
       )}
       dir={sentenceDir}
       style={{ textAlign: sentenceDir === 'rtl' ? 'right' : 'left' }}
     >
-      {parts.map((part, index) => (
-        <span key={index} className="inline-flex items-center gap-2">
-          <span className="whitespace-pre-wrap">{stripMarkdown(part)}</span>
-          {index < parts.length - 1 && (
-            <span className="inline-flex items-center justify-center min-w-32 h-11 px-4 border-2 border-dashed border-cyan-400 rounded-md bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-500">
-              <span className="text-sm text-cyan-600 dark:text-cyan-400 font-mono">___</span>
+      {elements.map((element, index) => {
+        if (element.type === 'text') {
+          return (
+            <span key={index} className="whitespace-pre-wrap">
+              {stripMarkdown(element.content)}
             </span>
-          )}
-        </span>
-      ))}
+          );
+        } else {
+          return (
+            <span key={index} className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center justify-center min-w-32 h-11 px-4 border-2 border-dashed border-cyan-400 rounded-md bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-500">
+                <span className="text-sm text-cyan-600 dark:text-cyan-400 font-mono">___</span>
+              </span>
+              {element.hint && (
+                <span className="text-base text-muted-foreground">({element.hint})</span>
+              )}
+            </span>
+          );
+        }
+      })}
     </div>
   );
 };
