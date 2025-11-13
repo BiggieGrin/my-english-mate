@@ -377,7 +377,7 @@ const Lesson = () => {
       </header>
 
       {/* Chat Area */}
-      <div className="flex-1 container mx-auto px-4 py-6 max-w-4xl overflow-y-auto">
+      <div className="flex-1 container mx-auto px-4 py-6 pb-32 max-w-4xl overflow-y-auto">{/* Added pb-32 for bottom input spacing */}
         <div className="space-y-4">
           {!isInitialized && (
             <div className="flex justify-center items-center h-full text-muted-foreground">
@@ -407,8 +407,6 @@ const Lesson = () => {
                       {textToShow.includes('___') ? (
                         <FillInTheBlankInput
                           content={textToShow}
-                          onSubmit={(answer) => streamChat(answer)}
-                          disabled={isLoading || index !== messages.length - 1}
                         />
                       ) : (
                         <MultipleChoiceButtons
@@ -448,8 +446,8 @@ const Lesson = () => {
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="bg-card border-t">
+      {/* Input Area - Fixed at Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg">
         <div className="container mx-auto px-4 py-4 max-w-4xl">
           <div className="flex gap-2">
             <Button 
@@ -460,12 +458,13 @@ const Lesson = () => {
               <Mic className="w-5 h-5" />
             </Button>
             <Input
-              placeholder="כתבו את התשובה שלכם..."
+              placeholder="הקלד/י את התשובה שלך כאן..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               className="flex-1 text-lg"
               disabled={isLoading}
+              dir="auto"
             />
             {isLoading ? (
               <Button 
