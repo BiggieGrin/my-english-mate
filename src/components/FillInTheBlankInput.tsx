@@ -76,8 +76,8 @@ export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
         <span key={index} className="inline-flex items-center gap-2">
           <span className="whitespace-pre-wrap">{stripMarkdown(part)}</span>
           {index < parts.length - 1 && (
-            <span className="inline-flex items-center justify-center min-w-24 h-10 px-3 border-2 border-dashed border-primary/40 rounded bg-primary/5">
-              <span className="text-xs text-muted-foreground">___</span>
+            <span className="inline-flex items-center justify-center min-w-32 h-11 px-4 border-2 border-dashed border-cyan-400 rounded-md bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-500">
+              <span className="text-sm text-cyan-600 dark:text-cyan-400 font-mono">___</span>
             </span>
           )}
         </span>
