@@ -46,7 +46,7 @@ export const LevelUpAnimation = ({ level, onComplete }: LevelUpAnimationProps) =
             <Trophy className="w-8 h-8 text-yellow-500 animate-bounce" style={{ animationDelay: '0.2s' }} />
           </div>
           <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-            🎉 עלית לרמה {level}! 🎉
+            🎉 עלית! 🎉
           </h3>
           <p className="text-lg text-muted-foreground">
             כל הכבוד! אתה מתקדם מצוין!

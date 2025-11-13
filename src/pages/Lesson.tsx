@@ -41,14 +41,33 @@ const Lesson = () => {
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
-  // Clean XP-related text from message content
+// Clean XP-related text from message content
   const cleanMessageContent = (content: string): string => {
     return content
       .replace(/\+\d+\s*XP\s*✨?/gi, '') // Remove "+20 XP ✨"
       .replace(/\d+\/\d+\s*XP/gi, '') // Remove "20/100 XP"
       .replace(/רמה \d+ — \d+\/\d+ XP/g, '') // Remove Hebrew XP progress
       .replace(/עלית לרמה \d+!/g, '') // Remove level up text
+      .replace(/🎉 רמה \d+! 🎉/g, '') // Remove level display
       .trim();
+  };
+
+  // Split text into segments based on language for proper direction handling
+  const splitByLanguage = (text: string): Array<{ text: string; direction: 'rtl' | 'ltr' }> => {
+    const segments: Array<{ text: string; direction: 'rtl' | 'ltr' }> = [];
+    const lines = text.split('\n');
+    
+    for (const line of lines) {
+      if (!line.trim()) {
+        segments.push({ text: '\n', direction: 'ltr' });
+        continue;
+      }
+      
+      const direction = detectTextDirection(line);
+      segments.push({ text: line + '\n', direction });
+    }
+    
+    return segments;
   };
   
   const conversationId = location.state?.conversationId || lessonId;
@@ -412,7 +431,7 @@ const Lesson = () => {
                         <MultipleChoiceButtons
                           content={textToShow}
                           onSelect={(choice) => streamChat(choice)}
-                          disabled={isLoading || index !== messages.length - 1}
+                          disabled={isLoading}
                         />
                       )}
                       {message.xpGain && !isStreamingMessage && (
@@ -423,13 +442,18 @@ const Lesson = () => {
                       )}
                     </div>
                   ) : (
-                    <p 
-                      className="text-lg whitespace-pre-wrap leading-relaxed"
-                      dir={detectTextDirection(message.content)}
-                      style={{ textAlign: detectTextDirection(message.content) === 'rtl' ? 'right' : 'left' }}
-                    >
-                      {message.content}
-                    </p>
+                    <div className="space-y-1">
+                      {splitByLanguage(message.content).map((segment, idx) => (
+                        <div
+                          key={idx}
+                          className="text-lg leading-relaxed"
+                          dir={segment.direction}
+                          style={{ textAlign: segment.direction === 'rtl' ? 'right' : 'left' }}
+                        >
+                          {segment.text}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </Card>
               </div>
