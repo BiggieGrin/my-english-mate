@@ -7,6 +7,7 @@ import { ArrowRight, Send, Mic, Loader2, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MultipleChoiceButtons } from '@/components/MultipleChoiceButtons';
+import { FillInTheBlankInput } from '@/components/FillInTheBlankInput';
 import { XpGainAnimation } from '@/components/XpGainAnimation';
 import { LevelUpAnimation } from '@/components/LevelUpAnimation';
 import { XpProgressBar } from '@/components/XpProgressBar';
@@ -402,11 +403,20 @@ const Lesson = () => {
                 >
                   {message.role === 'assistant' ? (
                     <div className="space-y-3">
-                      <MultipleChoiceButtons
-                        content={textToShow}
-                        onSelect={(choice) => streamChat(choice)}
-                        disabled={isLoading || index !== messages.length - 1}
-                      />
+                      {/* Check if it's a fill-in-the-blank question (contains ___) or multiple choice */}
+                      {textToShow.includes('___') ? (
+                        <FillInTheBlankInput
+                          content={textToShow}
+                          onSubmit={(answer) => streamChat(answer)}
+                          disabled={isLoading || index !== messages.length - 1}
+                        />
+                      ) : (
+                        <MultipleChoiceButtons
+                          content={textToShow}
+                          onSelect={(choice) => streamChat(choice)}
+                          disabled={isLoading || index !== messages.length - 1}
+                        />
+                      )}
                       {message.xpGain && !isStreamingMessage && (
                         <XpGainAnimation amount={message.xpGain} />
                       )}

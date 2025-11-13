@@ -45,6 +45,8 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
     const choicePattern = /^([A-D])[\)\.]\s*(.+?)$/gm;
     const matches = Array.from(text.matchAll(choicePattern));
     
+    // Only show multiple choice buttons if we have at least 2 options
+    // Otherwise, it's not a multiple choice question
     if (matches.length < 2) return null;
 
     // Extract choices - ONLY the answer text, nothing else
