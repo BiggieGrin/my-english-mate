@@ -49,22 +49,34 @@ const Lesson = () => {
       .replace(/רמה \d+ — \d+\/\d+ XP/g, '') // Remove Hebrew XP progress
       .replace(/עלית לרמה \d+!/g, '') // Remove level up text
       .replace(/🎉 רמה \d+! 🎉/g, '') // Remove level display
+      .replace(/רמה \d+/g, '') // Remove "רמה X" patterns
       .trim();
   };
 
   // Split text into segments based on language for proper direction handling
   const splitByLanguage = (text: string): Array<{ text: string; direction: 'rtl' | 'ltr' }> => {
-    const segments: Array<{ text: string; direction: 'rtl' | 'ltr' }> = [];
-    const lines = text.split('\n');
+    if (!text.trim()) return [];
     
-    for (const line of lines) {
-      if (!line.trim()) {
-        segments.push({ text: '\n', direction: 'ltr' });
+    const segments: Array<{ text: string; direction: 'rtl' | 'ltr' }> = [];
+    
+    // Split by both newlines and sentences to handle mixed-language blocks better
+    const parts = text.split(/(\n+)/);
+    
+    for (const part of parts) {
+      if (!part) continue;
+      
+      // Keep newlines as-is
+      if (/^\n+$/.test(part)) {
+        segments.push({ text: part, direction: 'ltr' });
         continue;
       }
       
-      const direction = detectTextDirection(line);
-      segments.push({ text: line + '\n', direction });
+      // For text content, detect direction
+      const trimmedPart = part.trim();
+      if (trimmedPart) {
+        const direction = detectTextDirection(trimmedPart);
+        segments.push({ text: part, direction });
+      }
     }
     
     return segments;
@@ -442,7 +454,7 @@ const Lesson = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {splitByLanguage(message.content).map((segment, idx) => (
                         <div
                           key={idx}

@@ -102,32 +102,33 @@ export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
   return (
     <div 
       className={cn(
-        "text-lg leading-relaxed inline-flex flex-wrap items-center gap-1",
-        sentenceDir === 'rtl' ? 'flex-row-reverse' : 'flex-row'
+        "text-lg leading-relaxed",
+        sentenceDir === 'rtl' ? 'text-right' : 'text-left'
       )}
       dir={sentenceDir}
-      style={{ textAlign: sentenceDir === 'rtl' ? 'right' : 'left' }}
     >
-      {elements.map((element, index) => {
-        if (element.type === 'text') {
-          return (
-            <span key={index} className="whitespace-pre-wrap">
-              {stripMarkdown(element.content)}
-            </span>
-          );
-        } else {
-          return (
-            <span key={index} className="inline-flex items-center gap-1">
-              <span className="inline-flex items-center justify-center min-w-32 h-11 px-4 border-2 border-dashed border-cyan-400 rounded-md bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-500">
-                <span className="text-sm text-cyan-600 dark:text-cyan-400 font-mono">___</span>
+      <div className="inline-flex flex-wrap items-baseline gap-1">
+        {elements.map((element, index) => {
+          if (element.type === 'text') {
+            return (
+              <span key={index} className="inline whitespace-pre-wrap">
+                {stripMarkdown(element.content)}
               </span>
-              {element.hint && (
-                <span className="text-base text-muted-foreground">({element.hint})</span>
-              )}
-            </span>
-          );
-        }
-      })}
+            );
+          } else {
+            return (
+              <span key={index} className="inline-flex items-center gap-1 align-baseline">
+                <span className="inline-flex items-center justify-center min-w-[8rem] h-9 px-3 border-2 border-dashed border-cyan-400 rounded-md bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-500">
+                  <span className="text-sm text-cyan-600 dark:text-cyan-400 font-mono">___</span>
+                </span>
+                {element.hint && (
+                  <span className="text-base text-muted-foreground whitespace-nowrap">({element.hint})</span>
+                )}
+              </span>
+            );
+          }
+        })}
+      </div>
     </div>
   );
 };

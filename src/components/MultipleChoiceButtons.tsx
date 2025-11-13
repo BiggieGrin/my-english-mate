@@ -105,19 +105,45 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
 
   const cleanBeforeText = beforeText ? stripMarkdown(beforeText) : '';
   const cleanAfterText = afterText ? stripMarkdown(afterText) : '';
-  const beforeTextDir = cleanBeforeText ? detectTextDirection(cleanBeforeText) : 'rtl';
-  const afterTextDir = cleanAfterText ? detectTextDirection(cleanAfterText) : 'rtl';
+  
+  // Split text by language for proper direction handling
+  const splitByLanguage = (text: string): Array<{ text: string; direction: 'rtl' | 'ltr' }> => {
+    if (!text.trim()) return [];
+    
+    const segments: Array<{ text: string; direction: 'rtl' | 'ltr' }> = [];
+    const parts = text.split(/(\n+)/);
+    
+    for (const part of parts) {
+      if (!part) continue;
+      if (/^\n+$/.test(part)) {
+        segments.push({ text: part, direction: 'ltr' });
+        continue;
+      }
+      const trimmedPart = part.trim();
+      if (trimmedPart) {
+        const direction = detectTextDirection(trimmedPart);
+        segments.push({ text: part, direction });
+      }
+    }
+    
+    return segments;
+  };
 
   return (
     <div className="space-y-4">
       {cleanBeforeText && (
-        <p 
-          className="text-lg whitespace-pre-wrap leading-relaxed"
-          dir={beforeTextDir}
-          style={{ textAlign: beforeTextDir === 'rtl' ? 'right' : 'left' }}
-        >
-          {cleanBeforeText}
-        </p>
+        <div className="space-y-2">
+          {splitByLanguage(cleanBeforeText).map((segment, idx) => (
+            <div
+              key={idx}
+              className="text-lg leading-relaxed"
+              dir={segment.direction}
+              style={{ textAlign: segment.direction === 'rtl' ? 'right' : 'left' }}
+            >
+              {segment.text}
+            </div>
+          ))}
+        </div>
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
@@ -162,13 +188,18 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
       </div>
 
       {cleanAfterText && (
-        <p 
-          className="text-lg whitespace-pre-wrap leading-relaxed"
-          dir={afterTextDir}
-          style={{ textAlign: afterTextDir === 'rtl' ? 'right' : 'left' }}
-        >
-          {cleanAfterText}
-        </p>
+        <div className="space-y-2">
+          {splitByLanguage(cleanAfterText).map((segment, idx) => (
+            <div
+              key={idx}
+              className="text-lg leading-relaxed"
+              dir={segment.direction}
+              style={{ textAlign: segment.direction === 'rtl' ? 'right' : 'left' }}
+            >
+              {segment.text}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
