@@ -1,13 +1,7 @@
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FillInTheBlankInputProps {
   content: string;
-  onSubmit: (answer: string) => void;
-  disabled?: boolean;
 }
 
 // Detect if text is primarily Hebrew (RTL) or English (LTR)
@@ -32,9 +26,7 @@ const stripMarkdown = (text: string): string => {
     .trim();
 };
 
-export const FillInTheBlankInput = ({ content, onSubmit, disabled }: FillInTheBlankInputProps) => {
-  const [answer, setAnswer] = useState('');
-
+export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
   // Parse fill-in-the-blank pattern: _____ or _______ or similar
   const parseFillInTheBlank = (text: string): { parts: string[], blanks: number } | null => {
     // Match patterns like _____, ______, etc. (3 or more underscores)
@@ -68,63 +60,28 @@ export const FillInTheBlankInput = ({ content, onSubmit, disabled }: FillInTheBl
 
   const { parts } = parsed;
 
-  const handleSubmit = () => {
-    if (!answer.trim() || disabled) return;
-    onSubmit(answer.trim());
-    setAnswer('');
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
   // Detect direction of the sentence parts
   const sentenceDir = detectTextDirection(parts.join(' '));
 
   return (
-    <div className="space-y-4">
-      <div 
-        className={cn(
-          "text-lg leading-relaxed flex flex-wrap items-center gap-2",
-          sentenceDir === 'rtl' ? 'flex-row-reverse' : 'flex-row'
-        )}
-        dir={sentenceDir}
-        style={{ textAlign: sentenceDir === 'rtl' ? 'right' : 'left' }}
-      >
-        {parts.map((part, index) => (
-          <span key={index} className="inline-flex items-center gap-2">
-            <span className="whitespace-pre-wrap">{stripMarkdown(part)}</span>
-            {index < parts.length - 1 && (
-              <span className="inline-flex items-center justify-center w-24 h-10 border-2 border-dashed border-primary/40 rounded bg-primary/5">
-                <span className="text-xs text-muted-foreground">___</span>
-              </span>
-            )}
-          </span>
-        ))}
-      </div>
-      
-      <div className="flex gap-2 items-center" dir="rtl">
-        <Input
-          value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="הקלד/י את התשובה כאן..."
-          disabled={disabled}
-          className="flex-1"
-          dir="ltr"
-        />
-        <Button
-          onClick={handleSubmit}
-          disabled={disabled || !answer.trim()}
-          size="icon"
-          className="shrink-0"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
-      </div>
+    <div 
+      className={cn(
+        "text-lg leading-relaxed flex flex-wrap items-center gap-2",
+        sentenceDir === 'rtl' ? 'flex-row-reverse' : 'flex-row'
+      )}
+      dir={sentenceDir}
+      style={{ textAlign: sentenceDir === 'rtl' ? 'right' : 'left' }}
+    >
+      {parts.map((part, index) => (
+        <span key={index} className="inline-flex items-center gap-2">
+          <span className="whitespace-pre-wrap">{stripMarkdown(part)}</span>
+          {index < parts.length - 1 && (
+            <span className="inline-flex items-center justify-center min-w-24 h-10 px-3 border-2 border-dashed border-primary/40 rounded bg-primary/5">
+              <span className="text-xs text-muted-foreground">___</span>
+            </span>
+          )}
+        </span>
+      ))}
     </div>
   );
 };
