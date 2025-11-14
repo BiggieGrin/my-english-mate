@@ -59,24 +59,22 @@ const Lesson = () => {
     
     const segments: Array<{ text: string; direction: 'rtl' | 'ltr' }> = [];
     
-    // Split by both newlines and sentences to handle mixed-language blocks better
-    const parts = text.split(/(\n+)/);
+    // Split by newlines - each line gets its own p tag
+    const lines = text.split('\n');
     
-    for (const part of parts) {
-      if (!part) continue;
+    for (const line of lines) {
+      const trimmedLine = line.trim();
       
-      // Keep newlines as-is
-      if (/^\n+$/.test(part)) {
-        segments.push({ text: part, direction: 'ltr' });
+      if (!trimmedLine) {
+        // Empty line - add as empty segment for spacing
+        segments.push({ text: '', direction: 'ltr' });
         continue;
       }
       
-      // For text content, detect direction
-      const trimmedPart = part.trim();
-      if (trimmedPart) {
-        const direction = detectTextDirection(trimmedPart);
-        segments.push({ text: part, direction });
-      }
+      // Detect direction based on first word of the line
+      const firstWord = trimmedLine.split(/\s+/)[0];
+      const direction = detectTextDirection(firstWord);
+      segments.push({ text: trimmedLine, direction });
     }
     
     return segments;
@@ -456,14 +454,14 @@ const Lesson = () => {
                   ) : (
                     <div className="space-y-2">
                       {splitByLanguage(message.content).map((segment, idx) => (
-                        <div
+                        <p
                           key={idx}
                           className="text-lg leading-relaxed"
                           dir={segment.direction}
                           style={{ textAlign: segment.direction === 'rtl' ? 'right' : 'left' }}
                         >
-                          {segment.text}
-                        </div>
+                          {segment.text || '\u00A0'}
+                        </p>
                       ))}
                     </div>
                   )}
