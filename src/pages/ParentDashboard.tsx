@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, TrendingUp, BookOpen, Clock, Award, Activity, Target, Zap } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { formatGrade } from '@/lib/gradeUtils';
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ const ParentDashboard = () => {
               <h2 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 התקדמות {studentData.name}
               </h2>
-              <p className="text-lg text-muted-foreground mb-1">כיתה {studentData.grade} | רמה מצוינת</p>
+              <p className="text-lg text-muted-foreground mb-1">כיתה {formatGrade(studentData.grade)} | רמה מצוינת</p>
               <p className="text-sm text-success font-semibold">🔥 רצף של 7 ימי לימוד!</p>
             </div>
           </div>
