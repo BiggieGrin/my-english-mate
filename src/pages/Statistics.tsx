@@ -14,6 +14,8 @@ const Statistics = () => {
   const [profile, setProfile] = useState<any>(null);
   const [dailyStudyData, setDailyStudyData] = useState<any[]>([]);
   const [strengthsData, setStrengthsData] = useState<any[]>([]);
+  const [aiAssessment, setAiAssessment] = useState<any>(null);
+  const [assessmentLoading, setAssessmentLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -95,6 +97,9 @@ const Statistics = () => {
       ];
       setStrengthsData(realStrengthsData);
 
+      // Fetch AI assessment
+      await fetchAIAssessment(user.id, profileData, realStrengthsData, last7Days);
+
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -107,24 +112,48 @@ const Statistics = () => {
     }
   };
 
+  const fetchAIAssessment = async (userId: string, profile: any, strengthsData: any[], dailyStudyData: any[]) => {
+    setAssessmentLoading(true);
+    try {
+      // Get recent lesson messages for context
+      const { data: recentMessages } = await supabase
+        .from('lesson_messages')
+        .select('content, role, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      const { data, error } = await supabase.functions.invoke('ai-assessment', {
+        body: {
+          profile,
+          strengthsData,
+          dailyStudyData,
+          recentMessages: recentMessages || []
+        }
+      });
+
+      if (error) throw error;
+      
+      setAiAssessment(data);
+    } catch (error) {
+      console.error('Error fetching AI assessment:', error);
+      // Fallback to basic assessment
+      setAiAssessment({
+        trend: "לא ניתן לנתח כרגע",
+        strengths: ["המשך ללמוד"],
+        improvements: ["תרגל באופן קבוע"],
+        hasEnoughData: false
+      });
+    } finally {
+      setAssessmentLoading(false);
+    }
+  };
+
   const calculateAverageStudyTime = () => {
     const total = dailyStudyData.reduce((sum, day) => sum + day.minutes, 0);
     return Math.round(total / dailyStudyData.length);
   };
 
-  const getAIAssessment = () => {
-    if (!profile) return { strengths: [], improvements: [], trend: '' };
-
-    const averageScore = strengthsData.reduce((sum, item) => sum + item.score, 0) / strengthsData.length;
-    const topSkills = strengthsData.filter(s => s.score >= 80).map(s => s.skill);
-    const improvementAreas = strengthsData.filter(s => s.score < 70).map(s => s.skill);
-
-    return {
-      strengths: topSkills.length > 0 ? topSkills : ['ממשיך להתקדם בכל התחומים'],
-      improvements: improvementAreas.length > 0 ? improvementAreas : ['המשך לתרגל באופן עקבי'],
-      trend: profile.current_streak >= 5 ? 'מצוין! 🔥' : profile.current_streak >= 3 ? 'התקדמות טובה 📈' : 'המשך לתרגל באופן קבוע 💪'
-    };
-  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
@@ -134,7 +163,6 @@ const Statistics = () => {
     return null;
   }
 
-  const assessment = getAIAssessment();
   const avgStudyTime = calculateAverageStudyTime();
 
   return (
@@ -273,43 +301,62 @@ const Statistics = () => {
             הערכת AI - ניתוח התקדמות
           </h3>
 
-          <div className="space-y-4">
-            {/* Trend */}
-            <div className="p-4 bg-card rounded-lg border border-primary/10">
-              <p className="text-sm text-muted-foreground mb-1">מגמת התקדמות</p>
-              <p className="text-lg font-semibold text-foreground">{assessment.trend}</p>
+          {assessmentLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mr-3 text-muted-foreground">מנתח את הנתונים שלך...</p>
             </div>
+          ) : aiAssessment ? (
+            <div className="space-y-4">
+              {!aiAssessment.hasEnoughData && (
+                <div className="p-4 bg-accent/10 rounded-lg border border-accent/20 mb-4">
+                  <p className="text-sm text-foreground">
+                    💡 המשך ללמוד כדי לקבל הערכה מפורטת יותר מה-AI
+                  </p>
+                </div>
+              )}
 
-            {/* Strengths */}
-            <div className="p-4 bg-card rounded-lg border border-primary/10">
-              <p className="text-sm text-muted-foreground mb-2">נקודות חוזקה 💪</p>
-              <div className="flex flex-wrap gap-2">
-                {assessment.strengths.map((strength, index) => (
-                  <span 
-                    key={index} 
-                    className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                  >
-                    {strength}
-                  </span>
-                ))}
+              {/* Trend */}
+              <div className="p-4 bg-card rounded-lg border border-primary/10">
+                <p className="text-sm text-muted-foreground mb-1">מגמת התקדמות</p>
+                <p className="text-lg font-semibold text-foreground">{aiAssessment.trend}</p>
+              </div>
+
+              {/* Strengths */}
+              <div className="p-4 bg-card rounded-lg border border-primary/10">
+                <p className="text-sm text-muted-foreground mb-2">נקודות חוזקה 💪</p>
+                <div className="flex flex-wrap gap-2">
+                  {aiAssessment.strengths.map((strength: string, index: number) => (
+                    <span 
+                      key={index} 
+                      className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
+                    >
+                      {strength}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Improvements */}
+              <div className="p-4 bg-card rounded-lg border border-accent/10">
+                <p className="text-sm text-muted-foreground mb-2">תחומים לשיפור 🎯</p>
+                <div className="flex flex-wrap gap-2">
+                  {aiAssessment.improvements.map((area: string, index: number) => (
+                    <span 
+                      key={index} 
+                      className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-medium"
+                    >
+                      {area}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-
-            {/* Improvements */}
-            <div className="p-4 bg-card rounded-lg border border-accent/10">
-              <p className="text-sm text-muted-foreground mb-2">תחומים לשיפור 🎯</p>
-              <div className="flex flex-wrap gap-2">
-                {assessment.improvements.map((area, index) => (
-                  <span 
-                    key={index} 
-                    className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-medium"
-                  >
-                    {area}
-                  </span>
-                ))}
-              </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              לא ניתן לטעון הערכה כרגע
             </div>
-          </div>
+          )}
         </Card>
       </div>
     </div>
