@@ -27,7 +27,14 @@ serve(async (req) => {
           trend: "התחל ללמוד! 🚀",
           strengths: ["עדיין לא התחלת מספיק שיעורים כדי לנתח"],
           improvements: ["התחל לתרגל באופן קבוע כדי לקבל הערכה מפורטת"],
-          hasEnoughData: false
+          hasEnoughData: false,
+          skills: {
+            vocabulary: 50,
+            grammar: 50,
+            reading: 50,
+            writing: 50,
+            speaking: 50
+          }
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -58,14 +65,27 @@ ${dailyStudyData.map((d: any) => `${d.day}: ${d.minutes} דקות`).join(', ')}
 {
   "trend": "משפט קצר על המגמה הכללית (עד 50 תווים, כולל אמוג'י)",
   "strengths": ["רשימה של 2-3 נקודות חוזקה קונקרטיות"],
-  "improvements": ["רשימה של 2-3 המלצות ספציפיות לשיפור"]
+  "improvements": ["רשימה של 2-3 המלצות ספציפיות לשיפור"],
+  "skills": {
+    "vocabulary": 0-100,
+    "grammar": 0-100,
+    "reading": 0-100,
+    "writing": 0-100,
+    "speaking": 0-100
+  }
 }
 
 דגש על:
 - תובנות קונקרטיות מהנתונים
 - עידוד חיובי
 - המלצות מעשיות
-- התייחסות לרצף הלמידה`;
+- התייחסות לרצף הלמידה
+- נתח את הנושאים והתוכן של השיחות כדי להעריך את רמת המיומנויות בכל תחום (0-100)
+- vocabulary = אוצר מילים
+- grammar = דקדוק
+- reading = הבנת הנקרא
+- writing = כתיבה
+- speaking = שיחה`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -118,7 +138,14 @@ ${dailyStudyData.map((d: any) => `${d.day}: ${d.minutes} דקות`).join(', ')}
       assessment = {
         trend: "ממשיך להתקדם 📈",
         strengths: ["פעיל בלמידה"],
-        improvements: ["המשך לתרגל באופן קבוע"]
+        improvements: ["המשך לתרגל באופן קבוע"],
+        skills: {
+          vocabulary: 50,
+          grammar: 50,
+          reading: 50,
+          writing: 50,
+          speaking: 50
+        }
       };
     }
 
@@ -135,7 +162,14 @@ ${dailyStudyData.map((d: any) => `${d.day}: ${d.minutes} דקות`).join(', ')}
         trend: "לא ניתן לנתח כרגע",
         strengths: ["המערכת תעבוד שוב בקרוב"],
         improvements: ["נסה שוב מאוחר יותר"],
-        hasEnoughData: false
+        hasEnoughData: false,
+        skills: {
+          vocabulary: 50,
+          grammar: 50,
+          reading: 50,
+          writing: 50,
+          speaking: 50
+        }
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

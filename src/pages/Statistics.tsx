@@ -75,30 +75,19 @@ const Statistics = () => {
       
       setDailyStudyData(last7Days);
 
-      // Calculate strengths based on actual performance
-      // For now, we'll use lesson completion and XP as indicators
-      const lessonsCompleted = profileData.lessons_completed || 0;
-      const totalPoints = profileData.total_points || 0;
-      const currentLevel = profileData.level || 1;
-      
-      // Calculate skill scores based on activity
-      const vocabScore = Math.min(85, 50 + (lessonsCompleted * 2));
-      const grammarScore = Math.min(80, 40 + (currentLevel * 5));
-      const readingScore = Math.min(90, 60 + (totalPoints / 50));
-      const writingScore = Math.min(75, 45 + (lessonsCompleted * 1.5));
-      const speakingScore = Math.min(80, 50 + (currentLevel * 4));
-      
-      const realStrengthsData = [
-        { skill: 'אוצר מילים', score: Math.round(vocabScore) },
-        { skill: 'דקדוק', score: Math.round(grammarScore) },
-        { skill: 'הבנת הנקרא', score: Math.round(readingScore) },
-        { skill: 'כתיבה', score: Math.round(writingScore) },
-        { skill: 'שיחה', score: Math.round(speakingScore) }
+      // Skills will be calculated by AI assessment based on actual conversations
+      // Default values in case AI assessment is not available yet
+      const defaultStrengthsData = [
+        { skill: 'אוצר מילים', score: 50 },
+        { skill: 'דקדוק', score: 50 },
+        { skill: 'הבנת הנקרא', score: 50 },
+        { skill: 'כתיבה', score: 50 },
+        { skill: 'שיחה', score: 50 }
       ];
-      setStrengthsData(realStrengthsData);
+      setStrengthsData(defaultStrengthsData);
 
       // Fetch AI assessment
-      await fetchAIAssessment(user.id, profileData, realStrengthsData, last7Days);
+      await fetchAIAssessment(user.id, profileData, defaultStrengthsData, last7Days);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -134,7 +123,20 @@ const Statistics = () => {
 
       if (error) throw error;
       
-      setAiAssessment(data);
+      const assessment = data as any;
+      setAiAssessment(assessment);
+      
+      // Update skills data from AI assessment
+      if (assessment.skills) {
+        const skillsData = [
+          { skill: 'אוצר מילים', score: assessment.skills.vocabulary },
+          { skill: 'דקדוק', score: assessment.skills.grammar },
+          { skill: 'הבנת הנקרא', score: assessment.skills.reading },
+          { skill: 'כתיבה', score: assessment.skills.writing },
+          { skill: 'שיחה', score: assessment.skills.speaking }
+        ];
+        setStrengthsData(skillsData);
+      }
     } catch (error) {
       console.error('Error fetching AI assessment:', error);
       // Fallback to basic assessment
@@ -142,7 +144,14 @@ const Statistics = () => {
         trend: "לא ניתן לנתח כרגע",
         strengths: ["המשך ללמוד"],
         improvements: ["תרגל באופן קבוע"],
-        hasEnoughData: false
+        hasEnoughData: false,
+        skills: {
+          vocabulary: 50,
+          grammar: 50,
+          reading: 50,
+          writing: 50,
+          speaking: 50
+        }
       });
     } finally {
       setAssessmentLoading(false);
