@@ -38,7 +38,7 @@ const Statistics = () => {
 
       // Calculate real daily study data from lesson_messages
       const today = new Date();
-      const last7Days = [];
+      const dailyData: { [key: number]: number } = {};
       
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
@@ -57,17 +57,19 @@ const Statistics = () => {
         
         // Each message represents approximately 1 minute of study
         const minutes = messages ? messages.length : 0;
-        
-        // Get day index (0 = Sunday, 6 = Saturday)
         const dayIndex = date.getDay();
-        // Convert to Hebrew format: Sunday=א, Monday=ב, etc.
-        const hebrewDays = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
         
-        last7Days.push({
-          day: hebrewDays[dayIndex],
-          minutes: minutes
-        });
+        dailyData[dayIndex] = (dailyData[dayIndex] || 0) + minutes;
       }
+      
+      // Order: Saturday (6), Sunday (0), Monday (1), Tuesday (2), Wednesday (3), Thursday (4), Friday (5)
+      const hebrewDays = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+      const orderedDays = [6, 0, 1, 2, 3, 4, 5]; // Start with Saturday (6)
+      
+      const last7Days = orderedDays.map(dayIndex => ({
+        day: hebrewDays[dayIndex],
+        minutes: dailyData[dayIndex] || 0
+      }));
       
       setDailyStudyData(last7Days);
 
@@ -200,11 +202,11 @@ const Statistics = () => {
               <Clock className="w-5 h-5 text-primary" />
               זמן למידה יומי
             </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={dailyStudyData}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={dailyStudyData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 14 }} />
+                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--card))', 
@@ -247,11 +249,11 @@ const Statistics = () => {
             <Target className="w-5 h-5 text-primary" />
             פיזור מיומנויות
           </h3>
-          <ResponsiveContainer width="100%" height={400}>
-            <RadarChart data={strengthsData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+          <ResponsiveContainer width="100%" height={450}>
+            <RadarChart data={strengthsData} margin={{ top: 40, right: 60, bottom: 40, left: 60 }}>
               <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="skill" stroke="hsl(var(--foreground))" tick={{ fontSize: 14 }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
+              <PolarAngleAxis dataKey="skill" stroke="hsl(var(--foreground))" tick={{ fontSize: 13 }} />
+              <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
               <Radar name="ציון" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
               <Tooltip 
                 contentStyle={{ 
