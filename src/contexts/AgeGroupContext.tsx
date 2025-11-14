@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { formatGradeRange } from '@/lib/gradeUtils';
 
 type AgeGroup = 'young' | 'middle' | 'high';
 
@@ -22,9 +23,9 @@ export const AgeGroupProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [ageGroup, setAgeGroup] = useState<AgeGroup>('middle');
   
   const gradeText = 
-    ageGroup === 'young' ? 'כיתות א׳-ג׳' :
-    ageGroup === 'middle' ? 'כיתות ד׳-ו׳' :
-    'כיתות ז׳-י״ב';
+    ageGroup === 'young' ? formatGradeRange(1, 3) :
+    ageGroup === 'middle' ? formatGradeRange(4, 6) :
+    formatGradeRange(7, 12);
 
   return (
     <AgeGroupContext.Provider value={{ ageGroup, setAgeGroup, gradeText }}>

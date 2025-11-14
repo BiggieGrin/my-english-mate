@@ -8,6 +8,7 @@ import { ArrowRight, User, Mail, GraduationCap, Settings, LogOut, BarChart3, Edi
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { XpProgressBar } from '@/components/XpProgressBar';
+import { formatGrade } from '@/lib/gradeUtils';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -127,6 +128,7 @@ const Profile = () => {
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Card */}
+        <div className="max-w-4xl mx-auto">
         <Card className="mb-6 overflow-hidden border-primary/20 shadow-lg">
           <div className="bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 p-8">
             <div className="flex flex-col items-center text-center gap-4">
@@ -135,7 +137,7 @@ const Profile = () => {
               </div>
               <div>
                 <h2 className="text-3xl font-bold text-foreground mb-1">{profile.full_name}</h2>
-                <p className="text-muted-foreground">כיתה {profile.grade}</p>
+                <p className="text-muted-foreground">כיתה {formatGrade(profile.grade)}</p>
               </div>
             </div>
 
@@ -151,26 +153,8 @@ const Profile = () => {
                 level={profile.level} 
               />
             </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4 mt-6 max-w-md mx-auto">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-primary">{profile.total_points}</p>
-                <p className="text-xs text-muted-foreground mt-1">נקודות</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-accent">{profile.current_streak}</p>
-                <p className="text-xs text-muted-foreground mt-1">ימי רצף</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-secondary">{profile.lessons_completed}</p>
-                <p className="text-xs text-muted-foreground mt-1">שיעורים</p>
-              </div>
-            </div>
           </div>
         </Card>
-
-        <div className="max-w-2xl mx-auto">
           {/* Personal Info Card */}
           <Card className="p-6 shadow-md border-primary/10 mb-6">
             <div className="flex justify-between items-center mb-4">
@@ -253,10 +237,10 @@ const Profile = () => {
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <GraduationCap className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">כיתה</p>
-                      <p className="font-medium">{profile.grade}</p>
-                    </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">כיתה</p>
+                    <p className="font-medium">{formatGrade(profile.grade)}</p>
+                  </div>
                   </div>
                 </>
               )}
