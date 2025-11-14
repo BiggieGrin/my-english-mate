@@ -62,9 +62,9 @@ const Statistics = () => {
         dailyData[dayIndex] = (dailyData[dayIndex] || 0) + minutes;
       }
       
-      // Order: Saturday (6), Sunday (0), Monday (1), Tuesday (2), Wednesday (3), Thursday (4), Friday (5)
+      // Order: Sunday (0) ... Friday (5) ... Saturday (6) - so Saturday is far right
       const hebrewDays = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
-      const orderedDays = [6, 0, 1, 2, 3, 4, 5]; // Start with Saturday (6)
+      const orderedDays = [0, 1, 2, 3, 4, 5, 6]; // Sunday on the left, Saturday on the right
       
       const last7Days = orderedDays.map(dayIndex => ({
         day: hebrewDays[dayIndex],
@@ -202,11 +202,11 @@ const Statistics = () => {
               <Clock className="w-5 h-5 text-primary" />
               זמן למידה יומי
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dailyStudyData} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={dailyStudyData} margin={{ top: 20, right: 24, left: 24, bottom: 36 }} barCategoryGap="25%">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 14 }} />
-                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
+                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" interval={0} tick={{ fontSize: 13 }} tickMargin={12} />
+                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} allowDecimals={false} />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--card))', 
@@ -249,10 +249,10 @@ const Statistics = () => {
             <Target className="w-5 h-5 text-primary" />
             פיזור מיומנויות
           </h3>
-          <ResponsiveContainer width="100%" height={450}>
-            <RadarChart data={strengthsData} margin={{ top: 40, right: 60, bottom: 40, left: 60 }}>
+          <ResponsiveContainer width="100%" height={420}>
+            <RadarChart data={strengthsData} outerRadius="70%" margin={{ top: 40, right: 80, bottom: 40, left: 80 }}>
               <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="skill" stroke="hsl(var(--foreground))" tick={{ fontSize: 13 }} />
+              <PolarAngleAxis dataKey="skill" stroke="hsl(var(--foreground))" tick={{ fontSize: 13 }} tickLine={false} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
               <Radar name="ציון" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
               <Tooltip 
