@@ -170,9 +170,9 @@ const Profile = () => {
           </div>
         </Card>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="max-w-2xl mx-auto">
           {/* Personal Info Card */}
-          <Card className="p-6 shadow-md border-primary/10">
+          <Card className="p-6 shadow-md border-primary/10 mb-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold flex items-center gap-2 text-foreground">
                 <Settings className="w-5 h-5 text-primary" />
@@ -263,28 +263,17 @@ const Profile = () => {
             </div>
           </Card>
 
-          {/* Quick Actions Card */}
-          <Card className="p-6 shadow-md border-primary/10">
-            <h3 className="text-xl font-semibold mb-4 text-foreground">פעולות מהירות</h3>
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => navigate('/statistics')}
-              >
-                <BarChart3 className="ml-2 w-5 h-5" />
-                סטטיסטיקות למידה
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-destructive hover:text-destructive"
-                onClick={handleLogout}
-              >
-                <LogOut className="ml-2 w-5 h-5" />
-                התנתק
-              </Button>
-            </div>
-          </Card>
+          {/* Logout Button */}
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={handleLogout}
+            >
+              <LogOut className="ml-2 w-5 h-5" />
+              התנתק
+            </Button>
+          </div>
         </div>
       </div>
     </div>
