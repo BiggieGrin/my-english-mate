@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.suggest-topics]
 verify_jwt = true
+
+[functions.ai-assessment]
+verify_jwt = true
