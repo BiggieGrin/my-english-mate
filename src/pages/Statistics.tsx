@@ -141,7 +141,7 @@ const Statistics = () => {
               <BarChart3 className="w-6 h-6 text-primary" />
               סטטיסטיקות למידה
             </h1>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
               <ArrowRight className="ml-2 w-4 h-4" />
               חזרה
             </Button>
