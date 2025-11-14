@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Clock, Flame, TrendingUp, Brain, Target, Zap } from 'lucide-react';
+import { ArrowRight, Clock, Flame, Brain, Target, Zap, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 const Statistics = () => {
   const navigate = useNavigate();
@@ -36,27 +36,58 @@ const Statistics = () => {
       if (error) throw error;
       setProfile(profileData);
 
-      // Generate mock daily study data for the last 7 days
-      const mockDailyData = [
-        { day: 'א׳', minutes: 15 },
-        { day: 'ב׳', minutes: 25 },
-        { day: 'ג׳', minutes: 20 },
-        { day: 'ד׳', minutes: 30 },
-        { day: 'ה׳', minutes: 18 },
-        { day: 'ו׳', minutes: 35 },
-        { day: 'ש׳', minutes: 22 }
-      ];
-      setDailyStudyData(mockDailyData);
+      // Calculate real daily study data from lesson_messages
+      const today = new Date();
+      const last7Days = [];
+      const dayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+      
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        
+        const { data: messages } = await supabase
+          .from('lesson_messages')
+          .select('created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', date.toISOString())
+          .lt('created_at', nextDate.toISOString());
+        
+        // Each message represents approximately 1 minute of study
+        const minutes = messages ? messages.length : 0;
+        
+        last7Days.push({
+          day: dayNames[date.getDay()],
+          minutes: minutes
+        });
+      }
+      
+      setDailyStudyData(last7Days);
 
-      // Generate AI-based strengths assessment
-      const mockStrengthsData = [
-        { skill: 'אוצר מילים', score: 85 },
-        { skill: 'דקדוק', score: 70 },
-        { skill: 'הבנת הנקרא', score: 90 },
-        { skill: 'כתיבה', score: 65 },
-        { skill: 'שיחה', score: 75 }
+      // Calculate strengths based on actual performance
+      // For now, we'll use lesson completion and XP as indicators
+      const lessonsCompleted = profileData.lessons_completed || 0;
+      const totalPoints = profileData.total_points || 0;
+      const currentLevel = profileData.level || 1;
+      
+      // Calculate skill scores based on activity
+      const vocabScore = Math.min(85, 50 + (lessonsCompleted * 2));
+      const grammarScore = Math.min(80, 40 + (currentLevel * 5));
+      const readingScore = Math.min(90, 60 + (totalPoints / 50));
+      const writingScore = Math.min(75, 45 + (lessonsCompleted * 1.5));
+      const speakingScore = Math.min(80, 50 + (currentLevel * 4));
+      
+      const realStrengthsData = [
+        { skill: 'אוצר מילים', score: Math.round(vocabScore) },
+        { skill: 'דקדוק', score: Math.round(grammarScore) },
+        { skill: 'הבנת הנקרא', score: Math.round(readingScore) },
+        { skill: 'כתיבה', score: Math.round(writingScore) },
+        { skill: 'שיחה', score: Math.round(speakingScore) }
       ];
-      setStrengthsData(mockStrengthsData);
+      setStrengthsData(realStrengthsData);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -107,7 +138,7 @@ const Statistics = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
-              <TrendingUp className="w-6 h-6 text-primary" />
+              <BarChart3 className="w-6 h-6 text-primary" />
               סטטיסטיקות למידה
             </h1>
             <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
@@ -182,32 +213,30 @@ const Statistics = () => {
             </ResponsiveContainer>
           </Card>
 
-          {/* Streak Progress */}
+          {/* Streak Information */}
           <Card className="p-6 shadow-md border-accent/10">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-foreground">
               <Flame className="w-5 h-5 text-accent" />
-              מגמת רצף למידה
+              רצף למידה
             </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={[
-                { week: 'שבוע 1', streak: 2 },
-                { week: 'שבוע 2', streak: 4 },
-                { week: 'שבוע 3', streak: 3 },
-                { week: 'שבוע 4', streak: profile.current_streak }
-              ]}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Line type="monotone" dataKey="streak" stroke="hsl(var(--accent))" strokeWidth={3} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="flex flex-col items-center justify-center h-[250px]">
+              <div className="relative">
+                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center mb-4">
+                  <Flame className="w-16 h-16 text-accent" />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-4xl font-bold text-accent">{profile.current_streak}</span>
+                </div>
+              </div>
+              <p className="text-lg font-semibold text-foreground mt-4">ימי למידה רצופים</p>
+              <p className="text-sm text-muted-foreground mt-2 text-center">
+                {profile.current_streak >= 5 
+                  ? 'מדהים! המשך כך! 🔥' 
+                  : profile.current_streak >= 3 
+                  ? 'כל הכבוד! המשך לתרגל 💪' 
+                  : 'צור רצף למידה קבוע'}
+              </p>
+            </div>
           </Card>
         </div>
 
