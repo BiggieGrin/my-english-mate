@@ -39,7 +39,6 @@ const Statistics = () => {
       // Calculate real daily study data from lesson_messages
       const today = new Date();
       const last7Days = [];
-      const dayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
       
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
@@ -59,8 +58,13 @@ const Statistics = () => {
         // Each message represents approximately 1 minute of study
         const minutes = messages ? messages.length : 0;
         
+        // Get day index (0 = Sunday, 6 = Saturday)
+        const dayIndex = date.getDay();
+        // Convert to Hebrew format: Sunday=א, Monday=ב, etc.
+        const hebrewDays = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+        
         last7Days.push({
-          day: dayNames[date.getDay()],
+          day: hebrewDays[dayIndex],
           minutes: minutes
         });
       }
@@ -220,21 +224,18 @@ const Statistics = () => {
               רצף למידה
             </h3>
             <div className="flex flex-col items-center justify-center h-[250px]">
-              <div className="relative">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center mb-4">
-                  <Flame className="w-16 h-16 text-accent" />
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-accent">{profile.current_streak}</span>
+              <div className="relative w-32 h-32 mb-4">
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center">
+                  <span className="text-5xl font-bold text-accent">{profile.current_streak}</span>
                 </div>
               </div>
-              <p className="text-lg font-semibold text-foreground mt-4">ימי למידה רצופים</p>
+              <p className="text-lg font-semibold text-foreground">ימי למידה רצופים</p>
               <p className="text-sm text-muted-foreground mt-2 text-center">
                 {profile.current_streak >= 5 
                   ? 'מדהים! המשך כך! 🔥' 
                   : profile.current_streak >= 3 
                   ? 'כל הכבוד! המשך לתרגל 💪' 
-                  : 'צור רצף למידה קבוע'}
+                  : ''}
               </p>
             </div>
           </Card>
@@ -246,10 +247,10 @@ const Statistics = () => {
             <Target className="w-5 h-5 text-primary" />
             פיזור מיומנויות
           </h3>
-          <ResponsiveContainer width="100%" height={350}>
-            <RadarChart data={strengthsData}>
+          <ResponsiveContainer width="100%" height={400}>
+            <RadarChart data={strengthsData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
               <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="skill" stroke="hsl(var(--foreground))" />
+              <PolarAngleAxis dataKey="skill" stroke="hsl(var(--foreground))" tick={{ fontSize: 14 }} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" />
               <Radar name="ציון" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
               <Tooltip 
