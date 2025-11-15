@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,6 +54,19 @@ const Register = () => {
     email: '',
     password: ''
   });
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Register.onAuthStateChange', _event, !!session);
+      if (session) navigate('/dashboard');
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Register.getSession', !!session);
+      if (session) navigate('/dashboard');
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const validateCurrentStep = () => {
     setValidationErrors({});
