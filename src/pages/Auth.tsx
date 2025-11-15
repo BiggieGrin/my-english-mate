@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,19 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [loginData, setLoginData] = useState({ email: "", password: "" });
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth.onAuthStateChange', _event, !!session);
+      if (session) navigate('/dashboard');
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Auth.getSession', !!session);
+      if (session) navigate('/dashboard');
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
