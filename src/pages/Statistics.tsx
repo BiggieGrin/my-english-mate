@@ -255,15 +255,20 @@ const Statistics = () => {
                 barCategoryGap="25%"
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} allowDecimals={false} />
                 <XAxis
                   dataKey="day"
                   stroke="hsl(var(--muted-foreground))"
                   interval={0}
                   tick={{ fontSize: 13 }}
                   tickMargin={12}
-                  reversed={true}
                 />
+                <YAxis
+                  stroke="hsl(var(--muted-foreground))"
+                  tickMargin={12}
+                  tick={{ fontSize: 12 }}
+                  allowDecimals={false}
+                />
+
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
