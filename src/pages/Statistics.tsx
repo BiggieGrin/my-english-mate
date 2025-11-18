@@ -264,7 +264,7 @@ const Statistics = () => {
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  tickMargin={12}
+                  tickMargin={24}
                   tick={{ fontSize: 12 }}
                   allowDecimals={false}
                 />
