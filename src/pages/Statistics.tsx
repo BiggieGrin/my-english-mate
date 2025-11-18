@@ -315,15 +315,30 @@ const Statistics = () => {
             <ResponsiveContainer width="100%" height={420}>
               <RadarChart
                 data={strengthsData}
-                outerRadius="100%" // Reduce this to make more room
-                margin={{ top: 60, right: 100, bottom: 60, left: 100 }} // Increase margins
+                outerRadius="60%"
+                margin={{ top: 80, right: 120, bottom: 80, left: 120 }}
               >
                 <PolarGrid stroke="hsl(var(--border))" />
                 <PolarAngleAxis
                   dataKey="skill"
                   stroke="hsl(var(--foreground))"
-                  tick={{ fontSize: 13, fill: "hsl(var(--foreground))" }}
-                  tickMargin={150} // Increase this
+                  tick={(props) => {
+                    const { x, y, payload } = props;
+                    // Calculate center of chart
+                    const cx = props.cx || 0;
+                    const cy = props.cy || 0;
+                    // Calculate angle and extend distance
+                    const angle = Math.atan2(y - cy, x - cx);
+                    const extendDistance = 40; // Adjust this to move labels further
+                    const newX = x + Math.cos(angle) * extendDistance;
+                    const newY = y + Math.sin(angle) * extendDistance;
+
+                    return (
+                      <text x={newX} y={newY} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={13}>
+                        {payload.value}
+                      </text>
+                    );
+                  }}
                   tickLine={false}
                 />
                 <PolarRadiusAxis
