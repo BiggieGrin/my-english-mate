@@ -183,7 +183,7 @@ const Topic = () => {
           <Button
             size="lg"
             variant="outline"
-            className="h-16 text-base border-blue-200 hover:bg-blue-50"
+            className="h-16 text-base border-blue-200 hover:text-primary hover:bg-blue-50"
             onClick={() => handleStartNewConversation("הכנה למבחן")}
           >
             <Brain className="ml-2 w-5 h-5" />
@@ -200,7 +200,7 @@ const Topic = () => {
           <Button
             size="lg"
             variant="outline"
-            className="h-16 text-base border-blue-200 hover:bg-blue-50"
+            className="h-16 text-base border-blue-200 hover:text-primary hover:bg-blue-50"
             onClick={() => handleStartNewConversation("ללמוד את הנושא")}
           >
             <BookOpen className="ml-2 w-5 h-5" />
