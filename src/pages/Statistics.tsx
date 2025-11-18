@@ -326,7 +326,7 @@ const Statistics = () => {
                 domain={[0, 100]}
                 stroke="hsl(var(--muted-foreground))"
                 tick={{ fontSize: 11 }}
-                tickMargin={24}
+                tickMargin={84}
               />
               <Radar
                 name="ציון"
