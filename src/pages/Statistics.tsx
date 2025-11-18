@@ -334,7 +334,7 @@ const Statistics = () => {
                     const newY = y + Math.sin(angle) * extendDistance;
 
                     return (
-                      <text x={newX} y={newY} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={20}>
+                      <text x={newX} y={newY} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={16}>
                         {payload.value}
                       </text>
                     );
