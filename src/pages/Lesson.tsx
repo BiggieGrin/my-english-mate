@@ -409,7 +409,7 @@ const Lesson = () => {
       </header>
 
       {/* Chat Area */}
-      <div className="flex-1 container mx-auto px-4 py-6 pb-32 max-w-4xl overflow-y-auto">
+      <div className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto">
         {/* Added pb-32 for bottom input spacing */}
         <div className="space-y-4">
           {!isInitialized && (
