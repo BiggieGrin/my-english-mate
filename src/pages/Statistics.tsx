@@ -114,38 +114,66 @@ const Statistics = () => {
   const fetchAIAssessment = async (userId: string, profile: any, strengthsData: any[], dailyStudyData: any[]) => {
     setAssessmentLoading(true);
     try {
-      // Get recent lesson messages for context
-      const { data: recentMessages } = await supabase
-        .from("lesson_messages")
-        .select("content, role, created_at")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(50);
+      // Check if we have a cached assessment
+      if (profile.ai_assessment) {
+        const assessment = profile.ai_assessment;
+        setAiAssessment(assessment);
 
-      const { data, error } = await supabase.functions.invoke("ai-assessment", {
-        body: {
-          profile,
-          strengthsData,
-          dailyStudyData,
-          recentMessages: recentMessages || [],
-        },
-      });
+        // Update skills data from cached assessment
+        if (assessment.skills) {
+          const skillsData = [
+            { skill: "אוצר מילים", score: assessment.skills.vocabulary },
+            { skill: "דקדוק", score: assessment.skills.grammar },
+            { skill: "הבנת הנקרא", score: assessment.skills.reading },
+            { skill: "כתיבה", score: assessment.skills.writing },
+            { skill: "שיחה", score: assessment.skills.speaking },
+          ];
+          setStrengthsData(skillsData);
+        }
+      }
 
-      if (error) throw error;
+      // Check if we need to update the assessment (every 10 minutes of study)
+      const minutesSinceLastAssessment = profile.last_assessment_time
+        ? Math.floor((Date.now() - new Date(profile.last_assessment_time).getTime()) / 60000)
+        : Infinity;
+      
+      const studyMinutesSinceAssessment = profile.total_study_minutes - (profile.ai_assessment?.study_minutes_at_assessment || 0);
 
-      const assessment = data as any;
-      setAiAssessment(assessment);
+      // Update if: no assessment yet OR 10+ minutes of study since last assessment
+      if (!profile.ai_assessment || studyMinutesSinceAssessment >= 10) {
+        // Get recent lesson messages for context
+        const { data: recentMessages } = await supabase
+          .from("lesson_messages")
+          .select("content, role, created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(50);
 
-      // Update skills data from AI assessment
-      if (assessment.skills) {
-        const skillsData = [
-          { skill: "אוצר מילים", score: assessment.skills.vocabulary },
-          { skill: "דקדוק", score: assessment.skills.grammar },
-          { skill: "הבנת הנקרא", score: assessment.skills.reading },
-          { skill: "כתיבה", score: assessment.skills.writing },
-          { skill: "שיחה", score: assessment.skills.speaking },
-        ];
-        setStrengthsData(skillsData);
+        const { data, error } = await supabase.functions.invoke("ai-assessment", {
+          body: {
+            profile,
+            strengthsData,
+            dailyStudyData,
+            recentMessages: recentMessages || [],
+          },
+        });
+
+        if (error) throw error;
+
+        const assessment = data as any;
+        setAiAssessment(assessment);
+
+        // Update skills data from new assessment
+        if (assessment.skills) {
+          const skillsData = [
+            { skill: "אוצר מילים", score: assessment.skills.vocabulary },
+            { skill: "דקדוק", score: assessment.skills.grammar },
+            { skill: "הבנת הנקרא", score: assessment.skills.reading },
+            { skill: "כתיבה", score: assessment.skills.writing },
+            { skill: "שיחה", score: assessment.skills.speaking },
+          ];
+          setStrengthsData(skillsData);
+        }
       }
     } catch (error) {
       console.error("Error fetching AI assessment:", error);
@@ -346,7 +374,6 @@ const Statistics = () => {
                   domain={[0, 100]}
                   stroke="hsl(var(--muted-foreground))"
                   tick={{ fontSize: 11 }}
-                  tickMargin={8}
                 />
                 <Radar
                   name="ציון"
