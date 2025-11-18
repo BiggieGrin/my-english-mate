@@ -323,7 +323,7 @@ const Statistics = () => {
                   dataKey="skill"
                   stroke="hsl(var(--foreground))"
                   tick={{ fontSize: 13, fill: "hsl(var(--foreground))" }}
-                  tickMargin={50} // Increase this
+                  tickMargin={150} // Increase this
                   tickLine={false}
                 />
                 <PolarRadiusAxis
