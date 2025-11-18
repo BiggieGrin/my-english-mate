@@ -2,7 +2,7 @@ const hebrewLetters = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י
 
 export const formatGrade = (grade: number): string => {
   if (grade < 1 || grade > 12) return `${grade}`;
-  return `$${hebrewLetters[grade - 1]}`;
+  return `${hebrewLetters[grade - 1]}`;
 };
 
 export const formatGradeRange = (startGrade: number, endGrade: number): string => {
