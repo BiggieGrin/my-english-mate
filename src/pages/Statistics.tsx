@@ -311,43 +311,45 @@ const Statistics = () => {
             <Target className="w-5 h-5 text-primary" />
             פיזור מיומנויות
           </h3>
-          <ResponsiveContainer width="100%" height={420}>
-            <RadarChart
-              data={strengthsData}
-              outerRadius="70%"
-              margin={{ top: 50, right: 100, bottom: 50, left: 100 }} // Increased margins
-            >
-              <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis
-                dataKey="skill"
-                stroke="hsl(var(--foreground))"
-                tick={{ fontSize: 13 }}
-                tickMargin={84}
-                tickLine={false}
-              />
-              <PolarRadiusAxis
-                angle={90}
-                domain={[0, 100]}
-                stroke="hsl(var(--muted-foreground))"
-                tick={{ fontSize: 11 }}
-                tickMargin={84}
-              />
-              <Radar
-                name="ציון"
-                dataKey="score"
-                stroke="hsl(var(--primary))"
-                fill="hsl(var(--primary))"
-                fillOpacity={0.6}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                }}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
+          <div dir="ltr">
+            <ResponsiveContainer width="100%" height={420}>
+              <RadarChart
+                data={strengthsData}
+                outerRadius="60%" // Reduce this to make more room
+                margin={{ top: 60, right: 100, bottom: 60, left: 100 }} // Increase margins
+              >
+                <PolarGrid stroke="hsl(var(--border))" />
+                <PolarAngleAxis
+                  dataKey="skill"
+                  stroke="hsl(var(--foreground))"
+                  tick={{ fontSize: 13, fill: "hsl(var(--foreground))" }}
+                  tickMargin={40} // Increase this
+                  tickLine={false}
+                />
+                <PolarRadiusAxis
+                  angle={90}
+                  domain={[0, 100]}
+                  stroke="hsl(var(--muted-foreground))"
+                  tick={{ fontSize: 11 }}
+                  tickMargin={8}
+                />
+                <Radar
+                  name="ציון"
+                  dataKey="score"
+                  stroke="hsl(var(--primary))"
+                  fill="hsl(var(--primary))"
+                  fillOpacity={0.6}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
 
         {/* AI Assessment */}
