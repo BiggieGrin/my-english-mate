@@ -329,7 +329,7 @@ const Statistics = () => {
                     const cy = props.cy || 0;
                     // Calculate angle and extend distance
                     const angle = Math.atan2(y - cy, x - cx);
-                    const extendDistance = 10; // Adjust this to move labels further
+                    const extendDistance = 15; // Adjust this to move labels further
                     const newX = x + Math.cos(angle) * extendDistance;
                     const newY = y + Math.sin(angle) * extendDistance;
 
