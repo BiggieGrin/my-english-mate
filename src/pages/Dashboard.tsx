@@ -328,10 +328,17 @@ const Dashboard = () => {
                   className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-purple-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                   onClick={() => navigate(`/topic/${topic.id}`)}
                 >
-                  <div className="p-8 pt-10">
+                  <div
+                    style={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                    className="p-8 pt-10"
+                  >
                     <div className="flex items-center gap-4 mb-6">
                       <span className="text-5xl">{topic.icon}</span>
-                      <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                     </div>
                     <div>
                       <p className="text-sm text-slate-500 mb-3">שיחות</p>
@@ -444,7 +451,6 @@ const Dashboard = () => {
                       <div className="p-4 text-center">
                         <div className="text-4xl mb-2">{topic.icon}</div>
                         <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
-                        <p className="text-sm text-muted-foreground">{topic.description}</p>
                       </div>
                     </Card>
                   ))}
@@ -463,7 +469,15 @@ const Dashboard = () => {
                   className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                   onClick={() => navigate(`/topic/${topic.id}`)}
                 >
-                  <div className="p-8 pt-10">
+                  <div
+                    style={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                    className="p-8 pt-10"
+                  >
                     <div className="flex items-center gap-4 mb-6">
                       <span className="text-5xl">{topic.icon}</span>
                       <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
@@ -576,7 +590,6 @@ const Dashboard = () => {
                     <div className="p-4 text-center">
                       <div className="text-4xl mb-2">{topic.icon}</div>
                       <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
-                      <p className="text-sm text-muted-foreground">{topic.description}</p>
                     </div>
                   </Card>
                 ))}
@@ -595,7 +608,15 @@ const Dashboard = () => {
                 className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-600 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                 onClick={() => navigate(`/topic/${topic.id}`)}
               >
-                <div className="p-8 pt-10">
+                <div
+                  style={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                  className="p-8 pt-10"
+                >
                   <div className="flex items-center gap-4 mb-6">
                     <span className="text-5xl">{topic.icon}</span>
                     <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
