@@ -234,14 +234,6 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <div className="container mx-auto px-6 py-12 max-w-7xl">
-          {/* Title Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-purple-600 mb-3">
-              ?מה ללמוד היום
-            </h1>
-            <p className="text-slate-600">בחרו נושא והתחילו להנות!</p>
-          </div>
 
           {/* Last Lesson Card - Purple/Pink */}
           {recentConversation && (
@@ -364,15 +356,6 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <div className="container mx-auto px-6 py-12 max-w-7xl">
-          {/* Title Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-blue-600 mb-3">
-              ?מה ללמוד היום
-            </h1>
-            <p className="text-slate-600">המשך את ההקדמות מהיומיים שלך</p>
-          </div>
-
           {/* Last Lesson Card - Blue */}
           {recentConversation && (
             <div className="mb-12">
@@ -492,14 +475,6 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-6 py-12 max-w-7xl">
-        {/* Title Section */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-blue-700 mb-3">
-            ?מה ללמוד היום
-          </h1>
-          <p className="text-slate-600">המשך את המסע האקדמי שלך לשליטה מושלמת באנגלית</p>
-        </div>
 
         {/* Last Lesson Card - Blue */}
         {recentConversation && (
