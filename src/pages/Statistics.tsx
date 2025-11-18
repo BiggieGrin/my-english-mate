@@ -325,6 +325,7 @@ const Statistics = () => {
                 angle={90}
                 domain={[0, 100]}
                 stroke="hsl(var(--muted-foreground))"
+                tickMargin={24}
                 tick={{ fontSize: 11 }}
               />
               <Radar
