@@ -392,7 +392,7 @@ const Lesson = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-card/80 shadow-sm border-b backdrop-blur-sm">
+      <header className="sticky top-0 z-40 ">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <XpProgressBar currentXp={currentXp} requiredXp={getXpToNextLevel(level)} level={level} />
