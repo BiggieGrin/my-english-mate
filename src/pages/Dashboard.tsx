@@ -335,8 +335,10 @@ const Dashboard = () => {
                       <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                     </div>
                     {topic.description && <p className="text-sm text-slate-600 mb-4">{topic.description}</p>}
-                    <p className="text-sm text-slate-500 mb-3">שיחות</p>
-                    <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
+                    <div>
+                      <p className="text-sm text-slate-500 mb-3">שיחות</p>
+                      <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
+                    </div>
                   </div>
                 </Card>
               ))
