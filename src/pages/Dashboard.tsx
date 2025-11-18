@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
-import { BarChart3, Star, User, Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getTopicsForStudent, TopicOption } from "@/data/englishTopics";
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { BarChart3, Star, User, Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getTopicsForStudent, TopicOption } from '@/data/englishTopics';
 
-type AgeGroup = "young" | "middle" | "high";
+type AgeGroup = 'young' | 'middle' | 'high';
 
 interface Topic {
   id: string;
@@ -22,7 +22,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [studentData, setStudentData] = useState<any>(null);
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>("middle");
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>('middle');
   const [topics, setTopics] = useState<Topic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -33,8 +33,8 @@ const Dashboard = () => {
   const [xpProgress, setXpProgress] = useState(0);
 
   useEffect(() => {
-    const data = localStorage.getItem("studentData");
-    const group = localStorage.getItem("ageGroup") as AgeGroup;
+    const data = localStorage.getItem('studentData');
+    const group = localStorage.getItem('ageGroup') as AgeGroup;
     if (data) {
       setStudentData(JSON.parse(data));
     }
@@ -51,44 +51,44 @@ const Dashboard = () => {
 
   const loadUserLevel = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase.from("profiles").select("level, current_xp").eq("id", user.id).single();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('level, current_xp')
+        .eq('id', user.id)
+        .single();
 
       if (profile) {
         const level = profile.level || 1;
         const xp = profile.current_xp || 0;
         const xpToNext = level * 100;
         const progress = Math.min((xp / xpToNext) * 100, 100);
-
+        
         setUserLevel(level);
         setCurrentXp(xp);
         setXpProgress(progress);
       }
     } catch (error) {
-      console.error("Error loading user level:", error);
+      console.error('Error loading user level:', error);
     }
   };
 
   const loadTopics = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/auth");
+        navigate('/auth');
         return;
       }
 
       // Fetch topics with conversation count
       const { data: topicsData, error: topicsError } = await supabase
-        .from("topics")
-        .select("id, title, icon, description")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .from('topics')
+        .select('id, title, icon, description')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
 
       if (topicsError) throw topicsError;
 
@@ -96,24 +96,24 @@ const Dashboard = () => {
       const topicsWithCount = await Promise.all(
         (topicsData || []).map(async (topic) => {
           const { count } = await supabase
-            .from("conversations")
-            .select("*", { count: "exact", head: true })
-            .eq("topic_id", topic.id);
+            .from('conversations')
+            .select('*', { count: 'exact', head: true })
+            .eq('topic_id', topic.id);
 
           return {
             ...topic,
             conversationCount: count || 0,
           };
-        }),
+        })
       );
 
       setTopics(topicsWithCount);
     } catch (error) {
-      console.error("Error loading topics:", error);
+      console.error('Error loading topics:', error);
       toast({
-        title: "שגיאה",
-        description: "לא הצלחנו לטעון את הנושאים.",
-        variant: "destructive",
+        title: 'שגיאה',
+        description: 'לא הצלחנו לטעון את הנושאים.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -122,46 +122,40 @@ const Dashboard = () => {
 
   const loadRecentConversation = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       // Get the most recent conversation with messages
       const { data: conversations, error } = await supabase
-        .from("conversations")
-        .select(
-          `
+        .from('conversations')
+        .select(`
           *,
           topics (title, icon)
-        `,
-        )
-        .eq("user_id", user.id)
-        .order("last_message_at", { ascending: false })
+        `)
+        .eq('user_id', user.id)
+        .order('last_message_at', { ascending: false })
         .limit(1);
 
       if (error) throw error;
-
+      
       if (conversations && conversations.length > 0) {
         setRecentConversation(conversations[0]);
       }
     } catch (error) {
-      console.error("Error loading recent conversation:", error);
+      console.error('Error loading recent conversation:', error);
     }
   };
 
   const loadAvailableTopics = async () => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       // Get user's profile to know grade and level
       const { data: profile } = await supabase
-        .from("profiles")
-        .select("grade, english_level")
-        .eq("id", user.id)
+        .from('profiles')
+        .select('grade, english_level')
+        .eq('id', user.id)
         .single();
 
       if (profile) {
@@ -169,24 +163,22 @@ const Dashboard = () => {
         setAvailableTopics(topics);
       }
     } catch (error) {
-      console.error("Error loading available topics:", error);
+      console.error('Error loading available topics:', error);
     }
   };
 
   const handleCreateTopic = async (topic: { title: string; icon: string; description: string | null }) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
       const { data, error } = await supabase
-        .from("topics")
+        .from('topics')
         .insert({
           user_id: user.id,
           title: topic.title,
           icon: topic.icon,
-          description: topic.description,
+          description: topic.description
         })
         .select()
         .single();
@@ -201,7 +193,7 @@ const Dashboard = () => {
       setTopics([...topics, { ...data, conversationCount: 0 }]);
       setIsDialogOpen(false);
     } catch (error) {
-      console.error("Error creating topic:", error);
+      console.error('Error creating topic:', error);
       toast({
         title: "שגיאה",
         description: "לא הצלחנו ליצור את הנושא",
@@ -216,7 +208,7 @@ const Dashboard = () => {
   };
 
   // Young (grades 1-3) version
-  if (ageGroup === "young") {
+  if (ageGroup === 'young') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 theme-young">
         {/* Header */}
@@ -231,20 +223,10 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-purple-100"
-                  onClick={() => navigate("/statistics")}
-                >
+                <Button variant="ghost" size="icon" className="rounded-full bg-purple-100" onClick={() => navigate('/statistics')}>
                   <BarChart3 className="w-5 h-5 text-purple-600" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-purple-100"
-                  onClick={() => navigate("/profile")}
-                >
+                <Button variant="ghost" size="icon" className="rounded-full bg-purple-100" onClick={() => navigate('/profile')}>
                   <User className="w-5 h-5 text-purple-600" />
                 </Button>
               </div>
@@ -254,6 +236,12 @@ const Dashboard = () => {
 
         <div className="container mx-auto px-6 py-12 max-w-7xl">
           {/* Title Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-purple-600 mb-3">
+              ?מה ללמוד היום
+            </h1>
+            <p className="text-slate-600">בחרו נושא והתחילו להנות!</p>
+          </div>
 
           {/* Last Lesson Card - Purple/Pink */}
           {recentConversation && (
@@ -261,15 +249,13 @@ const Dashboard = () => {
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl p-8 shadow-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-6">
-                    <div className="text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
+                    <div className="text-7xl">{recentConversation.topics?.icon || '🎯'}</div>
                     <div className="text-white">
                       <h2 className="text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
-                      <p className="text-purple-50 text-lg">
-                        {recentConversation.topics?.title || recentConversation.title}
-                      </p>
+                      <p className="text-purple-50 text-lg">{recentConversation.topics?.title || recentConversation.title}</p>
                     </div>
                   </div>
-                  <Button
+                  <Button 
                     size="lg"
                     className="bg-white text-purple-600 hover:bg-purple-50 font-bold text-lg px-8 py-6 rounded-2xl shadow-lg"
                     onClick={() => navigate(`/lesson/${recentConversation.id}`)}
@@ -284,7 +270,7 @@ const Dashboard = () => {
           {/* Topics Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Add New Topic Card */}
-            <Card
+            <Card 
               className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 border-2 border-dashed"
               onClick={handleOpenDialog}
             >
@@ -302,7 +288,7 @@ const Dashboard = () => {
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4">
                   {availableTopics.map((topic, index) => (
-                    <Card
+                    <Card 
                       key={index}
                       className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-300"
                       onClick={() => handleCreateTopic(topic)}
@@ -310,6 +296,7 @@ const Dashboard = () => {
                       <div className="p-4 text-center">
                         <div className="text-4xl mb-2">{topic.icon}</div>
                         <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
+                        <p className="text-sm text-muted-foreground">{topic.description}</p>
                       </div>
                     </Card>
                   ))}
@@ -323,40 +310,21 @@ const Dashboard = () => {
               </div>
             ) : (
               topics.map((topic) => (
-                <Card
+                <Card 
                   key={topic.id}
                   className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-purple-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                   onClick={() => navigate(`/topic/${topic.id}`)}
                 >
-                  <div
-                    style={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                    }}
-                    className="p-8 pt-10"
-                  >
+                  <div className="p-8 pt-10">
                     <div className="flex items-center gap-4 mb-6">
                       <span className="text-5xl">{topic.icon}</span>
+                      <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
-                      <p
-                        style={{
-                          margin: "0",
-                        }}
-                        className="text-sm text-slate-500 mb-3"
-                      >
-                        שיחות
-                      </p>
-                    </div>
+                    {topic.description && (
+                      <p className="text-sm text-slate-600 mb-4">{topic.description}</p>
+                    )}
+                    <p className="text-sm text-slate-500 mb-3">שיחות</p>
+                    <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
                   </div>
                 </Card>
               ))
@@ -368,7 +336,7 @@ const Dashboard = () => {
   }
 
   // Middle (grades 4-6) version
-  if (ageGroup === "middle") {
+  if (ageGroup === 'middle') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 theme-middle">
         {/* Header */}
@@ -385,20 +353,10 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-slate-100"
-                  onClick={() => navigate("/statistics")}
-                >
+                <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate('/statistics')}>
                   <BarChart3 className="w-5 h-5 text-slate-600" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-slate-100"
-                  onClick={() => navigate("/profile")}
-                >
+                <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate('/profile')}>
                   <User className="w-5 h-5 text-slate-600" />
                 </Button>
               </div>
@@ -408,6 +366,12 @@ const Dashboard = () => {
 
         <div className="container mx-auto px-6 py-12 max-w-7xl">
           {/* Title Section */}
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold text-blue-600 mb-3">
+              ?מה ללמוד היום
+            </h1>
+            <p className="text-slate-600">המשך את ההקדמות מהיומיים שלך</p>
+          </div>
 
           {/* Last Lesson Card - Blue */}
           {recentConversation && (
@@ -415,15 +379,13 @@ const Dashboard = () => {
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-8 shadow-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-6">
-                    <div className="text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
+                    <div className="text-7xl">{recentConversation.topics?.icon || '🎯'}</div>
                     <div className="text-white">
                       <h2 className="text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
-                      <p className="text-blue-50 text-lg">
-                        {recentConversation.topics?.title || recentConversation.title}
-                      </p>
+                      <p className="text-blue-50 text-lg">{recentConversation.topics?.title || recentConversation.title}</p>
                     </div>
                   </div>
-                  <Button
+                  <Button 
                     size="lg"
                     className="bg-white text-blue-600 hover:bg-blue-50 font-bold text-lg px-8 py-6 rounded-2xl shadow-lg"
                     onClick={() => navigate(`/lesson/${recentConversation.id}`)}
@@ -438,7 +400,7 @@ const Dashboard = () => {
           {/* Topics Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Add New Topic Card */}
-            <Card
+            <Card 
               className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
               onClick={handleOpenDialog}
             >
@@ -456,7 +418,7 @@ const Dashboard = () => {
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4">
                   {availableTopics.map((topic, index) => (
-                    <Card
+                    <Card 
                       key={index}
                       className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-300"
                       onClick={() => handleCreateTopic(topic)}
@@ -464,6 +426,7 @@ const Dashboard = () => {
                       <div className="p-4 text-center">
                         <div className="text-4xl mb-2">{topic.icon}</div>
                         <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
+                        <p className="text-sm text-muted-foreground">{topic.description}</p>
                       </div>
                     </Card>
                   ))}
@@ -477,42 +440,21 @@ const Dashboard = () => {
               </div>
             ) : (
               topics.map((topic) => (
-                <Card
+                <Card 
                   key={topic.id}
                   className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                   onClick={() => navigate(`/topic/${topic.id}`)}
                 >
-                  <div
-                    style={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                    }}
-                    className="p-8 pt-10"
-                  >
+                  <div className="p-8 pt-10">
                     <div className="flex items-center gap-4 mb-6">
                       <span className="text-5xl">{topic.icon}</span>
                       <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                     </div>
-                    {topic.description && <p className="text-sm text-slate-600 mb-4">{topic.description}</p>}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
-                      <p
-                        style={{
-                          margin: "0",
-                        }}
-                        className="text-sm text-slate-500 mb-3"
-                      >
-                        שיחות
-                      </p>
-                    </div>
+                    {topic.description && (
+                      <p className="text-sm text-slate-600 mb-4">{topic.description}</p>
+                    )}
+                    <p className="text-sm text-slate-500 mb-3">שיחות</p>
+                    <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
                   </div>
                 </Card>
               ))
@@ -539,20 +481,10 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full bg-slate-100"
-                onClick={() => navigate("/statistics")}
-              >
+              <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate('/statistics')}>
                 <BarChart3 className="w-5 h-5 text-slate-600" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full bg-slate-100"
-                onClick={() => navigate("/profile")}
-              >
+              <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate('/profile')}>
                 <User className="w-5 h-5 text-slate-600" />
               </Button>
             </div>
@@ -562,6 +494,12 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-6 py-12 max-w-7xl">
         {/* Title Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-blue-700 mb-3">
+            ?מה ללמוד היום
+          </h1>
+          <p className="text-slate-600">המשך את המסע האקדמי שלך לשליטה מושלמת באנגלית</p>
+        </div>
 
         {/* Last Lesson Card - Blue */}
         {recentConversation && (
@@ -569,15 +507,13 @@ const Dashboard = () => {
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 shadow-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
-                  <div className="text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
+                  <div className="text-7xl">{recentConversation.topics?.icon || '🎯'}</div>
                   <div className="text-white">
                     <h2 className="text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
-                    <p className="text-blue-50 text-lg">
-                      {recentConversation.topics?.title || recentConversation.title}
-                    </p>
+                    <p className="text-blue-50 text-lg">{recentConversation.topics?.title || recentConversation.title}</p>
                   </div>
                 </div>
-                <Button
+                <Button 
                   size="lg"
                   className="bg-white text-blue-700 hover:bg-blue-50 font-bold text-lg px-8 py-6 rounded-2xl shadow-lg"
                   onClick={() => navigate(`/lesson/${recentConversation.id}`)}
@@ -592,7 +528,7 @@ const Dashboard = () => {
         {/* Topics Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Add New Topic Card */}
-          <Card
+          <Card 
             className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
             onClick={handleOpenDialog}
           >
@@ -610,7 +546,7 @@ const Dashboard = () => {
               </DialogHeader>
               <div className="grid grid-cols-2 gap-4">
                 {availableTopics.map((topic, index) => (
-                  <Card
+                  <Card 
                     key={index}
                     className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-300"
                     onClick={() => handleCreateTopic(topic)}
@@ -618,6 +554,7 @@ const Dashboard = () => {
                     <div className="p-4 text-center">
                       <div className="text-4xl mb-2">{topic.icon}</div>
                       <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
+                      <p className="text-sm text-muted-foreground">{topic.description}</p>
                     </div>
                   </Card>
                 ))}
@@ -631,41 +568,21 @@ const Dashboard = () => {
             </div>
           ) : (
             topics.map((topic) => (
-              <Card
+              <Card 
                 key={topic.id}
                 className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-600 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                 onClick={() => navigate(`/topic/${topic.id}`)}
               >
-                <div
-                  style={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                  className="p-8 pt-10"
-                >
+                <div className="p-8 pt-10">
                   <div className="flex items-center gap-4 mb-6">
                     <span className="text-5xl">{topic.icon}</span>
                     <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <p className="text-4xl font-bold text-blue-600">{topic.conversationCount}</p>
-                    <p
-                      style={{
-                        margin: "0",
-                      }}
-                      className="text-sm text-slate-500 mb-3"
-                    >
-                      שיחות
-                    </p>
-                  </div>
+                  {topic.description && (
+                    <p className="text-sm text-slate-600 mb-4">{topic.description}</p>
+                  )}
+                  <p className="text-sm text-slate-500 mb-3">שיחות</p>
+                  <p className="text-4xl font-bold text-blue-600">{topic.conversationCount}</p>
                 </div>
               </Card>
             ))
