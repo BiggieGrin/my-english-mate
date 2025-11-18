@@ -344,6 +344,7 @@ const Dashboard = () => {
                       style={{
                         display: "flex",
                         alignItems: "center",
+                        gap: "10",
                       }}
                     >
                       <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
@@ -499,6 +500,7 @@ const Dashboard = () => {
                       style={{
                         display: "flex",
                         alignItems: "center",
+                        gap: "10",
                       }}
                     >
                       <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
@@ -651,6 +653,7 @@ const Dashboard = () => {
                     style={{
                       display: "flex",
                       alignItems: "center",
+                      gap: "10",
                     }}
                   >
                     <p className="text-4xl font-bold text-blue-600">{topic.conversationCount}</p>
