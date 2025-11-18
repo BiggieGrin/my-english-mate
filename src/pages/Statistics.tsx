@@ -312,7 +312,11 @@ const Statistics = () => {
             פיזור מיומנויות
           </h3>
           <ResponsiveContainer width="100%" height={420}>
-            <RadarChart data={strengthsData} outerRadius="70%" margin={{ top: 40, right: 80, bottom: 40, left: 80 }}>
+            <RadarChart
+              data={strengthsData}
+              outerRadius="70%"
+              margin={{ top: 50, right: 100, bottom: 50, left: 100 }} // Increased margins
+            >
               <PolarGrid stroke="hsl(var(--border))" />
               <PolarAngleAxis
                 dataKey="skill"
