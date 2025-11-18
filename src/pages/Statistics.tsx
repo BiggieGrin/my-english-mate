@@ -1,11 +1,24 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Clock, Flame, Brain, Target, Zap, BarChart3 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Clock, Flame, Brain, Target, Zap, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+} from "recharts";
 
 const Statistics = () => {
   const navigate = useNavigate();
@@ -23,17 +36,15 @@ const Statistics = () => {
 
   const fetchData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/auth');
+        navigate("/auth");
         return;
       }
 
-      const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const { data: profileData, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
       if (error) throw error;
       setProfile(profileData);
@@ -41,60 +52,59 @@ const Statistics = () => {
       // Calculate real daily study data from lesson_messages
       const today = new Date();
       const dailyData: { [key: number]: number } = {};
-      
+
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         date.setHours(0, 0, 0, 0);
-        
+
         const nextDate = new Date(date);
         nextDate.setDate(nextDate.getDate() + 1);
-        
+
         const { data: messages } = await supabase
-          .from('lesson_messages')
-          .select('created_at')
-          .eq('user_id', user.id)
-          .gte('created_at', date.toISOString())
-          .lt('created_at', nextDate.toISOString());
-        
+          .from("lesson_messages")
+          .select("created_at")
+          .eq("user_id", user.id)
+          .gte("created_at", date.toISOString())
+          .lt("created_at", nextDate.toISOString());
+
         // Each message represents approximately 1 minute of study
         const minutes = messages ? messages.length : 0;
         const dayIndex = date.getDay();
-        
+
         dailyData[dayIndex] = (dailyData[dayIndex] || 0) + minutes;
       }
-      
+
       // Order: Sunday (0) ... Friday (5) ... Saturday (6) - so Saturday is far right
-      const hebrewDays = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+      const hebrewDays = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
       const orderedDays = [0, 1, 2, 3, 4, 5, 6]; // Sunday on the left, Saturday on the right
-      
-      const last7Days = orderedDays.map(dayIndex => ({
+
+      const last7Days = orderedDays.map((dayIndex) => ({
         day: hebrewDays[dayIndex],
-        minutes: dailyData[dayIndex] || 0
+        minutes: dailyData[dayIndex] || 0,
       }));
-      
+
       setDailyStudyData(last7Days);
 
       // Skills will be calculated by AI assessment based on actual conversations
       // Default values in case AI assessment is not available yet
       const defaultStrengthsData = [
-        { skill: 'אוצר מילים', score: 50 },
-        { skill: 'דקדוק', score: 50 },
-        { skill: 'הבנת הנקרא', score: 50 },
-        { skill: 'כתיבה', score: 50 },
-        { skill: 'שיחה', score: 50 }
+        { skill: "אוצר מילים", score: 50 },
+        { skill: "דקדוק", score: 50 },
+        { skill: "הבנת הנקרא", score: 50 },
+        { skill: "כתיבה", score: 50 },
+        { skill: "שיחה", score: 50 },
       ];
       setStrengthsData(defaultStrengthsData);
 
       // Fetch AI assessment
       await fetchAIAssessment(user.id, profileData, defaultStrengthsData, last7Days);
-
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
       toast({
         title: "שגיאה",
         description: "לא ניתן לטעון את הסטטיסטיקות",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -106,39 +116,39 @@ const Statistics = () => {
     try {
       // Get recent lesson messages for context
       const { data: recentMessages } = await supabase
-        .from('lesson_messages')
-        .select('content, role, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+        .from("lesson_messages")
+        .select("content, role, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
         .limit(50);
 
-      const { data, error } = await supabase.functions.invoke('ai-assessment', {
+      const { data, error } = await supabase.functions.invoke("ai-assessment", {
         body: {
           profile,
           strengthsData,
           dailyStudyData,
-          recentMessages: recentMessages || []
-        }
+          recentMessages: recentMessages || [],
+        },
       });
 
       if (error) throw error;
-      
+
       const assessment = data as any;
       setAiAssessment(assessment);
-      
+
       // Update skills data from AI assessment
       if (assessment.skills) {
         const skillsData = [
-          { skill: 'אוצר מילים', score: assessment.skills.vocabulary },
-          { skill: 'דקדוק', score: assessment.skills.grammar },
-          { skill: 'הבנת הנקרא', score: assessment.skills.reading },
-          { skill: 'כתיבה', score: assessment.skills.writing },
-          { skill: 'שיחה', score: assessment.skills.speaking }
+          { skill: "אוצר מילים", score: assessment.skills.vocabulary },
+          { skill: "דקדוק", score: assessment.skills.grammar },
+          { skill: "הבנת הנקרא", score: assessment.skills.reading },
+          { skill: "כתיבה", score: assessment.skills.writing },
+          { skill: "שיחה", score: assessment.skills.speaking },
         ];
         setStrengthsData(skillsData);
       }
     } catch (error) {
-      console.error('Error fetching AI assessment:', error);
+      console.error("Error fetching AI assessment:", error);
       // Fallback to basic assessment
       setAiAssessment({
         trend: "לא ניתן לנתח כרגע",
@@ -150,8 +160,8 @@ const Statistics = () => {
           grammar: 50,
           reading: 50,
           writing: 50,
-          speaking: 50
-        }
+          speaking: 50,
+        },
       });
     } finally {
       setAssessmentLoading(false);
@@ -162,7 +172,6 @@ const Statistics = () => {
     const total = dailyStudyData.reduce((sum, day) => sum + day.minutes, 0);
     return Math.round(total / dailyStudyData.length);
   };
-
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
@@ -184,7 +193,7 @@ const Statistics = () => {
               <BarChart3 className="w-6 h-6 text-primary" />
               סטטיסטיקות למידה
             </h1>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
               <ArrowRight className="ml-2 w-4 h-4" />
               חזרה
             </Button>
@@ -240,15 +249,25 @@ const Statistics = () => {
               זמן למידה יומי
             </h3>
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={dailyStudyData} margin={{ top: 20, right: 24, left: 24, bottom: 36 }} barCategoryGap="25%">
+              <BarChart
+                data={dailyStudyData}
+                margin={{ top: 20, right: 24, left: 54, bottom: 36 }}
+                barCategoryGap="25%"
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" interval={0} tick={{ fontSize: 13 }} tickMargin={12} />
+                <XAxis
+                  dataKey="day"
+                  stroke="hsl(var(--muted-foreground))"
+                  interval={0}
+                  tick={{ fontSize: 13 }}
+                  tickMargin={12}
+                />
                 <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} allowDecimals={false} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))', 
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
                   }}
                 />
                 <Bar dataKey="minutes" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
@@ -270,11 +289,11 @@ const Statistics = () => {
               </div>
               <p className="text-lg font-semibold text-foreground">ימי למידה רצופים</p>
               <p className="text-sm text-muted-foreground mt-2 text-center">
-                {profile.current_streak >= 5 
-                  ? 'מדהים! המשך כך! 🔥' 
-                  : profile.current_streak >= 3 
-                  ? 'כל הכבוד! המשך לתרגל 💪' 
-                  : ''}
+                {profile.current_streak >= 5
+                  ? "מדהים! המשך כך! 🔥"
+                  : profile.current_streak >= 3
+                    ? "כל הכבוד! המשך לתרגל 💪"
+                    : ""}
               </p>
             </div>
           </Card>
@@ -289,14 +308,30 @@ const Statistics = () => {
           <ResponsiveContainer width="100%" height={420}>
             <RadarChart data={strengthsData} outerRadius="70%" margin={{ top: 40, right: 80, bottom: 40, left: 80 }}>
               <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="skill" stroke="hsl(var(--foreground))" tick={{ fontSize: 13 }} tickLine={false} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 11 }} />
-              <Radar name="ציון" dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.6} />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--card))', 
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px'
+              <PolarAngleAxis
+                dataKey="skill"
+                stroke="hsl(var(--foreground))"
+                tick={{ fontSize: 13 }}
+                tickLine={false}
+              />
+              <PolarRadiusAxis
+                angle={90}
+                domain={[0, 100]}
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fontSize: 11 }}
+              />
+              <Radar
+                name="ציון"
+                dataKey="score"
+                stroke="hsl(var(--primary))"
+                fill="hsl(var(--primary))"
+                fillOpacity={0.6}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
                 }}
               />
             </RadarChart>
@@ -319,9 +354,7 @@ const Statistics = () => {
             <div className="space-y-4">
               {!aiAssessment.hasEnoughData && (
                 <div className="p-4 bg-accent/10 rounded-lg border border-accent/20 mb-4">
-                  <p className="text-sm text-foreground">
-                    💡 המשך ללמוד כדי לקבל הערכה מפורטת יותר מה-AI
-                  </p>
+                  <p className="text-sm text-foreground">💡 המשך ללמוד כדי לקבל הערכה מפורטת יותר מה-AI</p>
                 </div>
               )}
 
@@ -336,10 +369,7 @@ const Statistics = () => {
                 <p className="text-sm text-muted-foreground mb-2">נקודות חוזקה 💪</p>
                 <div className="flex flex-wrap gap-2">
                   {aiAssessment.strengths.map((strength: string, index: number) => (
-                    <span 
-                      key={index} 
-                      className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
-                    >
+                    <span key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
                       {strength}
                     </span>
                   ))}
@@ -351,10 +381,7 @@ const Statistics = () => {
                 <p className="text-sm text-muted-foreground mb-2">תחומים לשיפור 🎯</p>
                 <div className="flex flex-wrap gap-2">
                   {aiAssessment.improvements.map((area: string, index: number) => (
-                    <span 
-                      key={index} 
-                      className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-medium"
-                    >
+                    <span key={index} className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-medium">
                       {area}
                     </span>
                   ))}
@@ -362,9 +389,7 @@ const Statistics = () => {
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              לא ניתן לטעון הערכה כרגע
-            </div>
+            <div className="text-center py-8 text-muted-foreground">לא ניתן לטעון הערכה כרגע</div>
           )}
         </Card>
       </div>
