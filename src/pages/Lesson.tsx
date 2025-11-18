@@ -384,8 +384,8 @@ const Lesson = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* XP Progress Bar - Fixed Top Left */}
-      <div className="fixed top-4 left-4 z-50 w-64 max-w-[calc(100vw-2rem)]">
+      {/* XP Progress Bar - Fixed Top Right */}
+      <div className="fixed top-4 right-4 z-50 w-64 max-w-[calc(100vw-2rem)]">
         <XpProgressBar 
           currentXp={currentXp} 
           requiredXp={getXpToNextLevel(level)} 

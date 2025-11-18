@@ -11,18 +11,9 @@ export const XpProgressBar = ({ currentXp, requiredXp, level }: XpProgressBarPro
 
   return (
     <div className="flex items-center gap-0 relative" dir="ltr">
-      <div 
-        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg z-20 shadow-lg relative"
-        style={{
-          background: 'linear-gradient(135deg, #5392f5 0%, #4287f5 100%)',
-          boxShadow: '0 4px 20px rgba(66, 135, 245, 0.4)'
-        }}
-      >
-        {level}
-      </div>
-      <div className="flex-1 rounded-full overflow-hidden -ml-6 relative" style={{ height: '0.9rem', background: '#3a4a5c' }}>
+      <div className="flex-1 rounded-full overflow-hidden -mr-6 relative" style={{ height: '0.9rem', background: '#3a4a5c' }}>
         <div 
-          className="h-full rounded-full transition-all duration-500 ease-out relative"
+          className="h-full rounded-full transition-all duration-500 ease-out relative ml-auto"
           style={{
             width: `${percentage}%`,
             background: 'linear-gradient(90deg, #5392f5 0%, #4287f5 100%)',
@@ -38,6 +29,15 @@ export const XpProgressBar = ({ currentXp, requiredXp, level }: XpProgressBarPro
             }}
           />
         </div>
+      </div>
+      <div 
+        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg z-20 shadow-lg relative"
+        style={{
+          background: 'linear-gradient(135deg, #5392f5 0%, #4287f5 100%)',
+          boxShadow: '0 4px 20px rgba(66, 135, 245, 0.4)'
+        }}
+      >
+        {level}
       </div>
     </div>
   );
