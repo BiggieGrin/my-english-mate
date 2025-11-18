@@ -31,6 +31,7 @@ const stripMarkdown = (text: string): string => {
     .replace(/\*\*/g, "") // Remove bold
     .replace(/\*/g, "") // Remove italic
     .replace(/_{2}/g, "") // Remove underline
+    .replace(/—{2}/g, "") // Remove dash
     .replace(/_/g, "") // Remove single underscore
     .replace(/~~(.*?)~~/g, "$1") // Remove strikethrough
     .trim();
