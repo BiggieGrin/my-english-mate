@@ -315,7 +315,7 @@ const Statistics = () => {
             <ResponsiveContainer width="100%" height={420}>
               <RadarChart
                 data={strengthsData}
-                outerRadius="60%"
+                outerRadius="80%"
                 margin={{ top: 80, right: 120, bottom: 80, left: 120 }}
               >
                 <PolarGrid stroke="hsl(var(--border))" />
@@ -329,7 +329,7 @@ const Statistics = () => {
                     const cy = props.cy || 0;
                     // Calculate angle and extend distance
                     const angle = Math.atan2(y - cy, x - cx);
-                    const extendDistance = 40; // Adjust this to move labels further
+                    const extendDistance = 10; // Adjust this to move labels further
                     const newX = x + Math.cos(angle) * extendDistance;
                     const newY = y + Math.sin(angle) * extendDistance;
 
