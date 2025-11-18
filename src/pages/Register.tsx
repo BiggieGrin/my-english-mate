@@ -158,24 +158,33 @@ const Register = () => {
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
-          // Remove skipBrowserRedirect or set it to false
+          skipBrowserRedirect: true,
         },
       });
 
       if (error) throw error;
 
-      // When skipBrowserRedirect is false (default), Supabase handles the redirect
-      // automatically, so we don't need manual redirect logic here
+      if (data?.url) {
+        try {
+          if (window.top) {
+            window.top.location.href = data.url;
+          } else {
+            window.location.href = data.url;
+          }
+        } catch {
+          window.open(data.url, "_blank", "noopener,noreferrer");
+        }
+      }
     } catch (error: any) {
-      console.error("Google signup error:", error);
       toast({
         title: "ההרשמה נכשלה",
-        description: error.message || "אנא נסו שוב",
+        description: "אנא נסו שוב",
         variant: "destructive",
       });
       setIsLoading(false);
     }
   };
+
   const isStepValid = () => {
     switch (step) {
       case 1:
