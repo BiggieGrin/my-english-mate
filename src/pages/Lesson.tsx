@@ -392,14 +392,14 @@ const Lesson = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-40 ">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <XpProgressBar currentXp={currentXp} requiredXp={getXpToNextLevel(level)} level={level} />
             <Button variant="ghost" onClick={() => navigate(topicId ? `/topic/${topicId}` : "/dashboard")}>
               <ArrowRight className="ml-2" />
               חזרה
             </Button>
+            <XpProgressBar currentXp={currentXp} requiredXp={getXpToNextLevel(level)} level={level} />
           </div>
         </div>
       </header>
