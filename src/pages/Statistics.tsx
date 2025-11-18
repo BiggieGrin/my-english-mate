@@ -251,7 +251,7 @@ const Statistics = () => {
             <ResponsiveContainer width="100%" height={320}>
               <BarChart
                 data={dailyStudyData}
-                margin={{ top: 20, right: 24, left: 54, bottom: 36 }}
+                margin={{ top: 20, right: 24, left: 24, bottom: 36 }}
                 barCategoryGap="25%"
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -261,6 +261,7 @@ const Statistics = () => {
                   interval={0}
                   tick={{ fontSize: 13 }}
                   tickMargin={12}
+                  reversed={true}
                 />
                 <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} allowDecimals={false} />
                 <Tooltip

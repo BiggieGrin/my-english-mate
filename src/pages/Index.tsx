@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
-import { Sparkles, BookOpen, Trophy, Heart } from 'lucide-react';
-import heroTeacher from '@/assets/hero-teacher.jpg';
-import kidsLearning from '@/assets/kids-learning.jpg';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import { Sparkles, BookOpen, Trophy, Heart } from "lucide-react";
+import heroTeacher from "@/assets/hero-teacher.jpg";
+import kidsLearning from "@/assets/kids-learning.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ const Index = () => {
   const handleStart = () => {
     setIsAnimating(true);
     setTimeout(() => {
-      navigate('/register');
+      navigate("/register");
     }, 600);
   };
 
@@ -27,10 +27,10 @@ const Index = () => {
             <h1 className="text-2xl font-bold text-primary">המורה לאנגלית שלי</h1>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => navigate('/auth')}>
+            <Button variant="outline" onClick={() => navigate("/auth")}>
               התחברות
             </Button>
-            <Button variant="outline" onClick={() => navigate('/parent')}>
+            <Button variant="outline" onClick={() => navigate("/parent")}>
               כניסת הורים
             </Button>
           </div>
@@ -46,12 +46,10 @@ const Index = () => {
               <br />
               <span className="text-primary">בקלות ובהנאה!</span>
             </h2>
-            <p className="text-xl text-muted-foreground">
-              מורה אנגלית חכם שמדבר עברית ומלמד בדיוק בקצב שלך
-            </p>
-            <Button 
-              size="lg" 
-              className={`text-xl px-8 py-6 glow ${isAnimating ? 'bounce-in' : ''}`}
+            <p className="text-xl text-muted-foreground">מורה אנגלית חכם שמדבר עברית ומלמד בדיוק בקצב שלך</p>
+            <Button
+              size="lg"
+              className={`text-xl px-8 py-6 glow ${isAnimating ? "bounce-in" : ""}`}
               onClick={handleStart}
             >
               <Sparkles className="ml-2" />
@@ -59,11 +57,7 @@ const Index = () => {
             </Button>
           </div>
           <div className="relative bounce-in">
-            <img 
-              src={heroTeacher} 
-              alt="המורה החכמה לאנגלית" 
-              className="rounded-3xl shadow-2xl w-full"
-            />
+            <img src={heroTeacher} alt="המורה החכמה לאנגלית" className="rounded-3xl shadow-2xl w-full" />
           </div>
         </div>
       </section>
@@ -77,9 +71,7 @@ const Index = () => {
               <BookOpen className="w-8 h-8 text-primary" />
             </div>
             <h4 className="text-xl font-bold mb-2">לומדים בעברית</h4>
-            <p className="text-muted-foreground">
-              המורה מסביר בעברית, כך שהכל ברור ופשוט
-            </p>
+            <p className="text-muted-foreground">המורה מסביר בעברית, כך שהכל ברור ופשוט</p>
           </Card>
 
           <Card className="p-8 text-center hover:scale-105 transition-transform">
@@ -87,9 +79,7 @@ const Index = () => {
               <Heart className="w-8 h-8 text-secondary" />
             </div>
             <h4 className="text-xl font-bold mb-2">בקצב שלך</h4>
-            <p className="text-muted-foreground">
-              המורה מתאים את עצמו בדיוק לרמה ולגיל שלך
-            </p>
+            <p className="text-muted-foreground">המורה מתאים את עצמו בדיוק לרמה ולגיל שלך</p>
           </Card>
 
           <Card className="p-8 text-center hover:scale-105 transition-transform">
@@ -97,9 +87,7 @@ const Index = () => {
               <Trophy className="w-8 h-8 text-accent" />
             </div>
             <h4 className="text-xl font-bold mb-2">מרוויחים הישגים</h4>
-            <p className="text-muted-foreground">
-              כל תרגיל = נקודות, מדליות ומדבקות מגניבות!
-            </p>
+            <p className="text-muted-foreground">כל תרגיל = נקודות, מדליות ומדבקות מגניבות!</p>
           </Card>
         </div>
       </section>
@@ -108,16 +96,11 @@ const Index = () => {
       <section className="container mx-auto px-4 py-20">
         <div className="bg-card rounded-3xl p-8 md:p-12 shadow-xl">
           <div className="grid md:grid-cols-2 gap-8 items-center">
-            <img 
-              src={kidsLearning} 
-              alt="ילדים לומדים אנגלית" 
-              className="rounded-2xl"
-            />
+            <img src={kidsLearning} alt="ילדים לומדים אנגלית" className="rounded-2xl" />
             <div className="space-y-4">
               <h3 className="text-3xl font-bold">למידה שמשנה הכל</h3>
               <p className="text-lg text-muted-foreground">
-                אלפי ילדים בישראל כבר משפרים את האנגלית שלהם איתנו - 
-                בצורה שמהנה, בטוחה ומותאמת אישית לכל תלמיד.
+                אלפי ילדים בישראל כבר משפרים את האנגלית שלהם איתנו - בצורה שמהנה, בטוחה ומותאמת אישית לכל תלמיד.
               </p>
               <ul className="space-y-2 text-muted-foreground">
                 <li>✓ מותאם לתכנית הלימודים בבתי הספר</li>
@@ -133,14 +116,8 @@ const Index = () => {
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-20 text-center">
         <h3 className="text-4xl font-bold mb-6">מוכנים להתחיל?</h3>
-        <p className="text-xl text-muted-foreground mb-8">
-          ההרשמה לוקחת רק דקה אחת והשיעור הראשון חינם!
-        </p>
-        <Button 
-          size="lg" 
-          className="text-xl px-12 py-6 glow"
-          onClick={handleStart}
-        >
+        <p className="text-xl text-muted-foreground mb-8">ההרשמה לוקחת רק דקה אחת והשיעור הראשון חינם!</p>
+        <Button size="lg" className="text-xl px-12 py-6 glow" onClick={handleStart}>
           <Sparkles className="ml-2" />
           להתחיל ללמוד עכשיו
         </Button>
