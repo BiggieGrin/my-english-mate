@@ -315,7 +315,7 @@ const Statistics = () => {
             <ResponsiveContainer width="100%" height={420}>
               <RadarChart
                 data={strengthsData}
-                outerRadius="80%" // Reduce this to make more room
+                outerRadius="50%" // Reduce this to make more room
                 margin={{ top: 60, right: 100, bottom: 60, left: 100 }} // Increase margins
               >
                 <PolarGrid stroke="hsl(var(--border))" />
