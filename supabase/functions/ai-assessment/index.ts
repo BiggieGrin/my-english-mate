@@ -149,8 +149,30 @@ ${dailyStudyData.map((d: any) => `${d.day}: ${d.minutes} דקות`).join(', ')}
       };
     }
 
+    // Add study_minutes_at_assessment to track when assessment was made
+    const fullAssessment = {
+      ...assessment,
+      hasEnoughData: true,
+      study_minutes_at_assessment: profile.total_study_minutes || 0,
+    };
+
+    // Save assessment to profiles table
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        ai_assessment: fullAssessment,
+        last_assessment_time: new Date().toISOString(),
+      })
+      .eq("id", profile.id);
+
     return new Response(
-      JSON.stringify({ ...assessment, hasEnoughData: true }),
+      JSON.stringify(fullAssessment),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

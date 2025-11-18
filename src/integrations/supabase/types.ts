@@ -89,6 +89,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_assessment: Json | null
           created_at: string | null
           current_streak: number | null
           current_xp: number | null
@@ -96,13 +97,16 @@ export type Database = {
           full_name: string
           grade: number
           id: string
+          last_assessment_time: string | null
           lessons_completed: number | null
           level: number | null
           parent_email: string
           total_points: number | null
+          total_study_minutes: number | null
           updated_at: string | null
         }
         Insert: {
+          ai_assessment?: Json | null
           created_at?: string | null
           current_streak?: number | null
           current_xp?: number | null
@@ -110,13 +114,16 @@ export type Database = {
           full_name: string
           grade: number
           id: string
+          last_assessment_time?: string | null
           lessons_completed?: number | null
           level?: number | null
           parent_email: string
           total_points?: number | null
+          total_study_minutes?: number | null
           updated_at?: string | null
         }
         Update: {
+          ai_assessment?: Json | null
           created_at?: string | null
           current_streak?: number | null
           current_xp?: number | null
@@ -124,10 +131,12 @@ export type Database = {
           full_name?: string
           grade?: number
           id?: string
+          last_assessment_time?: string | null
           lessons_completed?: number | null
           level?: number | null
           parent_email?: string
           total_points?: number | null
+          total_study_minutes?: number | null
           updated_at?: string | null
         }
         Relationships: []
