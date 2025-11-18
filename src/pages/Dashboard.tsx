@@ -310,7 +310,6 @@ const Dashboard = () => {
                       <div className="p-4 text-center">
                         <div className="text-4xl mb-2">{topic.icon}</div>
                         <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
-                        <p className="text-sm text-muted-foreground">{topic.description}</p>
                       </div>
                     </Card>
                   ))}
@@ -601,9 +600,10 @@ const Dashboard = () => {
                     <span className="text-5xl">{topic.icon}</span>
                     <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                   </div>
-                  {topic.description && <p className="text-sm text-slate-600 mb-4">{topic.description}</p>}
-                  <p className="text-sm text-slate-500 mb-3">שיחות</p>
-                  <p className="text-4xl font-bold text-blue-600">{topic.conversationCount}</p>
+                  <div>
+                    <p className="text-sm text-slate-500 mb-3">שיחות</p>
+                    <p className="text-4xl font-bold text-blue-600">{topic.conversationCount}</p>
+                  </div>
                 </div>
               </Card>
             ))
