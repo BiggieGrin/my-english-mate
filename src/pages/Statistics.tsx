@@ -315,7 +315,7 @@ const Statistics = () => {
             <ResponsiveContainer width="100%" height={420}>
               <RadarChart
                 data={strengthsData}
-                outerRadius="80%"
+                outerRadius="100%"
                 margin={{ top: 80, right: 120, bottom: 80, left: 120 }}
               >
                 <PolarGrid stroke="hsl(var(--border))" />
@@ -334,7 +334,7 @@ const Statistics = () => {
                     const newY = y + Math.sin(angle) * extendDistance;
 
                     return (
-                      <text x={newX} y={newY} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={13}>
+                      <text x={newX} y={newY} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={20}>
                         {payload.value}
                       </text>
                     );
