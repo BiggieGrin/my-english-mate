@@ -223,18 +223,16 @@ const Dashboard = () => {
         });
         return;
       }
-      const userGrade = profile?.grade || 1;
 
       // First, insert or get the curriculum topic
       const { data: curriculumTopic, error: curriculumError } = await supabase
         .from("curriculum_topics")
-        .find({
+        .select("*")
+        .match({
           title: topic.title,
           description: topic.description,
         })
-        .select()
         .single();
-
       if (curriculumError) throw curriculumError;
 
       // Then enroll the user in this topic
