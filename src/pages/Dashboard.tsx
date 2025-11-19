@@ -296,7 +296,7 @@ const Dashboard = () => {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <div>
+              <DialogContent>
                 <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
                   <DialogHeader>
                     <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
@@ -316,7 +316,7 @@ const Dashboard = () => {
                     ))}
                   </div>
                 </DialogContent>
-              </div>
+              </DialogContent>
             </Dialog>
 
             {isLoading ? (
@@ -452,7 +452,7 @@ const Dashboard = () => {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <div>
+              <DialogContent>
                 <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
                   <DialogHeader>
                     <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
@@ -472,7 +472,7 @@ const Dashboard = () => {
                     ))}
                   </div>
                 </DialogContent>
-              </div>
+              </DialogContent>
             </Dialog>
 
             {isLoading ? (
@@ -608,7 +608,7 @@ const Dashboard = () => {
           </Card>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <div>
+            <DialogContent>
               <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
@@ -626,7 +626,7 @@ const Dashboard = () => {
                       </div>
                     </Card>
                   ))}
-                </div>
+                </DialogContent>
               </DialogContent>
             </div>
           </Dialog>
