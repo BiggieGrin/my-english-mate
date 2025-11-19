@@ -6,7 +6,7 @@ import { BarChart3, Star, User, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { getTopicsForStudent, TopicOption } from "@/data/englishTopics";
+import { TopicOption } from "@/data/englishTopics";
 
 type AgeGroup = "young" | "middle" | "high";
 
@@ -171,16 +171,39 @@ const Dashboard = () => {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get user's profile to know grade and level
+      // Get user's profile to know grade
       const { data: profile } = await supabase
         .from("profiles")
-        .select("grade, english_level")
+        .select("grade")
         .eq("id", user.id)
         .single();
 
       if (profile) {
-        const topics = getTopicsForStudent(profile.grade, profile.english_level);
-        setAvailableTopics(topics);
+        // Fetch topics from curriculum_topics filtered by grade
+        const { data: availableTopicsData, error } = await supabase
+          .from('curriculum_topics')
+          .select('*')
+          .eq('grade', profile.grade)
+          .order('title');
+        
+        if (error) {
+          console.error('Error loading available topics:', error);
+          toast({
+            title: "שגיאה",
+            description: "לא הצלחנו לטעון את הנושאים הזמינים",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Transform to match TopicOption interface
+        const transformedTopics = availableTopicsData?.map(topic => ({
+          title: topic.title,
+          icon: topic.icon,
+          description: topic.description || ''
+        })) || [];
+        
+        setAvailableTopics(transformedTopics);
       }
     } catch (error) {
       console.error("Error loading available topics:", error);
