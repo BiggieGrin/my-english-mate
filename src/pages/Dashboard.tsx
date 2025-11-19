@@ -296,7 +296,7 @@ const Dashboard = () => {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
+              <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
                 </DialogHeader>
@@ -450,7 +450,7 @@ const Dashboard = () => {
             </Card>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
+              <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide" dir="rtl">
                 <DialogHeader>
                   <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
                 </DialogHeader>
