@@ -44,15 +44,33 @@ const Topic = () => {
         return;
       }
 
-      // Load topic details
+      // Load topic details from curriculum_topics
       const { data: topicData, error: topicError } = await supabase
-        .from("topics")
+        .from("curriculum_topics")
         .select("*")
         .eq("id", topicId)
-        .eq("user_id", user.id)
         .single();
 
       if (topicError) throw topicError;
+
+      // Verify user is enrolled in this topic
+      const { data: enrollment } = await supabase
+        .from("user_topics")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("topic_id", topicId)
+        .single();
+
+      if (!enrollment) {
+        toast({
+          title: "שגיאה",
+          description: "אינך רשום לנושא זה.",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+        return;
+      }
+
       setTopic(topicData);
 
       // Load conversations for this topic

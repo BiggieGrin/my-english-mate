@@ -83,25 +83,37 @@ const Dashboard = () => {
         return;
       }
 
-      // Fetch topics with conversation count
-      const { data: topicsData, error: topicsError } = await supabase
-        .from("topics")
-        .select("id, title, icon, description")
+      // Fetch user's enrolled topics from user_topics joined with curriculum_topics
+      const { data: userTopics, error: topicsError } = await supabase
+        .from("user_topics")
+        .select(`
+          topic_id,
+          curriculum_topics (
+            id,
+            title,
+            icon,
+            description
+          )
+        `)
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .order("last_accessed_at", { ascending: false });
 
       if (topicsError) throw topicsError;
 
       // For each topic, count conversations
       const topicsWithCount = await Promise.all(
-        (topicsData || []).map(async (topic) => {
+        (userTopics || []).map(async (userTopic: any) => {
+          const topic = userTopic.curriculum_topics;
           const { count } = await supabase
             .from("conversations")
             .select("*", { count: "exact", head: true })
             .eq("topic_id", topic.id);
 
           return {
-            ...topic,
+            id: topic.id,
+            title: topic.title,
+            icon: topic.icon,
+            description: topic.description,
             conversationCount: count || 0,
           };
         }),
@@ -179,36 +191,61 @@ const Dashboard = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
-      if (
-        topics()
-          .map((topic) => topic.title)
-          .contains(topic.title)
-      ) {
+      
+      // Check if topic already exists
+      if (topics.some((t) => t.title === topic.title)) {
         toast({
           title: "שגיאה",
           description: "הנושא כבר נלמד",
         });
-      } else {
-        const { data, error } = await supabase
-          .from("topics")
-          .insert({
-            user_id: user.id,
-            title: topic.title,
-            icon: topic.icon,
-            description: topic.description,
-          })
-          .select()
-          .single();
+        return;
+      }
 
-        if (error) throw error;
+      // Get user's grade for the curriculum topic
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("grade")
+        .eq("id", user.id)
+        .single();
 
-        toast({
-          title: "הצלחה!",
-          description: "הנושא נוסף בהצלחה",
+      const userGrade = profile?.grade || 1;
+
+      // First, insert or get the curriculum topic
+      const { data: curriculumTopic, error: curriculumError } = await supabase
+        .from("curriculum_topics")
+        .insert({
+          title: topic.title,
+          icon: topic.icon,
+          description: topic.description,
+          grade: userGrade,
+        })
+        .select()
+        .single();
+
+      if (curriculumError) throw curriculumError;
+
+      // Then enroll the user in this topic
+      const { error: enrollError } = await supabase
+        .from("user_topics")
+        .insert({
+          user_id: user.id,
+          topic_id: curriculumTopic.id,
         });
 
-        setTopics([...topics, { ...data, conversationCount: 0 }]);
-      }
+      if (enrollError) throw enrollError;
+
+      toast({
+        title: "הצלחה!",
+        description: "הנושא נוסף בהצלחה",
+      });
+
+      setTopics([...topics, { 
+        id: curriculumTopic.id,
+        title: curriculumTopic.title,
+        icon: curriculumTopic.icon,
+        description: curriculumTopic.description,
+        conversationCount: 0 
+      }]);
 
       setIsDialogOpen(false);
     } catch (error) {
