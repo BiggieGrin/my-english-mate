@@ -13,19 +13,19 @@ All colors MUST be HSL.
     --young-secondary: 320 65% 65%;
     --young-accent: 45 95% 60%;
     --young-bg: 280 25% 97%;
-    
+
     /* חטיבה - כחול מודרני */
     --middle-primary: 217 91% 60%;
     --middle-secondary: 221 83% 53%;
     --middle-accent: 224 76% 48%;
     --middle-bg: 210 20% 98%;
-    
+
     /* תיכון - כחול מקצועי */
     --high-primary: 221 83% 53%;
     --high-secondary: 224 76% 48%;
     --high-accent: 217 91% 60%;
     --high-bg: 210 20% 98%;
-    
+
     /* ברירת מחדל - כחול */
     --background: 210 20% 98%;
     --foreground: 222 47% 11%;
@@ -56,11 +56,11 @@ All colors MUST be HSL.
     --ring: 217 91% 60%;
 
     --radius: 1rem;
-    
+
     /* Success colors */
     --success: 145 65% 50%;
     --success-foreground: 0 0% 100%;
-    
+
     /* Warning colors */
     --warning: 35 90% 55%;
     --warning-foreground: 0 0% 100%;
@@ -81,7 +81,7 @@ All colors MUST be HSL.
 
     --sidebar-ring: 217 91% 60%;
   }
-  
+
   /* Age group themes */
   .theme-young {
     --primary: var(--young-primary);
@@ -89,20 +89,25 @@ All colors MUST be HSL.
     --accent: var(--young-accent);
     --background: var(--young-bg);
   }
-  
+
   .theme-middle {
     --primary: var(--middle-primary);
     --secondary: var(--middle-secondary);
     --accent: var(--middle-accent);
     --background: var(--middle-bg);
   }
-  
+
   .theme-high {
     --primary: var(--high-primary);
     --secondary: var(--high-secondary);
     --accent: var(--high-accent);
     --background: var(--high-bg);
   }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @layer base {
@@ -114,8 +119,13 @@ All colors MUST be HSL.
     @apply bg-background text-foreground font-heebo;
     direction: rtl;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-heebo;
   }
 }
@@ -124,15 +134,15 @@ All colors MUST be HSL.
   .bounce-in {
     animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
-  
+
   .fade-in-up {
     animation: fade-in-up 0.5s ease-out;
   }
-  
+
   .glow {
     box-shadow: 0 0 20px hsla(var(--primary), 0.4);
   }
-  
+
   @keyframes bounce-in {
     0% {
       transform: scale(0.3);
@@ -149,7 +159,7 @@ All colors MUST be HSL.
       opacity: 1;
     }
   }
-  
+
   @keyframes fade-in-up {
     from {
       opacity: 0;
