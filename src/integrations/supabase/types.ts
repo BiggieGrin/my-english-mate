@@ -49,6 +49,36 @@ export type Database = {
           },
         ]
       }
+      curriculum_topics: {
+        Row: {
+          created_at: string
+          description: string | null
+          grade: number
+          icon: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          grade: number
+          icon?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          grade?: number
+          icon?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lesson_messages: {
         Row: {
           content: string
@@ -170,6 +200,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_topics: {
+        Row: {
+          created_at: string
+          id: string
+          last_accessed_at: string
+          started_at: string
+          topic_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_accessed_at?: string
+          started_at?: string
+          topic_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_accessed_at?: string
+          started_at?: string
+          topic_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_topics_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_topics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
