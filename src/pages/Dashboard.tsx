@@ -597,7 +597,7 @@ const Dashboard = () => {
             </div>
           </Card>
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen} hideCloseButton={true}>
             <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide" dir="rtl">
               <div className="grid grid-cols-2 gap-4">
                 {availableTopics.map((topic, index) => (
