@@ -622,7 +622,6 @@ const Dashboard = () => {
                     </Card>
                   ))}
                 </DialogContent>
-            </div>
           </Dialog>
 
           {isLoading ? (
