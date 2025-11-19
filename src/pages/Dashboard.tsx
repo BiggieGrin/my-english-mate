@@ -297,9 +297,6 @@ const Dashboard = () => {
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide" dir="rtl">
-                <DialogHeader>
-                  <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
-                </DialogHeader>
                 <div className="grid grid-cols-2 gap-4">
                   {availableTopics.map((topic, index) => (
                     <Card
@@ -451,9 +448,6 @@ const Dashboard = () => {
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide" dir="rtl">
-                <DialogHeader>
-                  <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
-                </DialogHeader>
                 <div className="grid grid-cols-2 gap-4">
                   {availableTopics.map((topic, index) => (
                     <Card
@@ -605,9 +599,6 @@ const Dashboard = () => {
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide" dir="rtl">
-              <DialogHeader>
-                <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
-              </DialogHeader>
               <div className="grid grid-cols-2 gap-4">
                 {availableTopics.map((topic, index) => (
                   <Card
