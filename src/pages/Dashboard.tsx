@@ -172,22 +172,18 @@ const Dashboard = () => {
       if (!user) return;
 
       // Get user's profile to know grade
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("grade")
-        .eq("id", user.id)
-        .single();
+      const { data: profile } = await supabase.from("profiles").select("grade").eq("id", user.id).single();
 
       if (profile) {
         // Fetch topics from curriculum_topics filtered by grade
         const { data: availableTopicsData, error } = await supabase
-          .from('curriculum_topics')
-          .select('*')
-          .eq('grade', profile.grade)
-          .order('title');
-        
+          .from("curriculum_topics")
+          .select("*")
+          .eq("grade", profile.grade)
+          .order("title");
+
         if (error) {
-          console.error('Error loading available topics:', error);
+          console.error("Error loading available topics:", error);
           toast({
             title: "שגיאה",
             description: "לא הצלחנו לטעון את הנושאים הזמינים",
@@ -195,14 +191,15 @@ const Dashboard = () => {
           });
           return;
         }
-        
+
         // Transform to match TopicOption interface
-        const transformedTopics = availableTopicsData?.map(topic => ({
-          title: topic.title,
-          icon: topic.icon,
-          description: topic.description || ''
-        })) || [];
-        
+        const transformedTopics =
+          availableTopicsData?.map((topic) => ({
+            title: topic.title,
+            icon: topic.icon,
+            description: topic.description || "",
+          })) || [];
+
         setAvailableTopics(transformedTopics);
       }
     } catch (error) {
@@ -227,24 +224,7 @@ const Dashboard = () => {
         return;
       }
 
-      // Get user's grade for the curriculum topic
-      const { data: profile } = await supabase.from("profiles").select("grade").eq("id", user.id).single();
-
-      const userGrade = profile?.grade || 1;
-
-      // First, insert or get the curriculum topic
-      const { data: curriculumTopic, error: curriculumError } = await supabase
-        .from("curriculum_topics")
-        .insert({
-          title: topic.title,
-          icon: topic.icon,
-          description: topic.description,
-          grade: userGrade,
-        })
-        .select()
-        .single();
-
-      if (curriculumError) throw curriculumError;
+      const curriculumTopic = availableTopics.find((topic) => topic.title === topic.title);
 
       // Then enroll the user in this topic
       const { error: enrollError } = await supabase.from("user_topics").insert({
