@@ -44,7 +44,7 @@ export type Database = {
             foreignKeyName: "conversations_topic_id_fkey"
             columns: ["topic_id"]
             isOneToOne: false
-            referencedRelation: "topics"
+            referencedRelation: "curriculum_topics"
             referencedColumns: ["id"]
           },
         ]
@@ -168,36 +168,6 @@ export type Database = {
           total_points?: number | null
           total_study_minutes?: number | null
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      topics: {
-        Row: {
-          created_at: string
-          description: string | null
-          icon: string
-          id: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          icon?: string
-          id?: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          icon?: string
-          id?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
         }
         Relationships: []
       }
