@@ -86,7 +86,8 @@ const Dashboard = () => {
       // Fetch user's enrolled topics from user_topics joined with curriculum_topics
       const { data: userTopics, error: topicsError } = await supabase
         .from("user_topics")
-        .select(`
+        .select(
+          `
           topic_id,
           curriculum_topics (
             id,
@@ -94,7 +95,8 @@ const Dashboard = () => {
             icon,
             description
           )
-        `)
+        `,
+        )
         .eq("user_id", user.id)
         .order("last_accessed_at", { ascending: false });
 
@@ -191,22 +193,19 @@ const Dashboard = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
-      
+
       // Check if topic already exists
       if (topics.some((t) => t.title === topic.title)) {
         toast({
           title: "שגיאה",
           description: "הנושא כבר נלמד",
+          variant: "destructive",
         });
         return;
       }
 
       // Get user's grade for the curriculum topic
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("grade")
-        .eq("id", user.id)
-        .single();
+      const { data: profile } = await supabase.from("profiles").select("grade").eq("id", user.id).single();
 
       const userGrade = profile?.grade || 1;
 
@@ -225,12 +224,10 @@ const Dashboard = () => {
       if (curriculumError) throw curriculumError;
 
       // Then enroll the user in this topic
-      const { error: enrollError } = await supabase
-        .from("user_topics")
-        .insert({
-          user_id: user.id,
-          topic_id: curriculumTopic.id,
-        });
+      const { error: enrollError } = await supabase.from("user_topics").insert({
+        user_id: user.id,
+        topic_id: curriculumTopic.id,
+      });
 
       if (enrollError) throw enrollError;
 
@@ -239,13 +236,16 @@ const Dashboard = () => {
         description: "הנושא נוסף בהצלחה",
       });
 
-      setTopics([...topics, { 
-        id: curriculumTopic.id,
-        title: curriculumTopic.title,
-        icon: curriculumTopic.icon,
-        description: curriculumTopic.description,
-        conversationCount: 0 
-      }]);
+      setTopics([
+        ...topics,
+        {
+          id: curriculumTopic.id,
+          title: curriculumTopic.title,
+          icon: curriculumTopic.icon,
+          description: curriculumTopic.description,
+          conversationCount: 0,
+        },
+      ]);
 
       setIsDialogOpen(false);
     } catch (error) {
