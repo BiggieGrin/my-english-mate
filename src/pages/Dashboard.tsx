@@ -223,8 +223,19 @@ const Dashboard = () => {
         });
         return;
       }
+      const userGrade = profile?.grade || 1;
 
-      const curriculumTopic = availableTopics.find((topic) => topic.title === topic.title);
+      // First, insert or get the curriculum topic
+      const { data: curriculumTopic, error: curriculumError } = await supabase
+        .from("curriculum_topics")
+        .find({
+          title: topic.title,
+          description: topic.description,
+        })
+        .select()
+        .single();
+
+      if (curriculumError) throw curriculumError;
 
       // Then enroll the user in this topic
       const { error: enrollError } = await supabase.from("user_topics").insert({
