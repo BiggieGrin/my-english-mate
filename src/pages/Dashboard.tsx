@@ -179,26 +179,37 @@ const Dashboard = () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
+      if (
+        topics()
+          .map((topic) => topic.title)
+          .contains(topic.title)
+      ) {
+        toast({
+          title: "שגיאה",
+          description: "הנושא כבר נלמד",
+        });
+      } else {
+        const { data, error } = await supabase
+          .from("topics")
+          .insert({
+            user_id: user.id,
+            title: topic.title,
+            icon: topic.icon,
+            description: topic.description,
+          })
+          .select()
+          .single();
 
-      const { data, error } = await supabase
-        .from("topics")
-        .insert({
-          user_id: user.id,
-          title: topic.title,
-          icon: topic.icon,
-          description: topic.description,
-        })
-        .select()
-        .single();
+        if (error) throw error;
 
-      if (error) throw error;
+        toast({
+          title: "הצלחה!",
+          description: "הנושא נוסף בהצלחה",
+        });
 
-      toast({
-        title: "הצלחה!",
-        description: "הנושא נוסף בהצלחה",
-      });
+        setTopics([...topics, { ...data, conversationCount: 0 }]);
+      }
 
-      setTopics([...topics, { ...data, conversationCount: 0 }]);
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Error creating topic:", error);
