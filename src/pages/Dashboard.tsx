@@ -298,7 +298,7 @@ const Dashboard = () => {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
                 <DialogHeader>
-                  <DialogTitle className="text-right">בחר נושא למידה</DialogTitle>
+                  <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4">
                   {availableTopics.map((topic, index) => (
@@ -452,7 +452,7 @@ const Dashboard = () => {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
                 <DialogHeader>
-                  <DialogTitle className="text-right">בחר נושא למידה</DialogTitle>
+                  <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4">
                   {availableTopics.map((topic, index) => (
@@ -605,22 +605,24 @@ const Dashboard = () => {
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto" dir="rtl">
-              <DialogHeader>
-                <DialogTitle className="text-right">בחר נושא למידה</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-4">
-                {availableTopics.map((topic, index) => (
-                  <Card
-                    key={index}
-                    className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-300"
-                    onClick={() => handleCreateTopic(topic)}
-                  >
-                    <div className="p-4 text-center">
-                      <div className="text-4xl mb-2">{topic.icon}</div>
-                      <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
-                    </div>
-                  </Card>
-                ))}
+              <div>
+                <DialogHeader>
+                  <DialogTitle className="text-center">בחר נושא למידה</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4">
+                  {availableTopics.map((topic, index) => (
+                    <Card
+                      key={index}
+                      className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-300"
+                      onClick={() => handleCreateTopic(topic)}
+                    >
+                      <div className="p-4 text-center">
+                        <div className="text-4xl mb-2">{topic.icon}</div>
+                        <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               </div>
             </DialogContent>
           </Dialog>
