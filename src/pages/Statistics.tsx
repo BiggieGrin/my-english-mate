@@ -49,14 +49,16 @@ const Statistics = () => {
       if (error) throw error;
       setProfile(profileData);
 
-      // Calculate real daily study data from lesson_messages
+      // Calculate real daily study data from lesson_messages - last 7 days chronologically
       const today = new Date();
-      const dailyData: { [key: number]: number } = {};
+      today.setHours(0, 0, 0, 0);
+      
+      const hebrewDays = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
+      const last7Days = [];
 
       for (let i = 6; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
-        date.setHours(0, 0, 0, 0);
 
         const nextDate = new Date(date);
         nextDate.setDate(nextDate.getDate() + 1);
@@ -72,17 +74,11 @@ const Statistics = () => {
         const minutes = messages ? messages.length : 0;
         const dayIndex = date.getDay();
 
-        dailyData[dayIndex] = (dailyData[dayIndex] || 0) + minutes;
+        last7Days.push({
+          day: hebrewDays[dayIndex],
+          minutes: minutes,
+        });
       }
-
-      // Order: Sunday (0) ... Friday (5) ... Saturday (6) - so Saturday is far right
-      const hebrewDays = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
-      const orderedDays = [0, 1, 2, 3, 4, 5, 6]; // Sunday on the left, Saturday on the right
-
-      const last7Days = orderedDays.map((dayIndex) => ({
-        day: hebrewDays[dayIndex],
-        minutes: dailyData[dayIndex] || 0,
-      }));
 
       setDailyStudyData(last7Days);
 
