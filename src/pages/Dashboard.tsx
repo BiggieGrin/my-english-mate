@@ -147,7 +147,7 @@ const Dashboard = () => {
         .select(
           `
           *,
-          topics (title, icon)
+          curriculum_topics (title, icon)
         `,
         )
         .eq("user_id", user.id)
