@@ -52,6 +52,9 @@ const Lesson = () => {
       .replace(/עלית לרמה \d+!/g, "") // Remove level up text
       .replace(/🎉 רמה \d+! 🎉/g, "") // Remove level display
       .replace(/רמה \d+/g, "") // Remove "רמה X" patterns
+      .replace(/צברת עוד \d+ נקודות XP!.*/g, "") // Remove "צברת עוד X נקודות XP! יש לך כעת..."
+      .replace(/יש לך כעת \d+ מתוך \d+ לרמה הבאה\./g, "") // Remove progress towards next level
+      .replace(/xp_detected/g, "") // Remove processing marker
       .trim();
   };
 
