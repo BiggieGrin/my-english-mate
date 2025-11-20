@@ -224,16 +224,29 @@ const Dashboard = () => {
         return;
       }
 
-      // First, insert or get the curriculum topic
+      // Get user's grade to find the correct topic
+      const { data: profile } = await supabase.from("profiles").select("grade").eq("id", user.id).single();
+      if (!profile) throw new Error("No profile found");
+
+      // First, get the curriculum topic matching title and grade
       const { data: curriculumTopic, error: curriculumError } = await supabase
         .from("curriculum_topics")
         .select("*")
         .match({
           title: topic.title,
-          description: topic.description,
+          grade: profile.grade,
         })
-        .single();
+        .maybeSingle();
+      
       if (curriculumError) throw curriculumError;
+      if (!curriculumTopic) {
+        toast({
+          title: "שגיאה",
+          description: "הנושא לא נמצא עבור הכיתה שלך",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Then enroll the user in this topic
       const { error: enrollError } = await supabase.from("user_topics").insert({
