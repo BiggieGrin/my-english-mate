@@ -410,6 +410,7 @@ const Dashboard = () => {
                     <div className="flex flex-row-reverse items-center gap-4 mb-6">
                       <span className="text-5xl">{topic.icon}</span>
                     </div>
+                    {topic.description && <p className="text-sm text-slate-600 mb-4 ltr">{topic.description}</p>}
                     <div className="flex items-center gap-2">
                       <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
                       <p className="text-sm text-slate-500 mb-3 m-0">שיחות</p>
@@ -546,7 +547,7 @@ const Dashboard = () => {
                       <span className="text-5xl">{topic.icon}</span>
                       <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                     </div>
-                    {topic.description && <p className="text-sm text-slate-600 mb-4">{topic.description}</p>}
+                    {topic.description && <p className="text-sm text-slate-600 mb-4 ltr">{topic.description}</p>}
                     <div className="flex items-center gap-2">
                       <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
                       <p className="text-sm text-slate-500 mb-3 m-0">שיחות</p>
@@ -678,6 +679,7 @@ const Dashboard = () => {
                     <span className="text-5xl">{topic.icon}</span>
                     <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                   </div>
+                  {topic.description && <p className="text-sm text-slate-600 mb-4 ltr">{topic.description}</p>}
                   <div className="flex items-center gap-2">
                     <p className="text-4xl font-bold text-blue-600">{topic.conversationCount}</p>
                     <p className="text-sm text-slate-500 mb-3 m-0">שיחות</p>
