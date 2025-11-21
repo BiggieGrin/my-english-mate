@@ -19,10 +19,10 @@ serve(async (req) => {
     const modeMap: Record<string, string> = {
       "שיעורי בית": "homework",
       "הכנה למבחן": "exam_prep",
-      "לימוד": "learn",
-      "homework": "homework",
-      "exam_prep": "exam_prep",
-      "learn": "learn"
+      לימוד: "learn",
+      homework: "homework",
+      exam_prep: "exam_prep",
+      learn: "learn",
     };
 
     // Mode defaults
@@ -134,7 +134,7 @@ serve(async (req) => {
       content: systemPromptContent,
     };
 
-    console.log("Calling AI for user:", profile.full_name, "Mode:", currentMode);
+    console.log("Calling AI for user:", profile.full_name, "Mode:", currentMode, systemPrompt);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
