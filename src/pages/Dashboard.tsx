@@ -407,7 +407,7 @@ const Dashboard = () => {
                   onClick={() => navigate(`/topic/${topic.id}`)}
                 >
                   <div className="p-8 pt-10 h-full flex flex-col justify-between">
-                    <div className="flex items-center gap-4 mb-6">
+                    <div className="flex flex-row-reverse items-center gap-4 mb-6">
                       <span className="text-5xl">{topic.icon}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -542,7 +542,7 @@ const Dashboard = () => {
                   onClick={() => navigate(`/topic/${topic.id}`)}
                 >
                   <div className="p-8 pt-10 h-full flex flex-col justify-between">
-                    <div className="flex items-center gap-4 mb-6">
+                    <div className="flex flex-row-reverse items-center gap-4 mb-6">
                       <span className="text-5xl">{topic.icon}</span>
                       <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                     </div>
@@ -593,7 +593,7 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
-
+      <h1>HAREL</h1>
       <div className="container mx-auto px-6 py-12 max-w-7xl">
         {/* HERO SECTION - HIGH */}
         <div className="mb-12 text-right">
@@ -674,7 +674,7 @@ const Dashboard = () => {
                 onClick={() => navigate(`/topic/${topic.id}`)}
               >
                 <div className="p-8 pt-10 h-full flex flex-col justify-between">
-                  <div className="flex items-center gap-4 mb-6">
+                  <div className="flex flex-row-reverse items-center gap-4 mb-6">
                     <span className="text-5xl">{topic.icon}</span>
                     <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
                   </div>
