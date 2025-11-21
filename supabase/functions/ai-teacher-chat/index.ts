@@ -30,6 +30,7 @@ serve(async (req) => {
     // homework = עזרה בשיעורי בית
     // exam_prep = הכנה למבחן
     const currentMode = modeMap[mode] || "learn";
+    console.log("Current mode received:", mode, "-> Mapped to:", currentMode);
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error("Invalid messages format");
