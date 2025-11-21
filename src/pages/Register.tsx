@@ -138,7 +138,7 @@ const Register = () => {
     } else {
       setIsLoading(true);
       try {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
           options: {
@@ -154,15 +154,24 @@ const Register = () => {
 
         if (error) throw error;
 
-        toast({
-          title: "ההרשמה הצליחה!",
-          description: "ברוכים הבאים למסע הלמידה שלכם!",
-        });
-
         const ageGroup = parseInt(formData.grade) <= 3 ? "young" : parseInt(formData.grade) <= 6 ? "middle" : "high";
         localStorage.setItem("ageGroup", ageGroup);
 
-        navigate("/dashboard");
+        // If user is immediately confirmed (auto-confirm enabled), session will be available
+        if (data?.session) {
+          toast({
+            title: "ההרשמה הצליחה!",
+            description: "ברוכים הבאים למסע הלמידה שלכם!",
+          });
+          // onAuthStateChange will handle the navigation
+        } else {
+          // Email confirmation required
+          toast({
+            title: "ההרשמה הצליחה!",
+            description: "בדקו את המייל שלכם לאישור החשבון",
+          });
+          setIsLoading(false);
+        }
       } catch (error: any) {
         console.error("Registration error:", error);
         
