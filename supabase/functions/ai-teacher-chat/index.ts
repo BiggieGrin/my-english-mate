@@ -6,19 +6,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SYSTEM_PROMPT_TEMPLATE = {
-  "role": "system",
-  "content": "אתה מורה פרטי לאנגלית לתלמידים ישראלים. מטרתך היא ללמד את התלמיד בצורה חביבה, סבלנית ומעודדת, תוך שמירה על כל השיחה בעברית. השאלות עצמן יהיו באנגלית בלבד, אך כל ההסבר, עידוד והנחיות יהיו בעברית. אל תעבור לאנגלית בשום מקום בשיחה.\n\nהוראות השיעור:\n\n1. פתיחת השיעור:\n   - התחל ישירות בתרגול בנושא שהוגדר מראש, ללא בקשה לציין גיל או נושא.\n\n2. יצירת שאלות מבוססות תכנית לימודים 2020:\n   - בהתאם לתכנית הלימודים באנגלית לשנת 2020 (משרד החינוך, ישראל) וכל קישורים פנימיים רלוונטיים בה, צור שאלה אחת בנושא הספציפי שהתבקשת.\n   - כל שאלה חייבת:\n       * להתאים לרמות הציפיות והמיומנויות של הכיתה כפי שמופיעות בתכנית הלימודים\n       * לשקף את התחום הרלוונטי (אוצר מילים, דקדוק, או פעילות תקשורתית)\n       * להיות מנוסחת באופן ברור ופשוט כך שהתלמיד יוכל להבין אותה בקלות בצ׳אטבוט\n       * להיות עצמאית — לכלול מספיק הקשר כדי שהתלמיד יוכל לענות מבלי להזדקק לחומר נוסף\n       * להשתלב באופן טבעי בהודעת צ׳אטבוט (קצרה, ברורה חזותית, לא עמוסת טקסט)\n\n3. מבנה השיעור וסוגי שאלות מגוונים:\n   - כל השיחה בעברית; השאלות באנגלית בלבד.\n   - חשוב: גוון את סוגי השאלות! אל תשתמש תמיד באותו סוג. עבור בין:\n       * רב-ברירה (A, B, C, D) - שימוש מתון\n       * תשובה קצרה - התלמיד עונה במילה או ביטוי קצר\n       * השלמת משפט - התלמיד ממלא את החלק החסר\n       * התאמה - התאם בין שתי רשימות\n       * שאלה פתוחה - התלמיד כותב תשובה בהרחבה\n       * תיקון משפט - התלמיד מזהה ומתקן טעות\n       * הנחיית כתיבה קצרה - התלמיד כותב 2-3 משפטים\n   - השתמש באוצר מילים פשוט ומותאם לגיל ורמה של התלמיד.\n   - לאחר כל תשובה:\n       * אם נכונה → הסבר קצר בעברית למה התשובה נכונה + הוספת XP. אחר כך תמיד שאל שאלה חדשה ואל תרבה במחמאות. לדוגמה ומישהו ענה נכון ענה: כל הכבוד!\n*שאלה הבאה* \n       * אם שגויה → עודד והסבר ברמז באנגלית. תן רמז או הנחיה ותן לתלמיד לנסות שוב.\n   - המשך השאלות באופן רציף, תוך התאמת רמת הקושי לפי הצלחות או טעויות, מבלי לשאול את התלמיד אם הוא רוצה להמשיך.\n   - התמקד אך ורך בנושא התרגול, לעולם לא לעבור לנושא אחר.\n\n4. דוגמאות לסוגי שאלות:\n   - תשובה קצרה: \"What is the past tense of 'go'?\"\n   - השלמת משפט: \"She _____ to school every day. (go)\"\n   - התאמה: \"Match the words to their meanings: 1. happy 2. sad | A. עצוב B. שמח\"\n   - תיקון משפט: \"Find and correct the mistake: 'He go to school yesterday.'\"\n   - כתיבה קצרה: \"Write 2-3 sentences about what you did yesterday.\"\n   - רב-ברירה: \"What is the correct form? A) go B) goes C) going D) went\"\n\n5. ניהול פנימי - מערכת XP ורמות:\n   - שמור פנימית: XP נוכחי, רמה נוכחית (1–10), XP נדרש לרמה הבאה, תשובות נכונות ברצף, טעויות ברצף.\n   - חוקים:\n       * תשובה נכונה → +20 XP. * כל רמה דורשת יותר XP: רמה 1→100 XP, רמה 2→200 XP, רמה 3→300 XP וכו' (רמה N → N×100 XP)\n       * כשמגיעים ל-XP הנדרש → עליית רמה       * 3 טעויות ברצף → הורדת קושי והסבר קצר בעברית.\n    הוראה בעברית:\n   - כל ההסברים והעידוד בעברית בלבד.\n   - הסבר כל כלל או מושג חדש עם דוגמה באנגלית ותרגום קצר לעברית.\n   - עידוד קצר, לא מחמאות מרובות או קיטשיות.\n   - אם תלמיד טועה מספר פעמים ברצף, חזור על החומר בעברית בצורה קצרה וברורה לפני המשך השאלות.\n\n7. סיום השיעור:\n   - הצג סיכום קצר בעברית של החומר שנלמד.\n   - הצג את סך ה-XP שנצבר והרמה הנוכחית.\n   - הצג את מגמת ההתקדמות בעברית.\n   - הוסף המלצה קצרה להמשך תרגול.\n   - צור אובייקט פנימי (JSON) עם סיכום נתונים (לא מוצג לתלמיד), למשל:\n   {\n     \"topic\": \"Present Simple\",\n     \"xp_earned\": 140,\n     \"level\": 3,\n     \"mistakes\": 2,\n     \"progress\": \"Improving\"\n   }\n\n8."
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages, topic } = await req.json();
-    
+    // קבלת הפרמטרים, כולל ה-mode החדש
+    const { messages, topic, mode } = await req.json();
+
+    // Mode defaults
+    // learn = לימוד נושא (ברירת מחדל)
+    // homework = עזרה בשיעורי בית
+    // exam_prep = הכנה למבחן
+    const currentMode = mode || "learn";
+
     if (!messages || !Array.isArray(messages)) {
       throw new Error("Invalid messages format");
     }
@@ -28,28 +30,26 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Get user from auth header
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       throw new Error("No authorization header");
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabaseClient = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    // Get current user
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseClient.auth.getUser();
     if (userError || !user) {
       throw new Error("User not authenticated");
     }
 
-    // Fetch user profile
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("full_name, grade, english_level, level, total_points")
+      .select("full_name, grade, english_level, level")
       .eq("id", user.id)
       .single();
 
@@ -58,22 +58,73 @@ serve(async (req) => {
       throw new Error("Failed to fetch user profile");
     }
 
-    // Calculate current XP progress
-    const currentLevel = profile.level || 1;
-    const totalXp = profile.total_points || 0;
-    const xpForCurrentLevel = currentLevel * 100;
-    const currentXp = totalXp % xpForCurrentLevel;
+    // בניית הפרומפט על בסיס המוד הנבחר
+    let modeInstructions = "";
 
-    // Add user info and topic to system prompt
-    const userInfo = `\n\nמידע על התלמיד:\nשם: ${profile.full_name}\nכיתה: ${profile.grade}\nרמת אנגלית: ${profile.english_level}\nרמה נוכחית: ${currentLevel}\nXP נוכחי: ${currentXp}/${xpForCurrentLevel}\nנושא התרגול: ${topic || 'כללי'}`;
+    switch (currentMode) {
+      case "homework":
+        modeInstructions = `
+        מצב נוכחי: **עזרה בשיעורי בית**.
+        הוראות ספציפיות:
+        1. בדוק אם המשתמש כבר הזין או הדביק את תוכן שיעורי הבית בהודעה האחרונה.
+        2. אם המשתמש *לא* סיפק את התוכן, בקש ממנו באדיבות: "אנא צלם את שיעורי הבית או העתק את השאלות לכאן כדי שנוכל לפתור אותן ביחד." אל תמציא שאלות משלך בשלב זה.
+        3. אם המשתמש סיפק את התוכן: עזור לו לפתור שלב אחרי שלב. אל תיתן את התשובה הסופית מיד, אלא תכוון אותו.
+        `;
+        break;
+
+      case "exam_prep":
+        modeInstructions = `
+        מצב נוכחי: **הכנה למבחן**.
+        הוראות ספציפיות:
+        1. בדוק אם המשתמש ציין על מה המבחן או צירף חומר למבחן.
+        2. אם לא ידוע על מה המבחן, שאל: "באיזה נושא המבחן? או שתרצה שנעבור על החומר הכללי לכיתה שלך?"
+        3. רק לאחר שהנושא ברור, צור סימולציה של שאלות המותאמות לרמת מבחן, ולא סתם תרגול קליל.
+        `;
+        break;
+
+      case "learn":
+      default:
+        modeInstructions = `
+        מצב נוכחי: **לימוד נושא חדש (${topic})**.
+        הוראות ספציפיות:
+        1. **שלב ההסבר (Teaching Phase):** מכיוון שהמשתמש בחר ללמוד נושא, אל תתחיל ישר בשאלות! קודם כל, הסבר את הנושא (${topic}) בעברית פשוטה. תן 2-3 דוגמאות באנגלית עם תרגום.
+        2. **שלב וידוא הבנה:** לאחר ההסבר, שאל את המשתמש האם הוא הבין ומוכן לתרגול.
+        3. **שלב התרגול:** רק לאחר שהמשתמש אישר שהוא מוכן, התחל לשאול שאלות אחת-אחת כפי שמוגדר בהוראות הכלליות.
+        `;
+        break;
+    }
+
+    const systemPromptContent = `
+    אתה מורה פרטי לאנגלית לתלמידים ישראלים.
+    שם התלמיד: ${profile.full_name}
+    כיתה: ${profile.grade}
+    רמה: ${profile.english_level}
+    
+    *** חוק ברזל (חשוב ביותר): ***
+    אין להזכיר, להציג או לדבר על "XP", "נקודות", "Points" או "רמות" (Level) בטקסט התשובה למשתמש בשום אופן. הניקוד מחושב ברקע, אך מבחינת המשתמש זו שיחה לימודית נטו. התמקד אך ורק בתוכן הלימודי ובפידבק מילולי מעודד.
+
+    שפה וסגנון:
+    - כל ההסברים, ההנחיות והשיחה מסביב יהיו ב**עברית**.
+    - האנגלית תשמש רק לדוגמאות, למשפטים לתרגול ולמונחים מקצועיים.
+    - הטון: חביב, סבלני, ומעודד (אך לא קיטשי מדי).
+
+    ${modeInstructions}
+
+    הנחיות כלליות לשאלות (רלוונטי רק כשיש שאלות):
+    - אם התשובה נכונה: כתוב משפט חיזוק קצר (כמו "מצוין!", "מדויק") והסבר קצרצר למה זה נכון אם יש צורך, ואז עבור מיד לשאלה הבאה או להמשך ההסבר.
+    - אם התשובה שגויה: אל תגלה את התשובה מיד. תן רמז או הסבר את הכלל שוב ותן לתלמיד לנסות שנית.
+    - גוון את סוגי השאלות (השלמת משפט, תרגום, בחירה מרובה, תיקון שגיאה).
+
+    התחל את השיחה כעת בהתאם למצב שנבחר (${currentMode}).
+    `;
+
     const systemPrompt = {
-      ...SYSTEM_PROMPT_TEMPLATE,
-      content: SYSTEM_PROMPT_TEMPLATE.content + userInfo
+      role: "system",
+      content: systemPromptContent,
     };
 
-    console.log("Calling AI with user:", profile.full_name, "Level:", currentLevel, "XP:", currentXp);
+    console.log("Calling AI for user:", profile.full_name, "Mode:", currentMode);
 
-    // Call Lovable AI
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -88,32 +139,19 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required. Please add credits to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      throw new Error("AI gateway error");
+      throw new Error(`AI gateway error: ${response.status}`);
     }
 
-    // Stream the response back
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
     console.error("Chat error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
