@@ -494,7 +494,7 @@ const Dashboard = () => {
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 theme-high">
       <header className="bg-white shadow-sm border-b sticky top-0 z-10">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex-row flex items-center justify-between">
+          <div className="flex-row flex items-center justify-center">
             <div className="flex items-center gap-4"></div>
             <div className="gap-3 flex items-center justify-start">
               <Button variant="ghost" size="icon" className="rounded-full bg-slate-100" onClick={() => navigate("/statistics")}>
