@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Sparkles } from "lucide-react";
@@ -127,16 +127,8 @@ export default function Auth() {
           <h1 className="text-3xl font-bold text-primary">Welcome Back!</h1>
         </div>
 
-        <Tabs defaultValue="login">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup" onClick={() => navigate("/register")}>
-              Sign Up
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="login">
-            <form onSubmit={handleLogin} className="space-y-4">
+        <div className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -204,8 +196,20 @@ export default function Auth() {
                 {isLoading ? "מתחבר..." : "התחברות"}
               </Button>
             </form>
-          </TabsContent>
-        </Tabs>
+            
+            <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                עדיין אין לך חשבון?{" "}
+                <Button
+                  variant="link"
+                  className="p-0 h-auto font-semibold"
+                  onClick={() => navigate("/register")}
+                >
+                  הרשמו כאן
+                </Button>
+              </p>
+            </div>
+          </div>
       </Card>
     </div>
   );
