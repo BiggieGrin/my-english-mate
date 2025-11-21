@@ -15,11 +15,21 @@ serve(async (req) => {
     // קבלת הפרמטרים, כולל ה-mode החדש
     const { messages, topic, mode } = await req.json();
 
+    // Map Hebrew mode values to English
+    const modeMap: Record<string, string> = {
+      "שיעורי בית": "homework",
+      "הכנה למבחן": "exam_prep",
+      "לימוד": "learn",
+      "homework": "homework",
+      "exam_prep": "exam_prep",
+      "learn": "learn"
+    };
+
     // Mode defaults
     // learn = לימוד נושא (ברירת מחדל)
     // homework = עזרה בשיעורי בית
     // exam_prep = הכנה למבחן
-    const currentMode = mode || "learn";
+    const currentMode = modeMap[mode] || "learn";
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error("Invalid messages format");
