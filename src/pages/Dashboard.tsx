@@ -598,7 +598,6 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
-      <h1>HAREL</h1>
       <div className="container mx-auto px-6 py-12 max-w-7xl">
         {/* HERO SECTION - HIGH */}
         <div className="mb-12 text-right">
