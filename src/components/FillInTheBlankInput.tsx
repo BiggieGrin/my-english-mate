@@ -81,33 +81,42 @@ export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
   const parsed = parseFillInTheBlank(content);
 
   if (!parsed) {
-    // Not a fill-in-the-blank question, display as regular text
-    const cleanContent = stripMarkdown(content);
-    const contentDir = detectTextDirection(cleanContent);
+    // Not a fill-in-the-blank question, split by lines and apply direction per line
+    const lines = content.split("\n");
     return (
-      <p
-        className="text-lg whitespace-pre-wrap leading-relaxed"
-        dir={contentDir}
-        style={{ textAlign: contentDir === "rtl" ? "right" : "left" }}
-      >
-        {cleanContent}
-      </p>
+      <div className="space-y-2">
+        {lines.map((line, idx) => {
+          const cleanLine = stripMarkdown(line.trim());
+          if (!cleanLine) return <p key={idx}>&nbsp;</p>;
+          const lineDir = detectTextDirection(cleanLine);
+          return (
+            <p
+              key={idx}
+              className="text-lg leading-relaxed"
+              dir={lineDir}
+              style={{ textAlign: lineDir === "rtl" ? "right" : "left" }}
+            >
+              {cleanLine}
+            </p>
+          );
+        })}
+      </div>
     );
   }
 
   const { elements } = parsed;
 
-  // Detect direction based on all text elements
-  const allText = elements
+  // For fill-in-blank, detect direction based on the text (not hints)
+  const questionText = elements
     .filter((e) => e.type === "text")
     .map((e) => e.content)
     .join(" ");
-  const sentenceDir = detectTextDirection(allText);
+  const questionDir = detectTextDirection(questionText);
 
   return (
     <div
-      className={cn("text-lg leading-relaxed", sentenceDir === "rtl" ? "text-right" : "text-left")}
-      dir={sentenceDir}
+      className={cn("text-lg leading-relaxed", questionDir === "rtl" ? "text-right" : "text-left")}
+      dir={questionDir}
     >
       <span className="inline whitespace-pre-wrap">
         {elements.map((element, index) => {
