@@ -164,9 +164,16 @@ const Register = () => {
 
         navigate("/dashboard");
       } catch (error: any) {
+        console.error("Registration error:", error);
+        
+        let errorMessage = "אנא נסו שוב או פנו לתמיכה";
+        if (error.message?.includes("already registered")) {
+          errorMessage = "המייל כבר רשום במערכת. נסו להתחבר במקום.";
+        }
+        
         toast({
           title: "ההרשמה נכשלה",
-          description: "אנא נסו שוב או פנו לתמיכה",
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
