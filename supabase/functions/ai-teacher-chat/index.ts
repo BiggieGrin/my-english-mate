@@ -134,7 +134,8 @@ serve(async (req) => {
       content: systemPromptContent,
     };
 
-    console.log("Calling AI for user:", profile.full_name, "Mode:", currentMode, systemPrompt);
+    console.log("Calling AI for user:", profile.full_name, "Mode:", currentMode);
+    console.log("My Prompt:", systemPrompt);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
