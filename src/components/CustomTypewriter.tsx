@@ -10,36 +10,46 @@ interface CustomTypewriterProps {
   disabled?: boolean;
 }
 
-export const CustomTypewriter = ({ 
-  content, 
-  onComplete, 
+export const CustomTypewriter = ({
+  content,
+  onComplete,
   speed = 20,
   onSelectChoice,
-  disabled 
+  disabled,
 }: CustomTypewriterProps) => {
   const [displayedContent, setDisplayedContent] = useState("");
   const [isComplete, setIsComplete] = useState(false);
   const indexRef = useRef(0);
-  const timeoutRef = useRef<NodeJS.Timeout>();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // Main typing effect
   useEffect(() => {
+    // Reset state when content changes
+    setDisplayedContent("");
+    setIsComplete(false);
+    indexRef.current = 0;
+
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
+
     const typeNextCharacter = () => {
       if (indexRef.current < content.length) {
         setDisplayedContent(content.slice(0, indexRef.current + 1));
         indexRef.current += 1;
-        timeoutRef.current = setTimeout(typeNextCharacter, speed);
+        timeoutRef.current = window.setTimeout(typeNextCharacter, speed);
       } else {
         setIsComplete(true);
         onComplete();
       }
     };
 
-    typeNextCharacter();
+    timeoutRef.current = window.setTimeout(typeNextCharacter, speed);
 
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+        window.clearTimeout(timeoutRef.current);
       }
     };
   }, [content, speed, onComplete]);
@@ -47,7 +57,7 @@ export const CustomTypewriter = ({
   // Auto-scroll to keep the typing message in view
   useEffect(() => {
     if (!isComplete && containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      containerRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [displayedContent, isComplete]);
 
@@ -55,15 +65,15 @@ export const CustomTypewriter = ({
   if (isComplete) {
     if (content.includes("___")) {
       return <FillInTheBlankInput content={content} />;
-    } else {
-      return (
-        <MultipleChoiceButtons
-          content={content}
-          onSelect={onSelectChoice || (() => {})}
-          disabled={disabled || false}
-        />
-      );
     }
+
+    return (
+      <MultipleChoiceButtons
+        content={content}
+        onSelect={onSelectChoice || (() => {})}
+        disabled={disabled || false}
+      />
+    );
   }
 
   // During typing, show plain text with preserved whitespace
