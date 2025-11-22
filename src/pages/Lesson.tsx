@@ -91,14 +91,30 @@ const Lesson = () => {
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  };
-
+  // In your Lesson component, update the scroll effect:
   useEffect(() => {
-    const timeoutId = setTimeout(scrollToBottom, 100);
-    return () => clearTimeout(timeoutId);
-  }, [messages]);
+    // Always scroll to bottom when messages change
+    const scrollContainer = document.querySelector("#chat");
+    if (scrollContainer) {
+      requestAnimationFrame(() => {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      });
+    }
+  }, [messages, messages.length]); // Trigger on messages array changes
+
+  // Also add a scroll on displayedContent updates (for typewriter)
+  useEffect(() => {
+    if (isLoading) {
+      const interval = setInterval(() => {
+        const scrollContainer = document.querySelector("#chat");
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }
+      }, 50); // Check every 50ms while loading
+
+      return () => clearInterval(interval);
+    }
+  }, [isLoading]);
 
   // Load chat history and send initial message
   useEffect(() => {
@@ -383,7 +399,7 @@ const Lesson = () => {
       </header>
 
       {/* Chat Area */}
-      <div className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto">
+      <div id="chat" className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto">
         {/* Added pb-32 for bottom input spacing */}
         <div className="space-y-4">
           {!isInitialized && (
