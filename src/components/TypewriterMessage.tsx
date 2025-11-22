@@ -18,7 +18,7 @@ export const TypewriterMessage = ({ content, isStreaming }: TypewriterMessagePro
             typewriter.typeString(content).start();
           }}
           options={{
-            delay: 100,
+            delay: 1000,
             cursor: "",
           }}
         />
