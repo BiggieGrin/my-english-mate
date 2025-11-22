@@ -127,14 +127,12 @@ export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
                 } else {
                   return (
                     <span key={index} className="inline-block mx-1 align-baseline">
-                      {element.hint && (
-                        <span className="text-base text-muted-foreground whitespace-nowrap ml-1">
-                          ({element.hint})
-                        </span>
-                      )}
                       <span className="inline-flex items-center justify-center min-w-[8rem] h-9 px-3 border-2 border-dashed border-cyan-400 rounded-md bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-500">
                         <span className="text-sm text-cyan-600 dark:text-cyan-400 font-mono">___</span>
                       </span>
+                      {element.hint && (
+                        <span className="text-base text-muted-foreground whitespace-nowrap ml-1">({element.hint})</span>
+                      )}
                     </span>
                   );
                 }
