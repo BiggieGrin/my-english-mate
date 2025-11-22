@@ -11,6 +11,7 @@ import { FillInTheBlankInput } from "@/components/FillInTheBlankInput";
 import { XpGainAnimation } from "@/components/XpGainAnimation";
 import { LevelUpAnimation } from "@/components/LevelUpAnimation";
 import { XpProgressBar } from "@/components/XpProgressBar";
+import Typewriter from "typewriter-effect";
 
 // Detect if text is primarily Hebrew (RTL) or English (LTR)
 const detectTextDirection = (text: string): "rtl" | "ltr" => {
@@ -37,7 +38,7 @@ const Lesson = () => {
   const [totalPoints, setTotalPoints] = useState(0); // Total lifetime XP
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [displayedText, setDisplayedText] = useState<{ [key: number]: string }>({});
+  const [completedTyping, setCompletedTyping] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -98,16 +99,6 @@ const Lesson = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Complete typewriter animation when loading finishes
-  useEffect(() => {
-    if (!isLoading && messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.role === "assistant") {
-        const cleanContent = cleanMessageContent(lastMessage.content);
-        setDisplayedText((prev) => ({ ...prev, [messages.length - 1]: cleanContent }));
-      }
-    }
-  }, [isLoading, messages]);
 
   // Load chat history and send initial message
   useEffect(() => {
@@ -151,16 +142,11 @@ const Lesson = () => {
         if (error) throw error;
 
         if (existingMessages && existingMessages.length > 0) {
-          // Load existing chat
+          // Load existing chat - mark all as completed typing since they're from history
           setMessages(existingMessages);
-          // Initialize displayed text for existing messages (no typewriter)
-          const initialDisplayed: { [key: number]: string } = {};
-          existingMessages.forEach((msg, idx) => {
-            if (msg.role === "assistant") {
-              initialDisplayed[idx] = cleanMessageContent(msg.content);
-            }
-          });
-          setDisplayedText(initialDisplayed);
+          const completedSet = new Set<number>();
+          existingMessages.forEach((_, idx) => completedSet.add(idx));
+          setCompletedTyping(completedSet);
           setIsInitialized(true);
         } else {
           // Send initial message for new chat
@@ -255,7 +241,6 @@ const Lesson = () => {
 
       // Add empty assistant message to update
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-      setDisplayedText((prev) => ({ ...prev, [messageIndex]: "" }));
 
       while (true) {
         const { done, value } = await reader.read();
@@ -319,16 +304,6 @@ const Lesson = () => {
                 }
 
                 const cleanedMessage = assistantMessage.replace(" xp_detected", "").replace(" level_detected", "");
-                const cleanedContent = cleanMessageContent(cleanedMessage);
-
-                // Typewriter effect - add characters gradually
-                setDisplayedText((prev) => {
-                  const currentDisplay = prev[messageIndex] || "";
-                  if (currentDisplay.length < cleanedContent.length) {
-                    return { ...prev, [messageIndex]: cleanedContent.slice(0, currentDisplay.length + 3) };
-                  }
-                  return prev;
-                });
 
                 setMessages((prev) => {
                   const newMsgs = [...prev];
@@ -419,7 +394,7 @@ const Lesson = () => {
           {messages.map((message, index) => {
             const cleanContent = message.role === "assistant" ? cleanMessageContent(message.content) : message.content;
             const isStreamingMessage = message.role === "assistant" && index === messages.length - 1 && isLoading;
-            const textToShow = message.role === "assistant" ? displayedText[index] || cleanContent : cleanContent;
+            const hasCompletedTyping = completedTyping.has(index);
 
             return (
               <div key={index} className={`flex ${message.role === "user" ? "justify-start" : "justify-end"}`}>
@@ -431,17 +406,47 @@ const Lesson = () => {
                   {message.role === "assistant" ? (
                     <div className="space-y-3">
                       {/* Check if it's a fill-in-the-blank question (contains ___) or multiple choice */}
-                      {textToShow.includes("___") ? (
-                        <FillInTheBlankInput content={textToShow} />
+                      {!isStreamingMessage && cleanContent ? (
+                        <>
+                          {!hasCompletedTyping ? (
+                            <div className="typewriter-wrapper">
+                              <Typewriter
+                                onInit={(typewriter) => {
+                                  typewriter
+                                    .typeString(cleanContent)
+                                    .callFunction(() => {
+                                      // Mark this message as completed typing
+                                      setCompletedTyping((prev) => new Set(prev).add(index));
+                                    })
+                                    .start();
+                                }}
+                                options={{
+                                  delay: 20,
+                                  cursor: "",
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              {cleanContent.includes("___") ? (
+                                <FillInTheBlankInput content={cleanContent} />
+                              ) : (
+                                <MultipleChoiceButtons
+                                  content={cleanContent}
+                                  onSelect={(choice) => streamChat(choice)}
+                                  disabled={isLoading}
+                                />
+                              )}
+                            </>
+                          )}
+                          {message.xpGain && hasCompletedTyping && <XpGainAnimation amount={message.xpGain} />}
+                          {message.levelUp && hasCompletedTyping && <LevelUpAnimation level={message.levelUp} />}
+                        </>
                       ) : (
-                        <MultipleChoiceButtons
-                          content={textToShow}
-                          onSelect={(choice) => streamChat(choice)}
-                          disabled={isLoading}
-                        />
+                        <div className="text-muted-foreground">
+                          {cleanContent || <Loader2 className="w-5 h-5 animate-spin" />}
+                        </div>
                       )}
-                      {message.xpGain && !isStreamingMessage && <XpGainAnimation amount={message.xpGain} />}
-                      {message.levelUp && !isStreamingMessage && <LevelUpAnimation level={message.levelUp} />}
                     </div>
                   ) : (
                     <div className="space-y-2">
