@@ -405,24 +405,30 @@ const Lesson = () => {
                 >
                   {message.role === "assistant" ? (
                     <div className="space-y-3">
-                      {!isStreamingMessage && cleanContent ? (
+                      {hasCompletedTyping ? (
                         <>
-                          <CustomTypewriter
-                            content={cleanContent}
-                            onComplete={() => {
-                              setCompletedTyping((prev) => new Set(prev).add(index));
-                            }}
-                            speed={20}
-                            onSelectChoice={(choice) => streamChat(choice)}
-                            disabled={isLoading}
-                          />
-                          {message.xpGain && hasCompletedTyping && <XpGainAnimation amount={message.xpGain} />}
-                          {message.levelUp && hasCompletedTyping && <LevelUpAnimation level={message.levelUp} />}
+                          {cleanContent.includes("___") ? (
+                            <FillInTheBlankInput content={cleanContent} />
+                          ) : (
+                            <MultipleChoiceButtons
+                              content={cleanContent}
+                              onSelect={(choice) => streamChat(choice)}
+                              disabled={isLoading}
+                            />
+                          )}
+                          {message.xpGain && <XpGainAnimation amount={message.xpGain} />}
+                          {message.levelUp && <LevelUpAnimation level={message.levelUp} />}
                         </>
+                      ) : isStreamingMessage ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
-                        <div className="text-muted-foreground">
-                          {cleanContent || <Loader2 className="w-5 h-5 animate-spin" />}
-                        </div>
+                        <CustomTypewriter
+                          content={cleanContent}
+                          onComplete={() => {
+                            setCompletedTyping((prev) => new Set(prev).add(index));
+                          }}
+                          speed={20}
+                        />
                       )}
                     </div>
                   ) : (
