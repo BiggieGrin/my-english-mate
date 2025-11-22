@@ -4,15 +4,15 @@ interface FillInTheBlankInputProps {
   content: string;
 }
 
-// Detect if text is primarily Hebrew (RTL) or English (LTR)
+// Detect if first word is Hebrew (RTL) or English (LTR)
 const detectTextDirection = (text: string): "rtl" | "ltr" => {
   const hebrewPattern = /[\u0590-\u05FF]/;
-  const englishPattern = /[a-zA-Z]/;
-
-  const hebrewCount = (text.match(new RegExp(hebrewPattern, "g")) || []).length;
-  const englishCount = (text.match(new RegExp(englishPattern, "g")) || []).length;
-
-  return hebrewCount > englishCount ? "rtl" : "ltr";
+  
+  // Get the first word (non-whitespace characters)
+  const firstWord = text.trim().split(/\s+/)[0] || "";
+  
+  // Check if first word contains Hebrew characters
+  return hebrewPattern.test(firstWord) ? "rtl" : "ltr";
 };
 
 // Remove markdown symbols from text
