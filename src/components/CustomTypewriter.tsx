@@ -21,6 +21,7 @@ export const CustomTypewriter = ({
   const [isComplete, setIsComplete] = useState(false);
   const indexRef = useRef(0);
   const timeoutRef = useRef<NodeJS.Timeout>();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const typeNextCharacter = () => {
@@ -43,6 +44,13 @@ export const CustomTypewriter = ({
     };
   }, [content, speed, onComplete]);
 
+  // Auto-scroll to keep the typing message in view
+  useEffect(() => {
+    if (!isComplete && containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [displayedContent, isComplete]);
+
   // Once typing is complete, show the formatted components
   if (isComplete) {
     if (content.includes("___")) {
@@ -60,7 +68,7 @@ export const CustomTypewriter = ({
 
   // During typing, show plain text with preserved whitespace
   return (
-    <div className="whitespace-pre-wrap text-lg leading-relaxed">
+    <div ref={containerRef} className="whitespace-pre-wrap text-lg leading-relaxed">
       {displayedContent}
     </div>
   );
