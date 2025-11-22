@@ -11,7 +11,7 @@ import { FillInTheBlankInput } from "@/components/FillInTheBlankInput";
 import { XpGainAnimation } from "@/components/XpGainAnimation";
 import { LevelUpAnimation } from "@/components/LevelUpAnimation";
 import { XpProgressBar } from "@/components/XpProgressBar";
-import Typewriter from "typewriter-effect";
+import { CustomTypewriter } from "@/components/CustomTypewriter";
 
 // Detect if text is primarily Hebrew (RTL) or English (LTR)
 const detectTextDirection = (text: string): "rtl" | "ltr" => {
@@ -405,40 +405,17 @@ const Lesson = () => {
                 >
                   {message.role === "assistant" ? (
                     <div className="space-y-3">
-                      {/* Check if it's a fill-in-the-blank question (contains ___) or multiple choice */}
                       {!isStreamingMessage && cleanContent ? (
                         <>
-                          {!hasCompletedTyping ? (
-                            <div className="typewriter-wrapper">
-                              <Typewriter
-                                onInit={(typewriter) => {
-                                  typewriter
-                                    .typeString(cleanContent)
-                                    .callFunction(() => {
-                                      // Mark this message as completed typing
-                                      setCompletedTyping((prev) => new Set(prev).add(index));
-                                    })
-                                    .start();
-                                }}
-                                options={{
-                                  delay: 20,
-                                  cursor: "",
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <>
-                              {cleanContent.includes("___") ? (
-                                <FillInTheBlankInput content={cleanContent} />
-                              ) : (
-                                <MultipleChoiceButtons
-                                  content={cleanContent}
-                                  onSelect={(choice) => streamChat(choice)}
-                                  disabled={isLoading}
-                                />
-                              )}
-                            </>
-                          )}
+                          <CustomTypewriter
+                            content={cleanContent}
+                            onComplete={() => {
+                              setCompletedTyping((prev) => new Set(prev).add(index));
+                            }}
+                            speed={20}
+                            onSelectChoice={(choice) => streamChat(choice)}
+                            disabled={isLoading}
+                          />
                           {message.xpGain && hasCompletedTyping && <XpGainAnimation amount={message.xpGain} />}
                           {message.levelUp && hasCompletedTyping && <LevelUpAnimation level={message.levelUp} />}
                         </>
