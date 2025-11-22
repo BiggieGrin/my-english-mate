@@ -92,7 +92,7 @@ const Lesson = () => {
   const mode = location.state?.mode || "";
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   };
 
   useEffect(() => {
@@ -428,6 +428,7 @@ const Lesson = () => {
                             setCompletedTyping((prev) => new Set(prev).add(index));
                           }}
                           speed={20}
+                          onTypingUpdate={scrollToBottom}
                         />
                       )}
                     </div>
