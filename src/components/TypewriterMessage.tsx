@@ -15,12 +15,10 @@ export const TypewriterMessage = ({ content, isStreaming }: TypewriterMessagePro
         <Typewriter
           onInit={(typewriter) => {
             typewriterRef.current = typewriter;
-            typewriter
-              .typeString(content)
-              .start();
+            typewriter.typeString(content).start();
           }}
           options={{
-            delay: 30,
+            delay: 100,
             cursor: "",
           }}
         />
