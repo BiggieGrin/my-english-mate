@@ -8,6 +8,7 @@ interface CustomTypewriterProps {
   speed?: number;
   onSelectChoice?: (choice: string) => void;
   disabled?: boolean;
+  onTypingUpdate?: () => void;
 }
 
 export const CustomTypewriter = ({
@@ -16,6 +17,7 @@ export const CustomTypewriter = ({
   speed = 20,
   onSelectChoice,
   disabled,
+  onTypingUpdate,
 }: CustomTypewriterProps) => {
   const [displayedContent, setDisplayedContent] = useState("");
   const [isComplete, setIsComplete] = useState(false);
@@ -38,6 +40,7 @@ export const CustomTypewriter = ({
       if (indexRef.current < content.length) {
         setDisplayedContent(content.slice(0, indexRef.current + 1));
         indexRef.current += 1;
+        onTypingUpdate?.();
         timeoutRef.current = window.setTimeout(typeNextCharacter, speed);
       } else {
         setIsComplete(true);
@@ -54,12 +57,8 @@ export const CustomTypewriter = ({
     };
   }, [content, speed, onComplete]);
 
-  // Auto-scroll to keep the typing message in view
-  useEffect(() => {
-    if (!isComplete && containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [displayedContent, isComplete]);
+  // Scrolling during typing is handled by the parent via onTypingUpdate
+
 
   // Once typing is complete, show the formatted components
   if (isComplete) {
