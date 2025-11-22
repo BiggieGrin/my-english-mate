@@ -92,12 +92,12 @@ const Lesson = () => {
   const mode = location.state?.mode || "";
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    messagesEndRef.current?.scrollIntoView({ block: "end", inline: "nearest" });
   };
 
   useEffect(() => {
-    const timeoutId = setTimeout(scrollToBottom, 100);
-    return () => clearTimeout(timeoutId);
+    const timer = setInterval(scrollToBottom, 100); // Continuously scroll during updates
+    return () => clearInterval(timer);
   }, [messages]);
 
   // Load chat history and send initial message
