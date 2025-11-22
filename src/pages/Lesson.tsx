@@ -92,13 +92,13 @@ const Lesson = () => {
   const mode = location.state?.mode || "";
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timeoutId);
   }, [messages]);
-
 
   // Load chat history and send initial message
   useEffect(() => {
@@ -428,7 +428,6 @@ const Lesson = () => {
                             setCompletedTyping((prev) => new Set(prev).add(index));
                           }}
                           speed={20}
-                          onTypingUpdate={scrollToBottom}
                         />
                       )}
                     </div>
