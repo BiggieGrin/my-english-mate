@@ -91,30 +91,14 @@ const Lesson = () => {
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
 
-  // In your Lesson component, update the scroll effect:
-  useEffect(() => {
-    // Always scroll to bottom when messages change
-    const scrollContainer = document.querySelector("#chat");
-    if (scrollContainer) {
-      requestAnimationFrame(() => {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      });
-    }
-  }, [messages, messages.length]); // Trigger on messages array changes
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  };
 
-  // Also add a scroll on displayedContent updates (for typewriter)
   useEffect(() => {
-    if (isLoading) {
-      const interval = setInterval(() => {
-        const scrollContainer = document.querySelector("#chat");
-        if (scrollContainer) {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight;
-        }
-      }, 50); // Check every 50ms while loading
-
-      return () => clearInterval(interval);
-    }
-  }, [isLoading]);
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    return () => clearTimeout(timeoutId);
+  }, [messages]);
 
   // Load chat history and send initial message
   useEffect(() => {
