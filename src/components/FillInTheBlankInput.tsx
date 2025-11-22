@@ -78,64 +78,71 @@ export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
     return { elements };
   };
 
-  const parsed = parseFillInTheBlank(content);
+  // Split content by lines
+  const lines = content.split("\n");
 
-  if (!parsed) {
-    // Not a fill-in-the-blank question, split by lines and apply direction per line
-    const lines = content.split("\n");
-    return (
-      <div className="space-y-2">
-        {lines.map((line, idx) => {
-          const cleanLine = stripMarkdown(line.trim());
-          if (!cleanLine) return <p key={idx}>&nbsp;</p>;
-          const lineDir = detectTextDirection(cleanLine);
+  return (
+    <div className="space-y-2">
+      {lines.map((line, lineIdx) => {
+        const cleanLine = line.trim();
+        if (!cleanLine) return <p key={lineIdx}>&nbsp;</p>;
+
+        const parsed = parseFillInTheBlank(cleanLine);
+
+        if (!parsed) {
+          // Not a fill-in-the-blank line, display as regular text
+          const strippedLine = stripMarkdown(cleanLine);
+          const lineDir = detectTextDirection(strippedLine);
           return (
             <p
-              key={idx}
+              key={lineIdx}
               className="text-lg leading-relaxed"
               dir={lineDir}
               style={{ textAlign: lineDir === "rtl" ? "right" : "left" }}
             >
-              {cleanLine}
+              {strippedLine}
             </p>
           );
-        })}
-      </div>
-    );
-  }
+        }
 
-  const { elements } = parsed;
+        const { elements } = parsed;
 
-  // For fill-in-blank, detect direction based on the text (not hints)
-  const questionText = elements
-    .filter((e) => e.type === "text")
-    .map((e) => e.content)
-    .join(" ");
-  const questionDir = detectTextDirection(questionText);
+        // For fill-in-blank, detect direction based on the text (not hints)
+        const questionText = elements
+          .filter((e) => e.type === "text")
+          .map((e) => e.content)
+          .join(" ");
+        const questionDir = detectTextDirection(questionText);
 
-  return (
-    <div
-      className={cn("text-lg leading-relaxed", questionDir === "rtl" ? "text-right" : "text-left")}
-      dir={questionDir}
-    >
-      <span className="inline whitespace-pre-wrap">
-        {elements.map((element, index) => {
-          if (element.type === "text") {
-            return stripMarkdown(element.content);
-          } else {
-            return (
-              <span key={index} className="inline-block mx-1 align-baseline">
-                {element.hint && (
-                  <span className="text-base text-muted-foreground whitespace-nowrap ml-1">({element.hint})</span>
-                )}
-                <span className="inline-flex items-center justify-center min-w-[8rem] h-9 px-3 border-2 border-dashed border-cyan-400 rounded-md bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-500">
-                  <span className="text-sm text-cyan-600 dark:text-cyan-400 font-mono">___</span>
-                </span>
-              </span>
-            );
-          }
-        })}
-      </span>
+        return (
+          <p
+            key={lineIdx}
+            className={cn("text-lg leading-relaxed", questionDir === "rtl" ? "text-right" : "text-left")}
+            dir={questionDir}
+          >
+            <span className="inline whitespace-pre-wrap">
+              {elements.map((element, index) => {
+                if (element.type === "text") {
+                  return stripMarkdown(element.content);
+                } else {
+                  return (
+                    <span key={index} className="inline-block mx-1 align-baseline">
+                      {element.hint && (
+                        <span className="text-base text-muted-foreground whitespace-nowrap ml-1">
+                          ({element.hint})
+                        </span>
+                      )}
+                      <span className="inline-flex items-center justify-center min-w-[8rem] h-9 px-3 border-2 border-dashed border-cyan-400 rounded-md bg-cyan-50/50 dark:bg-cyan-950/20 dark:border-cyan-500">
+                        <span className="text-sm text-cyan-600 dark:text-cyan-400 font-mono">___</span>
+                      </span>
+                    </span>
+                  );
+                }
+              })}
+            </span>
+          </p>
+        );
+      })}
     </div>
   );
 };
