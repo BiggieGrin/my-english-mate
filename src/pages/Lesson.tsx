@@ -41,6 +41,9 @@ const Lesson = () => {
   const [completedTyping, setCompletedTyping] = useState<Set<number>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const typingMessageRef = useRef<HTMLDivElement>(null);
+  const shouldAutoScrollRef = useRef(true);
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
@@ -91,16 +94,26 @@ const Lesson = () => {
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
 
-  const scrollToBottom = () => {
-    requestAnimationFrame(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
-    });
+  const scrollToTypingMessage = () => {
+    if (shouldAutoScrollRef.current && typingMessageRef.current) {
+      typingMessageRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+    }
   };
 
+  // Detect user scroll
   useEffect(() => {
-    const timeoutId = setTimeout(scrollToBottom, 100);
-    return () => clearTimeout(timeoutId);
-  }, [messages]);
+    const chatContainer = chatContainerRef.current;
+    if (!chatContainer) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      shouldAutoScrollRef.current = isAtBottom;
+    };
+
+    chatContainer.addEventListener("scroll", handleScroll);
+    return () => chatContainer.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Load chat history and send initial message
   useEffect(() => {
@@ -385,7 +398,7 @@ const Lesson = () => {
       </header>
 
       {/* Chat Area */}
-      <div id="chat" className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto">
+      <div ref={chatContainerRef} id="chat" className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto">
         {/* Added pb-32 for bottom input spacing */}
         <div className="space-y-4">
           {!isInitialized && (
@@ -398,9 +411,12 @@ const Lesson = () => {
             const isStreamingMessage = message.role === "assistant" && index === messages.length - 1 && isLoading;
             const hasCompletedTyping = completedTyping.has(index);
 
+            const isTypingNow = message.role === "assistant" && index === messages.length - 1 && !hasCompletedTyping;
+            
             return (
               <div key={index} className={`flex ${message.role === "user" ? "justify-start" : "justify-end"}`}>
                 <Card
+                  ref={isTypingNow ? typingMessageRef : null}
                   className={`p-4 max-w-[80%] ${
                     message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card"
                   }`}
@@ -430,6 +446,7 @@ const Lesson = () => {
                             setCompletedTyping((prev) => new Set(prev).add(index));
                           }}
                           speed={20}
+                          onTypingUpdate={scrollToTypingMessage}
                         />
                       )}
                     </div>
