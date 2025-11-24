@@ -42,8 +42,8 @@ const Lesson = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const typingMessageRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
+  const scrollTimeoutRef = useRef<number | null>(null);
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
@@ -94,10 +94,20 @@ const Lesson = () => {
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
 
-  const scrollToTypingMessage = () => {
-    if (shouldAutoScrollRef.current && typingMessageRef.current) {
-      typingMessageRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+  const scrollToBottom = () => {
+    if (!shouldAutoScrollRef.current || !chatContainerRef.current) return;
+    
+    // Clear any pending scroll
+    if (scrollTimeoutRef.current) {
+      cancelAnimationFrame(scrollTimeoutRef.current);
     }
+    
+    // Use requestAnimationFrame for smooth, efficient scrolling
+    scrollTimeoutRef.current = requestAnimationFrame(() => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
+    });
   };
 
   // Detect user scroll
@@ -107,11 +117,11 @@ const Lesson = () => {
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = chatContainer;
-      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-      shouldAutoScrollRef.current = isAtBottom;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      shouldAutoScrollRef.current = isNearBottom;
     };
 
-    chatContainer.addEventListener("scroll", handleScroll);
+    chatContainer.addEventListener("scroll", handleScroll, { passive: true });
     return () => chatContainer.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -411,12 +421,9 @@ const Lesson = () => {
             const isStreamingMessage = message.role === "assistant" && index === messages.length - 1 && isLoading;
             const hasCompletedTyping = completedTyping.has(index);
 
-            const isTypingNow = message.role === "assistant" && index === messages.length - 1 && !hasCompletedTyping;
-            
             return (
               <div key={index} className={`flex ${message.role === "user" ? "justify-start" : "justify-end"}`}>
                 <Card
-                  ref={isTypingNow ? typingMessageRef : null}
                   className={`p-4 max-w-[80%] ${
                     message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card"
                   }`}
@@ -446,7 +453,7 @@ const Lesson = () => {
                             setCompletedTyping((prev) => new Set(prev).add(index));
                           }}
                           speed={20}
-                          onTypingUpdate={scrollToTypingMessage}
+                          onTypingUpdate={scrollToBottom}
                         />
                       )}
                     </div>
