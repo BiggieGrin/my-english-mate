@@ -43,7 +43,6 @@ const Lesson = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
-  const scrollTimeoutRef = useRef<number | null>(null);
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
@@ -95,34 +94,57 @@ const Lesson = () => {
   const mode = location.state?.mode || "";
 
   const scrollToBottom = () => {
-    if (!shouldAutoScrollRef.current || !chatContainerRef.current) return;
+    if (!chatContainerRef.current) return;
     
-    // Clear any pending scroll
-    if (scrollTimeoutRef.current) {
-      cancelAnimationFrame(scrollTimeoutRef.current);
+    // Always scroll if auto-scroll is enabled
+    if (shouldAutoScrollRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-    
-    // Use requestAnimationFrame for smooth, efficient scrolling
-    scrollTimeoutRef.current = requestAnimationFrame(() => {
-      if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-      }
-    });
   };
 
-  // Detect user scroll
+  // Detect user scroll and disable auto-scroll when scrolling up
   useEffect(() => {
     const chatContainer = chatContainerRef.current;
     if (!chatContainer) return;
 
+    let isScrollingProgrammatically = false;
+    let scrollTimeout: number;
+
     const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = chatContainer;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-      shouldAutoScrollRef.current = isNearBottom;
+      // Ignore programmatic scrolls
+      if (isScrollingProgrammatically) {
+        isScrollingProgrammatically = false;
+        return;
+      }
+
+      clearTimeout(scrollTimeout);
+      scrollTimeout = window.setTimeout(() => {
+        const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+        
+        // If user is within 50px of bottom, enable auto-scroll
+        // Otherwise, they've scrolled up manually, so disable it
+        shouldAutoScrollRef.current = distanceFromBottom < 50;
+      }, 100);
     };
 
+    // Mark scroll as programmatic when we do it
+    const originalScrollTop = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+    Object.defineProperty(chatContainer, 'scrollTop', {
+      set(value) {
+        isScrollingProgrammatically = true;
+        originalScrollTop?.set?.call(this, value);
+      },
+      get() {
+        return originalScrollTop?.get?.call(this);
+      }
+    });
+
     chatContainer.addEventListener("scroll", handleScroll, { passive: true });
-    return () => chatContainer.removeEventListener("scroll", handleScroll);
+    return () => {
+      chatContainer.removeEventListener("scroll", handleScroll);
+      clearTimeout(scrollTimeout);
+    };
   }, []);
 
   // Load chat history and send initial message
@@ -199,6 +221,7 @@ const Lesson = () => {
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
+    shouldAutoScrollRef.current = true; // Enable auto-scroll for new message
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
