@@ -92,7 +92,9 @@ const Lesson = () => {
   const mode = location.state?.mode || "";
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    });
   };
 
   useEffect(() => {
