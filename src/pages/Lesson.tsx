@@ -122,7 +122,7 @@ const Lesson = () => {
 
         // If user is within 100px of bottom, enable auto-scroll
         // Otherwise, they've scrolled up manually, so disable it
-        shouldAutoScrollRef.current = distanceFromBottom < 100;
+        shouldAutoScrollRef.current = true;
       }, 150);
     };
 
