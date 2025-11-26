@@ -32,6 +32,7 @@ interface ChatMessage {
   role: string;
   content: string;
   image?: string; // base64 data URL
+  imageId?: string; // reference to lesson_images table
   xpGain?: number;
   levelUp?: number;
 }
@@ -201,16 +202,37 @@ const Lesson = () => {
 
         const { data: existingMessages, error } = await supabase
           .from("lesson_messages")
-          .select("role, content")
+          .select("role, content, image_id")
           .eq("conversation_id", conversationId)
           .order("created_at", { ascending: true });
 
         if (error) throw error;
 
         if (existingMessages && existingMessages.length > 0) {
-          setMessages(existingMessages);
+          // Load images for messages that have image_id
+          const messagesWithImages: ChatMessage[] = await Promise.all(
+            existingMessages.map(async (msg) => {
+              if (msg.image_id) {
+                const { data: imageData } = await supabase
+                  .from("lesson_images")
+                  .select("image_data")
+                  .eq("id", msg.image_id)
+                  .maybeSingle();
+                
+                return {
+                  role: msg.role,
+                  content: msg.content,
+                  image: imageData?.image_data || undefined,
+                  imageId: msg.image_id,
+                };
+              }
+              return { role: msg.role, content: msg.content };
+            })
+          );
+          
+          setMessages(messagesWithImages);
           const completedSet = new Set<number>();
-          existingMessages.forEach((_, idx) => completedSet.add(idx));
+          messagesWithImages.forEach((_, idx) => completedSet.add(idx));
           setCompletedTyping(completedSet);
           setIsInitialized(true);
           // Scroll to bottom after loading history
@@ -265,12 +287,31 @@ const Lesson = () => {
       } = await supabase.auth.getUser();
 
       if (user && conversationId) {
+        let imageId: string | null = null;
+        
+        // If there's an image, save it to lesson_images first
+        if (imageData) {
+          const { data: savedImage, error: imageError } = await supabase
+            .from("lesson_images")
+            .insert({
+              user_id: user.id,
+              image_data: imageData,
+            })
+            .select("id")
+            .single();
+          
+          if (!imageError && savedImage) {
+            imageId = savedImage.id;
+          }
+        }
+        
         await supabase.from("lesson_messages").insert({
           user_id: user.id,
           conversation_id: conversationId,
           topic: topic,
           role: "user",
-          content: userMessage + (imageData ? " [תמונה מצורפת]" : ""),
+          content: userMessage + (imageData ? " הנה התמונה: [תמונה מצורפת]" : ""),
+          image_id: imageId,
         });
       }
 
@@ -519,8 +560,8 @@ const Lesson = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {/* Display image if present */}
-                      {message.image && (
+                      {/* Display image if present, or show fallback if image was deleted */}
+                      {message.image ? (
                         <div className="mb-2">
                           <img 
                             src={message.image} 
@@ -528,9 +569,13 @@ const Lesson = () => {
                             className="max-w-full max-h-64 rounded-lg object-contain"
                           />
                         </div>
-                      )}
-                      {/* Display text content */}
-                      {message.content && message.content !== "הנה התמונה:" && splitByLanguage(message.content).map((segment, idx) => (
+                      ) : message.imageId && !message.image ? (
+                        <p className="text-lg leading-relaxed text-muted-foreground" dir="rtl">
+                          הנה התמונה: [תמונה מצורפת]
+                        </p>
+                      ) : null}
+                      {/* Display text content - hide image placeholder text if we're showing actual image or fallback */}
+                      {message.content && !message.content.includes("הנה התמונה:") && splitByLanguage(message.content).map((segment, idx) => (
                         <p
                           key={idx}
                           className="text-lg leading-relaxed"
@@ -540,6 +585,19 @@ const Lesson = () => {
                           {segment.text || "\u00A0"}
                         </p>
                       ))}
+                      {/* Show text content that isn't just the image placeholder */}
+                      {message.content && message.content.includes("הנה התמונה:") && message.content.replace("הנה התמונה: [תמונה מצורפת]", "").trim() && 
+                        splitByLanguage(message.content.replace("הנה התמונה: [תמונה מצורפת]", "").trim()).map((segment, idx) => (
+                          <p
+                            key={idx}
+                            className="text-lg leading-relaxed"
+                            dir={segment.direction}
+                            style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
+                          >
+                            {segment.text || "\u00A0"}
+                          </p>
+                        ))
+                      }
                     </div>
                   )}
                 </Card>

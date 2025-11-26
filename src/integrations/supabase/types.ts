@@ -79,12 +79,34 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_data: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_data: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_data?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       lesson_messages: {
         Row: {
           content: string
           conversation_id: string | null
           created_at: string
           id: string
+          image_id: string | null
           role: string
           topic: string
           user_id: string
@@ -94,6 +116,7 @@ export type Database = {
           conversation_id?: string | null
           created_at?: string
           id?: string
+          image_id?: string | null
           role: string
           topic: string
           user_id: string
@@ -103,6 +126,7 @@ export type Database = {
           conversation_id?: string | null
           created_at?: string
           id?: string
+          image_id?: string | null
           role?: string
           topic?: string
           user_id?: string
@@ -113,6 +137,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_messages_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_images"
             referencedColumns: ["id"]
           },
         ]
