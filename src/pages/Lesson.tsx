@@ -26,7 +26,7 @@ const detectTextDirection = (text: string): "rtl" | "ltr" => {
 
 const Lesson = () => {
   const navigate = useNavigate();
-  const { lessonId } = useParams(); // This is actually the conversation ID now
+  const { lessonId } = useParams();
   const location = useLocation();
   const { toast } = useToast();
   const [messages, setMessages] = useState<Array<{ role: string; content: string; xpGain?: number; levelUp?: number }>>(
@@ -34,8 +34,8 @@ const Lesson = () => {
   );
   const [input, setInput] = useState("");
   const [level, setLevel] = useState(1);
-  const [currentXp, setCurrentXp] = useState(0); // XP towards next level
-  const [totalPoints, setTotalPoints] = useState(0); // Total lifetime XP
+  const [currentXp, setCurrentXp] = useState(0);
+  const [totalPoints, setTotalPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [completedTyping, setCompletedTyping] = useState<Set<number>>(new Set());
@@ -46,18 +46,37 @@ const Lesson = () => {
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
+  // Smooth scroll to bottom
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
+  };
+
+  // Auto-scroll while typing
+  useEffect(() => {
+    if (isTypingRef.current) {
+      scrollToBottom("smooth");
+    }
+  }, [messages]);
+
+  // Scroll to bottom when loading state changes (new message sent)
+  useEffect(() => {
+    if (isLoading) {
+      scrollToBottom("auto");
+    }
+  }, [isLoading]);
+
   // Clean XP-related text from message content
   const cleanMessageContent = (content: string): string => {
     return content
-      .replace(/\+\d+\s*XP\s*✨?/gi, "") // Remove "+20 XP ✨"
-      .replace(/\d+\/\d+\s*XP/gi, "") // Remove "20/100 XP"
-      .replace(/רמה \d+ — \d+\/\d+ XP/g, "") // Remove Hebrew XP progress
-      .replace(/עלית לרמה \d+!/g, "") // Remove level up text
-      .replace(/🎉 רמה \d+! 🎉/g, "") // Remove level display
-      .replace(/רמה \d+/g, "") // Remove "רמה X" patterns
-      .replace(/צברת עוד \d+ נקודות XP!.*/g, "") // Remove "צברת עוד X נקודות XP! יש לך כעת..."
-      .replace(/יש לך כעת \d+ מתוך \d+ לרמה הבאה\./g, "") // Remove progress towards next level
-      .replace(/xp_detected/g, "") // Remove processing marker
+      .replace(/\+\d+\s*XP\s*✨?/gi, "")
+      .replace(/\d+\/\d+\s*XP/gi, "")
+      .replace(/רמה \d+ — \d+\/\d+ XP/g, "")
+      .replace(/עלית לרמה \d+!/g, "")
+      .replace(/🎉 רמה \d+! 🎉/g, "")
+      .replace(/רמה \d+/g, "")
+      .replace(/צברת עוד \d+ נקודות XP!.*/g, "")
+      .replace(/יש לך כעת \d+ מתוך \d+ לרמה הבאה\./g, "")
+      .replace(/xp_detected/g, "")
       .trim();
   };
 
@@ -66,20 +85,16 @@ const Lesson = () => {
     if (!text.trim()) return [];
 
     const segments: Array<{ text: string; direction: "rtl" | "ltr" }> = [];
-
-    // Split by newlines - each line gets its own p tag
     const lines = text.split("\n");
 
     for (const line of lines) {
       const trimmedLine = line.trim();
 
       if (!trimmedLine) {
-        // Empty line - add as empty segment for spacing
         segments.push({ text: "", direction: "ltr" });
         continue;
       }
 
-      // Detect direction based on first word of the line
       const firstWord = trimmedLine.split(/\s+/)[0];
       const direction = detectTextDirection(firstWord);
       segments.push({ text: trimmedLine, direction });
@@ -112,7 +127,6 @@ const Lesson = () => {
           return;
         }
 
-        // Load user's level and XP
         const { data: profile } = await supabase
           .from("profiles")
           .select("level, current_xp, total_points")
@@ -125,7 +139,6 @@ const Lesson = () => {
           setTotalPoints(profile.total_points || 0);
         }
 
-        // Load existing messages for this conversation
         const { data: existingMessages, error } = await supabase
           .from("lesson_messages")
           .select("role, content")
@@ -135,14 +148,14 @@ const Lesson = () => {
         if (error) throw error;
 
         if (existingMessages && existingMessages.length > 0) {
-          // Load existing chat - mark all as completed typing since they're from history
           setMessages(existingMessages);
           const completedSet = new Set<number>();
           existingMessages.forEach((_, idx) => completedSet.add(idx));
           setCompletedTyping(completedSet);
           setIsInitialized(true);
+          // Scroll to bottom after loading history
+          setTimeout(() => scrollToBottom("auto"), 100);
         } else {
-          // Send initial message for new chat
           const initialMessage = `היי, אני רוצה ${mode} בנושא ${topic}`;
           await streamChat(initialMessage, true);
           setIsInitialized(true);
@@ -168,7 +181,9 @@ const Lesson = () => {
     setInput("");
     setIsLoading(true);
 
-    // Create new abort controller for this request
+    // Immediately scroll to bottom when user sends message
+    setTimeout(() => scrollToBottom("auto"), 0);
+
     abortControllerRef.current = new AbortController();
 
     try {
@@ -183,7 +198,6 @@ const Lesson = () => {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Save user message to database
       if (user && conversationId) {
         await supabase.from("lesson_messages").insert({
           user_id: user.id,
@@ -230,9 +244,8 @@ const Lesson = () => {
       const decoder = new TextDecoder();
       let assistantMessage = "";
       let buffer = "";
-      const messageIndex = newMessages.length; // Index for the new assistant message
+      const messageIndex = newMessages.length;
 
-      // Add empty assistant message to update
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       while (true) {
@@ -254,7 +267,6 @@ const Lesson = () => {
               if (content) {
                 assistantMessage += content;
 
-                // Parse XP gains from the message
                 const xpMatch = assistantMessage.match(/\+(\d+)\s*XP/);
 
                 let xpGain = undefined;
@@ -263,12 +275,10 @@ const Lesson = () => {
                 if (xpMatch && !assistantMessage.includes("xp_detected")) {
                   xpGain = parseInt(xpMatch[1]);
 
-                  // Calculate new XP with proper leveling logic
                   let newCurrentXp = currentXp + xpGain;
                   let newTotalPoints = totalPoints + xpGain;
                   let newLevel = level;
 
-                  // Handle level ups with XP rollover
                   while (newCurrentXp >= getXpToNextLevel(newLevel)) {
                     newCurrentXp -= getXpToNextLevel(newLevel);
                     newLevel++;
@@ -278,9 +288,8 @@ const Lesson = () => {
                   setCurrentXp(newCurrentXp);
                   setTotalPoints(newTotalPoints);
                   setLevel(newLevel);
-                  assistantMessage += " xp_detected"; // Mark as processed
+                  assistantMessage += " xp_detected";
 
-                  // Update in database
                   const {
                     data: { user },
                   } = await supabase.auth.getUser();
@@ -316,7 +325,6 @@ const Lesson = () => {
         }
       }
 
-      // Save assistant message to database
       if (user && assistantMessage && conversationId) {
         await supabase.from("lesson_messages").insert({
           user_id: user.id,
@@ -337,7 +345,7 @@ const Lesson = () => {
         description: "לא הצלחנו לקבל תשובה מהמורה. נסו שוב.",
         variant: "destructive",
       });
-      setMessages((prev) => prev.slice(0, -1)); // Remove failed message
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
@@ -381,7 +389,6 @@ const Lesson = () => {
         id="chat"
         className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto"
       >
-        {/* Added pb-32 for bottom input spacing */}
         <div className="space-y-4">
           {!isInitialized && (
             <div className="flex justify-center items-center h-full text-muted-foreground">
