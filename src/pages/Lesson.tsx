@@ -214,7 +214,7 @@ const Lesson = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ messages: newMessages, topic }),
+        body: JSON.stringify({ messages: newMessages, topic, mode }),
         signal: abortControllerRef.current.signal,
       });
 
