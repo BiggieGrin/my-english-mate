@@ -95,69 +95,6 @@ const Lesson = () => {
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
 
-  // Smooth scroll to bottom - force parameter ignores shouldAutoScrollRef
-  const scrollToBottom = (smooth: boolean = false, force: boolean = false) => {
-    if (!chatContainerRef.current) return;
-    if (!force && !shouldAutoScrollRef.current) return;
-
-    isProgrammaticScrollRef.current = true;
-    
-    requestAnimationFrame(() => {
-      if (chatContainerRef.current) {
-        if (smooth) {
-          chatContainerRef.current.scrollTo({
-            top: chatContainerRef.current.scrollHeight,
-            behavior: 'smooth'
-          });
-          // Reset flag after smooth scroll completes
-          setTimeout(() => {
-            isProgrammaticScrollRef.current = false;
-          }, 500);
-        } else {
-          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-          isProgrammaticScrollRef.current = false;
-        }
-      }
-    });
-  };
-
-  // UPDATED: Simplified scroll detection logic
-  useEffect(() => {
-    const chatContainer = chatContainerRef.current;
-    if (!chatContainer) return;
-
-    let scrollTimeout: number;
-
-    const handleScroll = () => {
-      // Don't update auto-scroll state during programmatic scrolling or typing
-      if (isTypingRef.current || isProgrammaticScrollRef.current) return;
-
-      clearTimeout(scrollTimeout);
-      scrollTimeout = window.setTimeout(() => {
-        const { scrollTop, scrollHeight, clientHeight } = chatContainer;
-        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-
-        // If user is within 100px of bottom, enable auto-scroll
-        // Otherwise, they've scrolled up manually, so disable it
-        shouldAutoScrollRef.current = distanceFromBottom < 100;
-      }, 150);
-    };
-
-    chatContainer.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      chatContainer.removeEventListener("scroll", handleScroll);
-      clearTimeout(scrollTimeout);
-    };
-  }, []);
-
-  // NEW: Auto-scroll when messages update (during streaming)
-  useEffect(() => {
-    // Always scroll to bottom when messages change during typing
-    if (isTypingRef.current || isLoading) {
-      scrollToBottom();
-    }
-  }, [messages, isLoading]);
-
   // Load chat history and send initial message
   useEffect(() => {
     const loadChatHistory = async () => {
