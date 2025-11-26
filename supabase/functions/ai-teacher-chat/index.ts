@@ -12,8 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    // קבלת הפרמטרים, כולל ה-mode החדש
-    const { messages, topic, mode } = await req.json();
+    // קבלת הפרמטרים, כולל ה-mode החדש ותמונה
+    const { messages, topic, mode, image } = await req.json();
 
     // Map Hebrew mode values to English
     const modeMap: Record<string, string> = {
@@ -36,6 +36,7 @@ serve(async (req) => {
     // exam_prep = הכנה למבחן
     const currentMode = modeMap[mode] || "learn";
     console.log("Current mode received:", mode, "-> Mapped to:", currentMode);
+    console.log("Image received:", image ? "Yes (length: " + image.length + ")" : "No");
 
     if (!messages || !Array.isArray(messages)) {
       throw new Error("Invalid messages format");
@@ -88,8 +89,9 @@ serve(async (req) => {
      - אמור *בצורה קבועה וללא וריאציות*: 
        "אנא צלם את שיעורי הבית או העתק את השאלות לכאן כדי שנוכל לפתור אותן ביחד."
      - אל תמציא שאלות, אל תיתן תרגול חלופי, ואל תסביר חומר שלא התבקש.
-  3. אם המשתמש *כן* סיפק את התוכן:
-     - נתח אותו.
+  3. אם המשתמש *כן* סיפק את התוכן (כולל תמונה):
+     - נתח אותו בקפידה.
+     - אם זו תמונה - תאר את מה שאתה רואה בה ועזור בהתאם.
      - הובל את התלמיד שלב־אחר־שלב.
      - אל תתן תשובה סופית מיידית — תמיד הכוונה הדרגתית.
      - אפשר לו לחשוב, להסביר את הבחירה שלו ולהתקדם ביחד.
@@ -101,12 +103,15 @@ serve(async (req) => {
   מצב נוכחי: **הכנה למבחן**.
 
   כללי פעולה (מחייבים):
-  1. בדוק אם המשתמש ציין על מה המבחן (נושא / יחידה / מבנה / אוצר מילים) או צירף חומר רלוונטי.
+  1. בדוק אם המשתמש ציין על מה המבחן (נושא / יחידה / מבנה / אוצר מילים) או צירף חומר רלוונטי (כולל תמונה).
   2. אם הנושא *אינו* ידוע:
      שאל *בתבנית קבועה*: 
      "על איזה נושא המבחן? או שתרצה שנעבור על החומר הכללי לרמה ולכיתה שלך?"
      - אל צור שאלות למבחן לפני שהנושא מוגדר בבירור.
-  3. רק לאחר שהנושא הובהר:
+  3. אם המשתמש שלח תמונה:
+     - נתח את התמונה בקפידה.
+     - אם זה חומר לימוד או מבחן לדוגמה - עזור בהתאם.
+  4. רק לאחר שהנושא הובהר:
      - צור סימולציה של שאלות ברמת מבחן (לא תרגול קליל).
      - בנה סט שאלות מגוון:
        • הבנת הנקרא  
@@ -142,6 +147,9 @@ serve(async (req) => {
   - בכל תשובה:
       • אם נכון — חיזוק קצר + מעבר לשלב הבא.  
       • אם לא נכון — רמז ולא פתרון ישיר.  
+
+  אם המשתמש שלח תמונה:
+  - נתח אותה ועזור בהתאם לתוכנה.
   `;
         break;
     }
@@ -173,6 +181,11 @@ serve(async (req) => {
    - אנגלית רק לדוגמאות, תרגול, או מונחים מקצועיים.
    - טון: סבלני, נעים, מקצועי, לא מתיילד.
    - כתיבה ממוקדת — לא טקסטים ארוכים מדי.
+
+3. **טיפול בתמונות**
+   - אם המשתמש שלח תמונה, נתח אותה בקפידה.
+   - תאר מה אתה רואה בתמונה ועזור בהתאם.
+   - אם זו תמונה של שיעורי בית / מבחן / טקסט באנגלית - עזור לפתור.
 
 =====================
 📌 הנחיות מצב ספציפי
@@ -213,7 +226,7 @@ ${modeInstructions}
   חובה לספק 4 אפשרויות. אין לבקש מהתלמיד להשלים/לתרגם.
 
 - אם סוג התרגיל הוא **תיקון שגיאה**:
-  אין לתת אופציות ואין לתרגם. השאלה היא רק: “מצא ותקן את השגיאה במשפט”.
+  אין לתת אופציות ואין לתרגם. השאלה היא רק: "מצא ותקן את השגיאה במשפט".
 
 - אם סוג התרגיל הוא **יצירת משפט**:
   אין לתת השלמות, אין לתת אופציות, ואין לבקש תרגום.
@@ -232,8 +245,28 @@ ${modeInstructions}
       content: systemPromptContent,
     };
 
+    // Process messages to handle image in the last user message
+    const processedMessages = messages.map((msg: any, index: number) => {
+      // If this is the last message and we have an image, add it
+      if (index === messages.length - 1 && msg.role === "user" && image) {
+        return {
+          role: "user",
+          content: [
+            { type: "text", text: msg.content || "הנה התמונה:" },
+            {
+              type: "image_url",
+              image_url: {
+                url: image, // base64 data URL
+              },
+            },
+          ],
+        };
+      }
+      return msg;
+    });
+
     console.log("Calling AI for user:", profile.full_name, "Mode:", currentMode);
-    console.log("My Prompt:", systemPrompt);
+    console.log("Has image in last message:", !!image);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -243,7 +276,7 @@ ${modeInstructions}
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
-        messages: [systemPrompt, ...messages],
+        messages: [systemPrompt, ...processedMessages],
         stream: true,
       }),
     });
@@ -251,6 +284,20 @@ ${modeInstructions}
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limits exceeded, please try again later." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: "Payment required, please add funds." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
