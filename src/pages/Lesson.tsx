@@ -94,13 +94,20 @@ const Lesson = () => {
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
 
-  // UPDATED: Improved scroll function with requestAnimationFrame
-  const scrollToBottom = () => {
+  // Smooth scroll to bottom
+  const scrollToBottom = (smooth: boolean = false) => {
     if (!chatContainerRef.current) return;
 
     requestAnimationFrame(() => {
       if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        if (smooth) {
+          chatContainerRef.current.scrollTo({
+            top: chatContainerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        } else {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
       }
     });
   };
@@ -218,8 +225,8 @@ const Lesson = () => {
     setIsLoading(true);
     shouldAutoScrollRef.current = true; // Enable auto-scroll for new message
 
-    // Immediately scroll to bottom when user sends message
-    setTimeout(() => scrollToBottom(), 0);
+    // Smoothly scroll to bottom when user sends message
+    setTimeout(() => scrollToBottom(true), 50);
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
