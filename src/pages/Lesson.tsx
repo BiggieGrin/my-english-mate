@@ -43,6 +43,7 @@ const Lesson = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
+  const isTypingRef = useRef(false);
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
@@ -94,17 +95,14 @@ const Lesson = () => {
   const mode = location.state?.mode || "";
 
   // UPDATED: Improved scroll function with requestAnimationFrame
-  const scrollToBottom = (force: boolean = false) => {
+  const scrollToBottom = () => {
     if (!chatContainerRef.current) return;
 
-    // Force scroll or scroll if auto-scroll is enabled
-    if (force || shouldAutoScrollRef.current) {
-      requestAnimationFrame(() => {
-        if (chatContainerRef.current) {
-          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-      });
-    }
+    requestAnimationFrame(() => {
+      if (chatContainerRef.current) {
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      }
+    });
   };
 
   // UPDATED: Simplified scroll detection logic
@@ -115,6 +113,9 @@ const Lesson = () => {
     let scrollTimeout: number;
 
     const handleScroll = () => {
+      // Don't disable auto-scroll while typing
+      if (isTypingRef.current) return;
+
       clearTimeout(scrollTimeout);
       scrollTimeout = window.setTimeout(() => {
         const { scrollTop, scrollHeight, clientHeight } = chatContainer;
@@ -122,7 +123,7 @@ const Lesson = () => {
 
         // If user is within 100px of bottom, enable auto-scroll
         // Otherwise, they've scrolled up manually, so disable it
-        shouldAutoScrollRef.current = true;
+        shouldAutoScrollRef.current = distanceFromBottom < 100;
       }, 150);
     };
 
@@ -135,8 +136,11 @@ const Lesson = () => {
 
   // NEW: Auto-scroll when messages update (during streaming)
   useEffect(() => {
-    scrollToBottom(false);
-  }, [messages]);
+    // Always scroll to bottom when messages change during typing
+    if (isTypingRef.current || isLoading) {
+      scrollToBottom();
+    }
+  }, [messages, isLoading]);
 
   // Load chat history and send initial message
   useEffect(() => {
@@ -213,6 +217,9 @@ const Lesson = () => {
     setInput("");
     setIsLoading(true);
     shouldAutoScrollRef.current = true; // Enable auto-scroll for new message
+
+    // Immediately scroll to bottom when user sends message
+    setTimeout(() => scrollToBottom(), 0);
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
@@ -469,9 +476,13 @@ const Lesson = () => {
                           content={cleanContent}
                           onComplete={() => {
                             setCompletedTyping((prev) => new Set(prev).add(index));
+                            isTypingRef.current = false;
                           }}
                           speed={20}
-                          onTypingUpdate={() => scrollToBottom(false)}
+                          onTypingUpdate={() => {
+                            isTypingRef.current = true;
+                            scrollToBottom();
+                          }}
                         />
                       )}
                     </div>
