@@ -37,6 +37,29 @@ const stripMarkdown = (text: string): string => {
     .trim();
 };
 
+// Split text by newlines, each line gets its own direction based on first word
+const splitByLanguage = (text: string): Array<{ text: string; direction: "rtl" | "ltr" }> => {
+  if (!text.trim()) return [];
+
+  const segments: Array<{ text: string; direction: "rtl" | "ltr" }> = [];
+  const lines = text.split("\n");
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+
+    if (!trimmedLine) {
+      segments.push({ text: "", direction: "ltr" });
+      continue;
+    }
+
+    const firstWord = trimmedLine.split(/\s+/)[0];
+    const direction = detectTextDirection(firstWord);
+    segments.push({ text: trimmedLine, direction });
+  }
+
+  return segments;
+};
+
 export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleChoiceButtonsProps) => {
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
 
@@ -84,15 +107,19 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
 
   if (!parsed) {
     const cleanContent = stripMarkdown(content);
-    const contentDir = detectTextDirection(cleanContent);
     return (
-      <p
-        className="text-lg whitespace-pre-wrap leading-relaxed"
-        dir={contentDir}
-        style={{ textAlign: contentDir === "rtl" ? "right" : "left" }}
-      >
-        {cleanContent}
-      </p>
+      <div className="space-y-1">
+        {splitByLanguage(cleanContent).map((segment, idx) => (
+          <p
+            key={idx}
+            className="text-lg leading-relaxed"
+            dir={segment.direction}
+            style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
+          >
+            {segment.text || "\u00A0"}
+          </p>
+        ))}
+      </div>
     );
   }
 
@@ -106,29 +133,6 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
 
   const cleanBeforeText = beforeText ? stripMarkdown(beforeText) : "";
   const cleanAfterText = afterText ? stripMarkdown(afterText) : "";
-
-  // Split text by newlines, each line gets its own direction based on first word
-  const splitByLanguage = (text: string): Array<{ text: string; direction: "rtl" | "ltr" }> => {
-    if (!text.trim()) return [];
-
-    const segments: Array<{ text: string; direction: "rtl" | "ltr" }> = [];
-    const lines = text.split("\n");
-
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-
-      if (!trimmedLine) {
-        segments.push({ text: "", direction: "ltr" });
-        continue;
-      }
-
-      const firstWord = trimmedLine.split(/\s+/)[0];
-      const direction = detectTextDirection(firstWord);
-      segments.push({ text: trimmedLine, direction });
-    }
-
-    return segments;
-  };
 
   return (
     <div className="space-y-4">
