@@ -457,7 +457,7 @@ const Lesson = () => {
               </div>
             );
           })}
-          {isLoading && (
+          {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
             <div className="flex justify-end">
               <Card className="p-4 max-w-[80%] bg-card">
                 <Loader2 className="w-5 h-5 animate-spin" />
