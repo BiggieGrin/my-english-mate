@@ -42,9 +42,7 @@ const Lesson = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const shouldAutoScrollRef = useRef(true);
   const isTypingRef = useRef(false);
-  const isProgrammaticScrollRef = useRef(false);
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
@@ -169,10 +167,6 @@ const Lesson = () => {
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
-    shouldAutoScrollRef.current = true; // Enable auto-scroll for new message
-
-    // Smoothly scroll to bottom when user sends message (force=true ignores scroll position)
-    setTimeout(() => scrollToBottom(true, true), 100);
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
@@ -434,7 +428,6 @@ const Lesson = () => {
                           speed={20}
                           onTypingUpdate={() => {
                             isTypingRef.current = true;
-                            scrollToBottom();
                           }}
                         />
                       )}
