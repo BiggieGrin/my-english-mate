@@ -44,6 +44,7 @@ const Lesson = () => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
   const isTypingRef = useRef(false);
+  const isProgrammaticScrollRef = useRef(false);
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
@@ -94,10 +95,13 @@ const Lesson = () => {
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
 
-  // Smooth scroll to bottom
-  const scrollToBottom = (smooth: boolean = false) => {
+  // Smooth scroll to bottom - force parameter ignores shouldAutoScrollRef
+  const scrollToBottom = (smooth: boolean = false, force: boolean = false) => {
     if (!chatContainerRef.current) return;
+    if (!force && !shouldAutoScrollRef.current) return;
 
+    isProgrammaticScrollRef.current = true;
+    
     requestAnimationFrame(() => {
       if (chatContainerRef.current) {
         if (smooth) {
@@ -105,8 +109,13 @@ const Lesson = () => {
             top: chatContainerRef.current.scrollHeight,
             behavior: 'smooth'
           });
+          // Reset flag after smooth scroll completes
+          setTimeout(() => {
+            isProgrammaticScrollRef.current = false;
+          }, 500);
         } else {
           chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+          isProgrammaticScrollRef.current = false;
         }
       }
     });
@@ -120,8 +129,8 @@ const Lesson = () => {
     let scrollTimeout: number;
 
     const handleScroll = () => {
-      // Don't disable auto-scroll while typing
-      if (isTypingRef.current) return;
+      // Don't update auto-scroll state during programmatic scrolling or typing
+      if (isTypingRef.current || isProgrammaticScrollRef.current) return;
 
       clearTimeout(scrollTimeout);
       scrollTimeout = window.setTimeout(() => {
@@ -225,8 +234,8 @@ const Lesson = () => {
     setIsLoading(true);
     shouldAutoScrollRef.current = true; // Enable auto-scroll for new message
 
-    // Smoothly scroll to bottom when user sends message
-    setTimeout(() => scrollToBottom(true), 50);
+    // Smoothly scroll to bottom when user sends message (force=true ignores scroll position)
+    setTimeout(() => scrollToBottom(true, true), 100);
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
