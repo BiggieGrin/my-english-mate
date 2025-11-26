@@ -93,52 +93,38 @@ const Lesson = () => {
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
 
-  const scrollToBottom = () => {
+  // UPDATED: Improved scroll function with requestAnimationFrame
+  const scrollToBottom = (force: boolean = false) => {
     if (!chatContainerRef.current) return;
-    
-    // Always scroll if auto-scroll is enabled
-    if (shouldAutoScrollRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+
+    // Force scroll or scroll if auto-scroll is enabled
+    if (force || shouldAutoScrollRef.current) {
+      requestAnimationFrame(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      });
     }
   };
 
-  // Detect user scroll and disable auto-scroll when scrolling up
+  // UPDATED: Simplified scroll detection logic
   useEffect(() => {
     const chatContainer = chatContainerRef.current;
     if (!chatContainer) return;
 
-    let isScrollingProgrammatically = false;
     let scrollTimeout: number;
 
     const handleScroll = () => {
-      // Ignore programmatic scrolls
-      if (isScrollingProgrammatically) {
-        isScrollingProgrammatically = false;
-        return;
-      }
-
       clearTimeout(scrollTimeout);
       scrollTimeout = window.setTimeout(() => {
         const { scrollTop, scrollHeight, clientHeight } = chatContainer;
         const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-        
-        // If user is within 50px of bottom, enable auto-scroll
-        // Otherwise, they've scrolled up manually, so disable it
-        shouldAutoScrollRef.current = distanceFromBottom < 50;
-      }, 100);
-    };
 
-    // Mark scroll as programmatic when we do it
-    const originalScrollTop = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
-    Object.defineProperty(chatContainer, 'scrollTop', {
-      set(value) {
-        isScrollingProgrammatically = true;
-        originalScrollTop?.set?.call(this, value);
-      },
-      get() {
-        return originalScrollTop?.get?.call(this);
-      }
-    });
+        // If user is within 100px of bottom, enable auto-scroll
+        // Otherwise, they've scrolled up manually, so disable it
+        shouldAutoScrollRef.current = distanceFromBottom < 100;
+      }, 150);
+    };
 
     chatContainer.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
@@ -146,6 +132,11 @@ const Lesson = () => {
       clearTimeout(scrollTimeout);
     };
   }, []);
+
+  // NEW: Auto-scroll when messages update (during streaming)
+  useEffect(() => {
+    scrollToBottom(false);
+  }, [messages]);
 
   // Load chat history and send initial message
   useEffect(() => {
@@ -431,7 +422,11 @@ const Lesson = () => {
       </header>
 
       {/* Chat Area */}
-      <div ref={chatContainerRef} id="chat" className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto">
+      <div
+        ref={chatContainerRef}
+        id="chat"
+        className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto"
+      >
         {/* Added pb-32 for bottom input spacing */}
         <div className="space-y-4">
           {!isInitialized && (
@@ -476,7 +471,7 @@ const Lesson = () => {
                             setCompletedTyping((prev) => new Set(prev).add(index));
                           }}
                           speed={20}
-                          onTypingUpdate={scrollToBottom}
+                          onTypingUpdate={() => scrollToBottom(false)}
                         />
                       )}
                     </div>
