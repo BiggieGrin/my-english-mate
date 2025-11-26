@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ArrowRight, Send, Mic, Loader2, X } from "lucide-react";
+import { ArrowRight, Send, Loader2, X, ImagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MultipleChoiceButtons } from "@/components/MultipleChoiceButtons";
@@ -24,14 +24,24 @@ const detectTextDirection = (text: string): "rtl" | "ltr" => {
   return hebrewCount > englishCount ? "rtl" : "ltr";
 };
 
+// Max file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+interface ChatMessage {
+  role: string;
+  content: string;
+  image?: string; // base64 data URL
+  xpGain?: number;
+  levelUp?: number;
+}
+
 const Lesson = () => {
   const navigate = useNavigate();
   const { lessonId } = useParams();
   const location = useLocation();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Array<{ role: string; content: string; xpGain?: number; levelUp?: number }>>(
-    [],
-  );
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [level, setLevel] = useState(1);
   const [currentXp, setCurrentXp] = useState(0);
@@ -39,10 +49,12 @@ const Lesson = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [completedTyping, setCompletedTyping] = useState<Set<number>>(new Set());
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isTypingRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getXpToNextLevel = (lvl: number) => lvl * 100;
 
@@ -107,6 +119,54 @@ const Lesson = () => {
   const topic = location.state?.topic || "English";
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
+
+  // Handle image selection
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      toast({
+        title: "סוג קובץ לא נתמך",
+        description: "אנא בחר/י תמונה בפורמט JPG, PNG או WebP",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "הקובץ גדול מדי",
+        description: "גודל התמונה המקסימלי הוא 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+    };
+    reader.onerror = () => {
+      toast({
+        title: "שגיאה",
+        description: "לא הצלחנו לטעון את התמונה",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
+
+    // Reset the input so the same file can be selected again
+    event.target.value = "";
+  };
+
+  // Clear selected image
+  const clearSelectedImage = () => {
+    setSelectedImage(null);
+  };
 
   // Load chat history and send initial message
   useEffect(() => {
@@ -175,10 +235,16 @@ const Lesson = () => {
     }
   }, [isInitialized, conversationId]);
 
-  const streamChat = async (userMessage: string, isInitial: boolean = false) => {
-    const newMessages = [...messages, { role: "user", content: userMessage }];
+  const streamChat = async (userMessage: string, isInitial: boolean = false, imageData?: string | null) => {
+    const newMessage: ChatMessage = { 
+      role: "user", 
+      content: userMessage,
+      ...(imageData && { image: imageData })
+    };
+    const newMessages = [...messages, newMessage];
     setMessages(newMessages);
     setInput("");
+    setSelectedImage(null);
     setIsLoading(true);
 
     // Immediately scroll to bottom when user sends message
@@ -204,9 +270,15 @@ const Lesson = () => {
           conversation_id: conversationId,
           topic: topic,
           role: "user",
-          content: userMessage,
+          content: userMessage + (imageData ? " [תמונה מצורפת]" : ""),
         });
       }
+
+      // Prepare messages for API (without image data in content to reduce payload for history)
+      const messagesForApi = newMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-chat`, {
         method: "POST",
@@ -214,7 +286,12 @@ const Lesson = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ messages: newMessages, topic, mode }),
+        body: JSON.stringify({ 
+          messages: messagesForApi, 
+          topic, 
+          mode,
+          image: imageData || undefined
+        }),
         signal: abortControllerRef.current.signal,
       });
 
@@ -364,8 +441,9 @@ const Lesson = () => {
   };
 
   const handleSend = () => {
-    if (!input.trim() || isLoading) return;
-    streamChat(input);
+    // Can send if there's text OR an image
+    if ((!input.trim() && !selectedImage) || isLoading) return;
+    streamChat(input || "הנה התמונה:", false, selectedImage);
   };
 
   return (
@@ -387,7 +465,7 @@ const Lesson = () => {
       <div
         ref={chatContainerRef}
         id="chat"
-        className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto"
+        className="flex-1 container mx-auto px-4 py-6 pb-32 max-w-4xl overflow-y-auto"
       >
         <div className="space-y-4">
           {!isInitialized && messages.length === 0 && (
@@ -441,7 +519,18 @@ const Lesson = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {splitByLanguage(message.content).map((segment, idx) => (
+                      {/* Display image if present */}
+                      {message.image && (
+                        <div className="mb-2">
+                          <img 
+                            src={message.image} 
+                            alt="תמונה שהועלתה" 
+                            className="max-w-full max-h-64 rounded-lg object-contain"
+                          />
+                        </div>
+                      )}
+                      {/* Display text content */}
+                      {message.content && message.content !== "הנה התמונה:" && splitByLanguage(message.content).map((segment, idx) => (
                         <p
                           key={idx}
                           className="text-lg leading-relaxed"
@@ -471,16 +560,54 @@ const Lesson = () => {
       {/* Input Area - Fixed at Bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg">
         <div className="container mx-auto px-4 py-4 max-w-4xl">
+          {/* Image Preview */}
+          {selectedImage && (
+            <div className="mb-3 relative inline-block">
+              <img 
+                src={selectedImage} 
+                alt="תצוגה מקדימה" 
+                className="h-20 w-20 object-cover rounded-lg border-2 border-primary"
+              />
+              <button
+                onClick={clearSelectedImage}
+                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80 transition-colors"
+                aria-label="הסר תמונה"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+          
           <div className="flex gap-2">
             {isLoading ? (
               <Button size="icon" variant="destructive" onClick={handleStop}>
                 <X className="w-5 h-5" />
               </Button>
             ) : (
-              <Button size="icon" onClick={handleSend} disabled={!input.trim() || isLoading}>
+              <Button size="icon" onClick={handleSend} disabled={(!input.trim() && !selectedImage) || isLoading}>
                 <Send className="w-5 h-5" />
               </Button>
             )}
+            
+            {/* Image Upload Button */}
+            <Button 
+              size="icon" 
+              variant="outline" 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+              className="shrink-0"
+            >
+              <ImagePlus className="w-5 h-5" />
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              capture="environment"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+            
             <Input
               placeholder="הקלד/י את התשובה שלך כאן..."
               value={input}
