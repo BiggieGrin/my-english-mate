@@ -390,7 +390,7 @@ const Lesson = () => {
         className="flex-1 container mx-auto px-4 py-6 pb-16 max-w-4xl overflow-y-auto"
       >
         <div className="space-y-4">
-          {!isInitialized && (
+          {!isInitialized && messages.length === 0 && (
             <div className="flex justify-center items-center h-full text-muted-foreground">
               <Loader2 className="w-8 h-8 animate-spin" />
             </div>
