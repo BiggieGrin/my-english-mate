@@ -310,7 +310,7 @@ const Lesson = () => {
           conversation_id: conversationId,
           topic: topic,
           role: "user",
-          content: userMessage + (imageData ? " הנה התמונה: [תמונה מצורפת]" : ""),
+          content: userMessage,
           image_id: imageId,
         });
       }
@@ -484,7 +484,7 @@ const Lesson = () => {
   const handleSend = () => {
     // Can send if there's text OR an image
     if ((!input.trim() && !selectedImage) || isLoading) return;
-    streamChat(input || "הנה התמונה:", false, selectedImage);
+    streamChat(input || "", false, selectedImage);
   };
 
   return (
@@ -571,11 +571,11 @@ const Lesson = () => {
                         </div>
                       ) : message.imageId && !message.image ? (
                         <p className="text-lg leading-relaxed text-muted-foreground" dir="rtl">
-                          הנה התמונה: [תמונה מצורפת]
+                          [תמונה מצורפת]
                         </p>
                       ) : null}
-                      {/* Display text content - hide image placeholder text if we're showing actual image or fallback */}
-                      {message.content && !message.content.includes("הנה התמונה:") && splitByLanguage(message.content).map((segment, idx) => (
+                      {/* Display text content only if there is actual text */}
+                      {message.content && message.content.trim() && splitByLanguage(message.content).map((segment, idx) => (
                         <p
                           key={idx}
                           className="text-lg leading-relaxed"
@@ -585,19 +585,6 @@ const Lesson = () => {
                           {segment.text || "\u00A0"}
                         </p>
                       ))}
-                      {/* Show text content that isn't just the image placeholder */}
-                      {message.content && message.content.includes("הנה התמונה:") && message.content.replace("הנה התמונה: [תמונה מצורפת]", "").trim() && 
-                        splitByLanguage(message.content.replace("הנה התמונה: [תמונה מצורפת]", "").trim()).map((segment, idx) => (
-                          <p
-                            key={idx}
-                            className="text-lg leading-relaxed"
-                            dir={segment.direction}
-                            style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
-                          >
-                            {segment.text || "\u00A0"}
-                          </p>
-                        ))
-                      }
                     </div>
                   )}
                 </Card>
