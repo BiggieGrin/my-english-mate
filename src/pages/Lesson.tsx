@@ -506,7 +506,7 @@ const Lesson = () => {
       <div
         ref={chatContainerRef}
         id="chat"
-        className="flex-1 container mx-auto px-4 py-6 pb-32 max-w-4xl overflow-y-auto"
+        className="flex-1 container mx-auto px-2 sm:px-4 py-6 pb-32 w-full max-w-4xl overflow-y-auto overflow-x-hidden"
       >
         <div className="space-y-4">
           {!isInitialized && messages.length === 0 && (
@@ -520,9 +520,9 @@ const Lesson = () => {
             const hasCompletedTyping = completedTyping.has(index);
 
             return (
-              <div key={index} className={`flex ${message.role === "user" ? "justify-start" : "justify-end"}`}>
+              <div key={index} className={`flex w-full ${message.role === "user" ? "justify-start" : "justify-end"}`}>
                 <Card
-                  className={`p-4 max-w-[80%] ${
+                  className={`p-3 sm:p-4 max-w-[85%] sm:max-w-[80%] break-words overflow-wrap-anywhere ${
                     message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card"
                   }`}
                 >
@@ -559,14 +559,14 @@ const Lesson = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                     <div className="space-y-2 w-full">
                       {/* Display image if found in database */}
                       {message.image && (
-                        <div className="mb-2">
+                        <div className="mb-2 w-full">
                           <img
                             src={message.image}
                             alt="תמונה שהועלתה"
-                            className="max-w-full max-h-64 rounded-lg object-contain"
+                            className="w-full max-w-full h-auto max-h-64 rounded-lg object-contain"
                           />
                         </div>
                       )}
@@ -614,8 +614,8 @@ const Lesson = () => {
             );
           })}
           {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
-            <div className="flex justify-end">
-              <Card className="p-4 max-w-[80%] bg-card">
+            <div className="flex w-full justify-end">
+              <Card className="p-3 sm:p-4 max-w-[85%] sm:max-w-[80%] bg-card">
                 <Loader2 className="w-5 h-5 animate-spin" />
               </Card>
             </div>
@@ -625,27 +625,27 @@ const Lesson = () => {
       </div>
 
       {/* Input Area - Fixed at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg">
-        <div className="container mx-auto px-4 py-4 max-w-4xl">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg w-full">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 max-w-4xl w-full">
           {/* Image Preview */}
           {selectedImage && (
-            <div className="mb-3 relative inline-block">
+            <div className="mb-2 sm:mb-3 relative inline-block">
               <img
                 src={selectedImage}
                 alt="תצוגה מקדימה"
-                className="h-20 w-20 object-cover rounded-lg border-2 border-primary"
+                className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border-2 border-primary max-w-full"
               />
               <button
                 onClick={clearSelectedImage}
-                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80 transition-colors"
+                className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80 transition-colors"
                 aria-label="הסר תמונה"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2 w-full items-center">
             {isLoading ? (
               <Button size="icon" variant="destructive" onClick={handleStop}>
                 <X className="w-5 h-5" />
@@ -664,13 +664,12 @@ const Lesson = () => {
               disabled={isLoading}
               className="shrink-0"
             >
-              <ImagePlus className="w-5 h-5" />
+              <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
-              capture="environment"
+              accept="image/*"
               onChange={handleImageSelect}
               className="hidden"
             />
@@ -680,7 +679,7 @@ const Lesson = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
-              className="flex-1 text-lg"
+              className="flex-1 text-base sm:text-lg min-w-0"
               disabled={isLoading}
               dir="auto"
             />
