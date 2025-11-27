@@ -560,8 +560,8 @@ const Lesson = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {/* Display image if present, or show fallback if image was deleted */}
-                      {message.image ? (
+                      {/* Display image if found in database */}
+                      {message.image && (
                         <div className="mb-2">
                           <img 
                             src={message.image} 
@@ -569,13 +569,34 @@ const Lesson = () => {
                             className="max-w-full max-h-64 rounded-lg object-contain"
                           />
                         </div>
-                      ) : message.imageId && !message.image ? (
-                        <p className="text-lg leading-relaxed text-muted-foreground" dir="rtl">
-                          [תמונה מצורפת]
-                        </p>
-                      ) : null}
-                      {/* Display text content only if there is actual text */}
-                      {message.content && message.content.trim() && splitByLanguage(message.content).map((segment, idx) => (
+                      )}
+                      
+                      {/* If image was deleted (has imageId but no image data), show fallback text */}
+                      {message.imageId && !message.image && (
+                        <div dir="rtl">
+                          <p className="text-lg leading-relaxed text-muted-foreground">
+                            [תמונה מצורפת]
+                          </p>
+                          {/* If there's also text content, add line break and show it */}
+                          {message.content && message.content.trim() && (
+                            <div className="mt-2">
+                              {splitByLanguage(message.content).map((segment, idx) => (
+                                <p
+                                  key={idx}
+                                  className="text-lg leading-relaxed"
+                                  dir={segment.direction}
+                                  style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
+                                >
+                                  {segment.text || "\u00A0"}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Display text content only if there's no deleted image (otherwise it's shown above) */}
+                      {!(message.imageId && !message.image) && message.content && message.content.trim() && splitByLanguage(message.content).map((segment, idx) => (
                         <p
                           key={idx}
                           className="text-lg leading-relaxed"
