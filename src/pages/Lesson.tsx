@@ -218,7 +218,7 @@ const Lesson = () => {
                   .select("image_data")
                   .eq("id", msg.image_id)
                   .maybeSingle();
-
+                
                 return {
                   role: msg.role,
                   content: msg.content,
@@ -227,9 +227,9 @@ const Lesson = () => {
                 };
               }
               return { role: msg.role, content: msg.content };
-            }),
+            })
           );
-
+          
           setMessages(messagesWithImages);
           const completedSet = new Set<number>();
           messagesWithImages.forEach((_, idx) => completedSet.add(idx));
@@ -258,10 +258,10 @@ const Lesson = () => {
   }, [isInitialized, conversationId]);
 
   const streamChat = async (userMessage: string, isInitial: boolean = false, imageData?: string | null) => {
-    const newMessage: ChatMessage = {
-      role: "user",
+    const newMessage: ChatMessage = { 
+      role: "user", 
       content: userMessage,
-      ...(imageData && { image: imageData }),
+      ...(imageData && { image: imageData })
     };
     const newMessages = [...messages, newMessage];
     setMessages(newMessages);
@@ -288,7 +288,7 @@ const Lesson = () => {
 
       if (user && conversationId) {
         let imageId: string | null = null;
-
+        
         // If there's an image, save it to lesson_images first
         if (imageData) {
           const { data: savedImage, error: imageError } = await supabase
@@ -299,12 +299,12 @@ const Lesson = () => {
             })
             .select("id")
             .single();
-
+          
           if (!imageError && savedImage) {
             imageId = savedImage.id;
           }
         }
-
+        
         await supabase.from("lesson_messages").insert({
           user_id: user.id,
           conversation_id: conversationId,
@@ -316,9 +316,9 @@ const Lesson = () => {
       }
 
       // Prepare messages for API (without image data in content to reduce payload for history)
-      const messagesForApi = newMessages.map((msg) => ({
+      const messagesForApi = newMessages.map(msg => ({
         role: msg.role,
-        content: msg.content,
+        content: msg.content
       }));
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-chat`, {
@@ -327,11 +327,11 @@ const Lesson = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          messages: messagesForApi,
-          topic,
+        body: JSON.stringify({ 
+          messages: messagesForApi, 
+          topic, 
           mode,
-          image: imageData || undefined,
+          image: imageData || undefined
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -506,7 +506,7 @@ const Lesson = () => {
       <div
         ref={chatContainerRef}
         id="chat"
-        className="flex-1 container mx-auto px-2 sm:px-4 py-6 pb-32 w-full max-w-4xl overflow-y-auto overflow-x-hidden"
+        className="flex-1 container mx-auto px-4 py-6 pb-32 max-w-4xl overflow-y-auto"
       >
         <div className="space-y-4">
           {!isInitialized && messages.length === 0 && (
@@ -520,9 +520,9 @@ const Lesson = () => {
             const hasCompletedTyping = completedTyping.has(index);
 
             return (
-              <div key={index} className={`flex w-full ${message.role === "user" ? "justify-start" : "justify-end"}`}>
+              <div key={index} className={`flex ${message.role === "user" ? "justify-start" : "justify-end"}`}>
                 <Card
-                  className={`p-3 sm:p-4 max-w-[85%] sm:max-w-[80%] break-words overflow-wrap-anywhere ${
+                  className={`p-4 max-w-[80%] ${
                     message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card"
                   }`}
                 >
@@ -559,22 +559,24 @@ const Lesson = () => {
                       )}
                     </div>
                   ) : (
-                     <div className="space-y-2 w-full">
+                    <div className="space-y-2">
                       {/* Display image if found in database */}
                       {message.image && (
-                        <div className="mb-2 w-full">
-                          <img
-                            src={message.image}
-                            alt="תמונה שהועלתה"
-                            className="w-full max-w-full h-auto max-h-64 rounded-lg object-contain"
+                        <div className="mb-2">
+                          <img 
+                            src={message.image} 
+                            alt="תמונה שהועלתה" 
+                            className="max-w-full max-h-64 rounded-lg object-contain"
                           />
                         </div>
                       )}
-
+                      
                       {/* If image was deleted (has imageId but no image data), show fallback text */}
                       {message.imageId && !message.image && (
                         <div dir="rtl">
-                          <p className="text-lg leading-relaxed text-muted-foreground">[תמונה מצורפת]</p>
+                          <p className="text-lg leading-relaxed text-muted-foreground">
+                            [תמונה מצורפת]
+                          </p>
                           {/* If there's also text content, add line break and show it */}
                           {message.content && message.content.trim() && (
                             <div className="mt-2">
@@ -592,21 +594,18 @@ const Lesson = () => {
                           )}
                         </div>
                       )}
-
+                      
                       {/* Display text content only if there's no deleted image (otherwise it's shown above) */}
-                      {!(message.imageId && !message.image) &&
-                        message.content &&
-                        message.content.trim() &&
-                        splitByLanguage(message.content).map((segment, idx) => (
-                          <p
-                            key={idx}
-                            className="text-lg leading-relaxed"
-                            dir={segment.direction}
-                            style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
-                          >
-                            {segment.text || "\u00A0"}
-                          </p>
-                        ))}
+                      {!(message.imageId && !message.image) && message.content && message.content.trim() && splitByLanguage(message.content).map((segment, idx) => (
+                        <p
+                          key={idx}
+                          className="text-lg leading-relaxed"
+                          dir={segment.direction}
+                          style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
+                        >
+                          {segment.text || "\u00A0"}
+                        </p>
+                      ))}
                     </div>
                   )}
                 </Card>
@@ -614,8 +613,8 @@ const Lesson = () => {
             );
           })}
           {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
-            <div className="flex w-full justify-end">
-              <Card className="p-3 sm:p-4 max-w-[85%] sm:max-w-[80%] bg-card">
+            <div className="flex justify-end">
+              <Card className="p-4 max-w-[80%] bg-card">
                 <Loader2 className="w-5 h-5 animate-spin" />
               </Card>
             </div>
@@ -625,27 +624,27 @@ const Lesson = () => {
       </div>
 
       {/* Input Area - Fixed at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg w-full">
-        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 max-w-4xl w-full">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg">
+        <div className="container mx-auto px-4 py-4 max-w-4xl">
           {/* Image Preview */}
           {selectedImage && (
-            <div className="mb-2 sm:mb-3 relative inline-block">
-              <img
-                src={selectedImage}
-                alt="תצוגה מקדימה"
-                className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border-2 border-primary max-w-full"
+            <div className="mb-3 relative inline-block">
+              <img 
+                src={selectedImage} 
+                alt="תצוגה מקדימה" 
+                className="h-20 w-20 object-cover rounded-lg border-2 border-primary"
               />
               <button
                 onClick={clearSelectedImage}
-                className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80 transition-colors"
+                className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80 transition-colors"
                 aria-label="הסר תמונה"
               >
-                <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           )}
-
-          <div className="flex gap-1 sm:gap-2 w-full items-center">
+          
+          <div className="flex gap-2">
             {isLoading ? (
               <Button size="icon" variant="destructive" onClick={handleStop}>
                 <X className="w-5 h-5" />
@@ -655,31 +654,32 @@ const Lesson = () => {
                 <Send className="w-5 h-5" />
               </Button>
             )}
-
+            
             {/* Image Upload Button */}
-            <Button
-              size="icon"
-              variant="outline"
+            <Button 
+              size="icon" 
+              variant="outline" 
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
               className="shrink-0"
             >
-              <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <ImagePlus className="w-5 h-5" />
             </Button>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              capture="environment"
               onChange={handleImageSelect}
               className="hidden"
             />
-
+            
             <Input
               placeholder="הקלד/י את התשובה שלך כאן..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
-              className="flex-1 text-base sm:text-lg min-w-0"
+              className="flex-1 text-lg"
               disabled={isLoading}
               dir="auto"
             />
