@@ -198,7 +198,7 @@ const Topic = () => {
             className="text-muted-foreground hover:text-foreground"
           >
             <ArrowRight className="ml-2 h-4 w-4" />
-            חזרה ללובי הבית
+            ללובי
           </Button>
         </div>
       </header>
