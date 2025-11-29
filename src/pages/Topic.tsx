@@ -2,7 +2,17 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate, useParams } from "react-router-dom";
-import { BookOpen, Home, Brain, ArrowRight, MessageSquare, Clock, CheckCircle2, ClipboardList, Trophy } from "lucide-react";
+import {
+  BookOpen,
+  Home,
+  Brain,
+  ArrowRight,
+  MessageSquare,
+  Clock,
+  CheckCircle2,
+  ClipboardList,
+  Trophy,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -173,17 +183,17 @@ const Topic = () => {
   // Calculate mock progress data
   const totalConversations = conversations.length;
   const mockProgress = Math.min((totalConversations / 5) * 100, 100); // Example: 5 conversations = 100%
-  const lessonsCount = conversations.filter(c => c.title?.includes("ללמוד")).length;
-  const homeworkCount = conversations.filter(c => c.title?.includes("שיעורי בית")).length;
-  const testsCount = conversations.filter(c => c.title?.includes("מבחן")).length;
+  const lessonsCount = conversations.filter((c) => c.title?.includes("ללמוד")).length;
+  const homeworkCount = conversations.filter((c) => c.title?.includes("שיעורי בית")).length;
+  const testsCount = conversations.filter((c) => c.title?.includes("מבחן")).length;
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
       <header className="bg-background border-b border-border">
         <div className="container mx-auto px-4 sm:px-6 py-4 max-w-7xl">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate("/dashboard")}
             className="text-muted-foreground hover:text-foreground"
           >
@@ -204,7 +214,7 @@ const Topic = () => {
               <span className="text-5xl sm:text-6xl">{topic.icon}</span>
             </div>
           </div>
-          
+
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 break-words px-4">{topic.title}</h1>
           {topic.description && (
             <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">{topic.description}</p>
@@ -219,7 +229,7 @@ const Topic = () => {
               <span className="text-sm sm:text-base font-semibold text-blue-600">{Math.round(mockProgress)}%</span>
             </div>
             <Progress value={mockProgress} className="h-2 mb-8" />
-            
+
             {/* Stats Pills */}
             <div className="grid grid-cols-3 gap-3 sm:gap-4">
               <div className="flex flex-col items-center gap-2 bg-blue-50 rounded-2xl p-3 sm:p-4">
@@ -317,7 +327,7 @@ const Topic = () => {
         {conversations.length > 0 && (
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-right">שיחות קודמות</h2>
-            
+
             <div className="space-y-3 sm:space-y-4">
               {conversations.map((conversation) => (
                 <Card
@@ -353,17 +363,6 @@ const Topic = () => {
                   </div>
                 </Card>
               ))}
-            </div>
-            
-            <div className="mt-6 text-center">
-              <Button 
-                variant="ghost" 
-                className="text-blue-600 hover:text-blue-700"
-                onClick={() => {/* Could implement "view all" functionality */}}
-              >
-                צפה בכל השיחות
-                <ArrowRight className="mr-2 h-4 w-4" />
-              </Button>
             </div>
           </div>
         )}
