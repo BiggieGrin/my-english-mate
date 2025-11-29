@@ -12,6 +12,7 @@ import { XpGainAnimation } from "@/components/XpGainAnimation";
 import { LevelUpAnimation } from "@/components/LevelUpAnimation";
 import { XpProgressBar } from "@/components/XpProgressBar";
 import { CustomTypewriter } from "@/components/CustomTypewriter";
+import { useSessionTracking } from "@/hooks/useSessionTracking";
 
 // Detect if text is primarily Hebrew (RTL) or English (LTR)
 const detectTextDirection = (text: string): "rtl" | "ltr" => {
@@ -120,6 +121,9 @@ const Lesson = () => {
   const topic = location.state?.topic || "English";
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
+  
+  // Session tracking for progress calculation
+  const { trackMessage } = useSessionTracking(conversationId, topicId, mode);
 
   // Handle image selection
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -269,6 +273,11 @@ const Lesson = () => {
     setSelectedImage(null);
     setIsLoading(true);
 
+    // Track user message
+    if (!isInitial) {
+      trackMessage(false, undefined);
+    }
+
     // Immediately scroll to bottom when user sends message
     setTimeout(() => scrollToBottom("auto"), 0);
 
@@ -407,6 +416,9 @@ const Lesson = () => {
                   setTotalPoints(newTotalPoints);
                   setLevel(newLevel);
                   assistantMessage += " xp_detected";
+
+                  // Track this as a correct answer
+                  trackMessage(true, true);
 
                   const {
                     data: { user },
