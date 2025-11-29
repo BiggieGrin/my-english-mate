@@ -365,15 +365,15 @@ const Dashboard = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full max-w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full">
             <Card
               className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 border-2 border-dashed"
               onClick={handleOpenDialog}
             >
-              <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
-                <Plus className="w-12 h-12 text-purple-500 mb-4" />
-                <h3 className="text-xl font-bold text-purple-600">נושא חדש</h3>
-                <p className="text-sm text-purple-400 mt-2">צור נושא חדש ללמידה</p>
+              <div className="p-4 sm:p-6 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px]">
+                <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-purple-500 mb-2 sm:mb-3" />
+                <h3 className="text-base sm:text-lg font-bold text-purple-600">נושא חדש</h3>
+                <p className="text-xs sm:text-sm text-purple-400 mt-1 sm:mt-2">צור נושא חדש ללמידה</p>
               </div>
             </Card>
 
@@ -410,16 +410,16 @@ const Dashboard = () => {
                   className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-purple-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                   onClick={() => navigate(`/topic/${topic.id}`)}
                 >
-                  <div className="p-8 pt-10 h-full flex flex-col justify-between">
-                    <div className="flex flex-row-reverse items-center gap-4 mb-6">
-                      <span className="text-5xl">{topic.icon}</span>
+                  <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
+                    <div className="flex flex-row-reverse items-center gap-3 mb-3 sm:mb-4">
+                      <span className="text-3xl sm:text-4xl md:text-5xl">{topic.icon}</span>
                     </div>
                     {topic.description && (
-                      <p className="text-sm text-slate-600 mb-4 [direction:ltr]">{topic.description}</p>
+                      <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">{topic.description}</p>
                     )}
                     <div className="flex items-center gap-2">
-                      <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
-                      <p className="text-sm text-slate-500 mb-3 m-0">שיחות</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-blue-500">{topic.conversationCount}</p>
+                      <p className="text-xs sm:text-sm text-slate-500">שיחות</p>
                     </div>
                   </div>
                 </Card>
@@ -505,15 +505,15 @@ const Dashboard = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full max-w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full">
             <Card
               className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
               onClick={handleOpenDialog}
             >
-              <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
-                <Plus className="w-12 h-12 text-blue-500 mb-4" />
-                <h3 className="text-xl font-bold text-blue-600">נושא חדש</h3>
-                <p className="text-sm text-blue-400 mt-2">צור נושא חדש ללמידה</p>
+              <div className="p-4 sm:p-6 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px]">
+                <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500 mb-2 sm:mb-3" />
+                <h3 className="text-base sm:text-lg font-bold text-blue-600">נושא חדש</h3>
+                <p className="text-xs sm:text-sm text-blue-400 mt-1 sm:mt-2">צור נושא חדש ללמידה</p>
               </div>
             </Card>
 
@@ -550,17 +550,17 @@ const Dashboard = () => {
                   className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
                   onClick={() => navigate(`/topic/${topic.id}`)}
                 >
-                  <div className="p-8 pt-10 h-full flex flex-col justify-between">
-                    <div className="flex flex-row-reverse items-center gap-4 mb-6">
-                      <span className="text-5xl">{topic.icon}</span>
-                      <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
+                  <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
+                    <div className="flex flex-row-reverse items-center gap-3 mb-3 sm:mb-4">
+                      <span className="text-3xl sm:text-4xl md:text-5xl">{topic.icon}</span>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-800">{topic.title}</h3>
                     </div>
                     {topic.description && (
-                      <p className="text-sm text-slate-600 mb-4 [direction:ltr]">{topic.description}</p>
+                      <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">{topic.description}</p>
                     )}
                     <div className="flex items-center gap-2">
-                      <p className="text-4xl font-bold text-blue-500">{topic.conversationCount}</p>
-                      <p className="text-sm text-slate-500 mb-3 m-0">שיחות</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-blue-500">{topic.conversationCount}</p>
+                      <p className="text-xs sm:text-sm text-slate-500">שיחות</p>
                     </div>
                   </div>
                 </Card>
@@ -640,17 +640,17 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full max-w-full">
-          <Card
-            className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
-            onClick={handleOpenDialog}
-          >
-            <div className="p-8 pt-10 flex flex-col items-center justify-center min-h-[200px]">
-              <Plus className="w-12 h-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-bold text-blue-700">נושא חדש</h3>
-              <p className="text-sm text-blue-500 mt-2">צור נושא חדש ללמידה</p>
-            </div>
-          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full">
+            <Card
+              className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
+              onClick={handleOpenDialog}
+            >
+              <div className="p-4 sm:p-6 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px]">
+                <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 mb-2 sm:mb-3" />
+                <h3 className="text-base sm:text-lg font-bold text-blue-700">נושא חדש</h3>
+                <p className="text-xs sm:text-sm text-blue-500 mt-1 sm:mt-2">צור נושא חדש ללמידה</p>
+              </div>
+            </Card>
 
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent
@@ -679,27 +679,27 @@ const Dashboard = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             </div>
           ) : (
-            topics.map((topic) => (
-              <Card
-                key={topic.id}
-                className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-600 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
-                onClick={() => navigate(`/topic/${topic.id}`)}
-              >
-                <div className="p-8 pt-10 h-full flex flex-col justify-between">
-                  <div className="flex flex-row-reverse items-center gap-4 mb-6">
-                    <span className="text-5xl">{topic.icon}</span>
-                    <h3 className="text-xl font-bold text-slate-800">{topic.title}</h3>
+              topics.map((topic) => (
+                <Card
+                  key={topic.id}
+                  className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-600 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
+                  onClick={() => navigate(`/topic/${topic.id}`)}
+                >
+                  <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
+                    <div className="flex flex-row-reverse items-center gap-3 mb-3 sm:mb-4">
+                      <span className="text-3xl sm:text-4xl md:text-5xl">{topic.icon}</span>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-800">{topic.title}</h3>
+                    </div>
+                    {topic.description && (
+                      <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">{topic.description}</p>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <p className="text-2xl sm:text-3xl font-bold text-blue-600">{topic.conversationCount}</p>
+                      <p className="text-xs sm:text-sm text-slate-500">שיחות</p>
+                    </div>
                   </div>
-                  {topic.description && (
-                    <p className="text-sm text-slate-600 mb-4 [direction:ltr]">{topic.description}</p>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <p className="text-4xl font-bold text-blue-600">{topic.conversationCount}</p>
-                    <p className="text-sm text-slate-500 mb-3 m-0">שיחות</p>
-                  </div>
-                </div>
-              </Card>
-            ))
+                </Card>
+              ))
           )}
         </div>
       </div>
