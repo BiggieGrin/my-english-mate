@@ -346,7 +346,7 @@ const Dashboard = () => {
                     <div className="text-5xl sm:text-7xl animate-bounce-slow">
                       {recentConversation.topics?.icon || "🎯"}
                     </div>
-                    <div className="text-white text-center sm:text-right flex justify-center">
+                    <div className="text-white text-center sm:text-right">
                       <h2 className="text-xl sm:text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
                       <p className="text-purple-50 text-base sm:text-lg break-words">
                         {recentConversation.topics?.title || recentConversation.title}
@@ -488,7 +488,7 @@ const Dashboard = () => {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
                   <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
                     <div className="text-5xl sm:text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
-                    <div className="text-white text-center sm:text-right flex justify-center">
+                    <div className="text-white text-center sm:text-right ">
                       <h2 className="text-xl sm:text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
                       <p className="text-blue-50 text-base sm:text-lg break-words">
                         {recentConversation.topics?.title || recentConversation.title}
@@ -625,7 +625,7 @@ const Dashboard = () => {
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
                 <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
                   <div className="text-5xl sm:text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
-                  <div className="text-white text-center sm:text-right flex justify-center">
+                  <div className="text-white text-center sm:text-right">
                     <h2 className="text-xl sm:text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
                     <p className="text-blue-50 text-base sm:text-lg break-words">
                       {recentConversation.topics?.title || recentConversation.title}
