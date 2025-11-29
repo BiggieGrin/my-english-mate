@@ -295,9 +295,9 @@ const Dashboard = () => {
   if (ageGroup === "young") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 theme-young">
-        <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex justify-between items-center">
+        <header className="bg-white shadow-sm border-b sticky top-0 z-10 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 sm:px-6 py-4 max-w-full">
+            <div className="flex justify-between items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-gradient-to-r from-purple-200 to-pink-200 rounded-xl"></div>
                 <div className="flex items-center gap-3 bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 rounded-full shadow-lg">
@@ -327,31 +327,31 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <div className="container mx-auto px-6 py-12 max-w-7xl">
+        <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl overflow-x-hidden">
           {/* HERO SECTION - YOUNG */}
           <div className="mb-12 text-right">
-            <h1 className="text-4xl md:text-5xl font-bold text-purple-900 mb-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-900 mb-3 break-words">
               {greeting}, {userName} 👋
             </h1>
-            <p className="text-xl text-purple-600 font-medium opacity-90">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
+            <p className="text-lg sm:text-xl text-purple-600 font-medium opacity-90 break-words">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
           </div>
 
           {recentConversation && (
-            <div className="mb-12">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl p-8 shadow-xl transition-transform hover:scale-[1.01]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="text-7xl animate-bounce-slow">{recentConversation.topics?.icon || "🎯"}</div>
-                    <div className="text-white">
-                      <h2 className="text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
-                      <p className="text-purple-50 text-lg">
+            <div className="mb-12 w-full max-w-full overflow-x-hidden">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+                  <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+                    <div className="text-5xl sm:text-7xl animate-bounce-slow">{recentConversation.topics?.icon || "🎯"}</div>
+                    <div className="text-white text-center sm:text-right">
+                      <h2 className="text-xl sm:text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
+                      <p className="text-purple-50 text-base sm:text-lg break-words">
                         {recentConversation.topics?.title || recentConversation.title}
                       </p>
                     </div>
                   </div>
                   <Button
                     size="lg"
-                    className="bg-white text-purple-600 hover:bg-purple-50 font-bold text-lg px-8 py-6 rounded-2xl shadow-lg"
+                    className="bg-white text-purple-600 hover:bg-purple-50 font-bold text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 rounded-2xl shadow-lg whitespace-nowrap"
                     onClick={() => navigate(`/lesson/${recentConversation.id}`)}
                   >
                     המשך ללמוד
@@ -361,7 +361,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full max-w-full">
             <Card
               className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 border-2 border-dashed"
               onClick={handleOpenDialog}
@@ -431,9 +431,9 @@ const Dashboard = () => {
   if (ageGroup === "middle") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 theme-middle">
-        <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex justify-between items-center">
+        <header className="bg-white shadow-sm border-b sticky top-0 z-10 w-full max-w-full overflow-x-hidden">
+          <div className="container mx-auto px-4 sm:px-6 py-4 max-w-full">
+            <div className="flex justify-between items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-gradient-to-r from-slate-200 to-slate-300 rounded-lg"></div>
                 <div className="flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 rounded-full shadow-lg">
@@ -465,31 +465,31 @@ const Dashboard = () => {
           </div>
         </header>
 
-        <div className="container mx-auto px-6 py-12 max-w-7xl">
+        <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl overflow-x-hidden">
           {/* HERO SECTION - MIDDLE */}
           <div className="mb-12 text-right">
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-800 mb-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800 mb-3 break-words">
               {greeting}, {userName} 👋
             </h1>
-            <p className="text-xl text-slate-600 font-medium">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
+            <p className="text-lg sm:text-xl text-slate-600 font-medium break-words">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
           </div>
 
           {recentConversation && (
-            <div className="mb-12">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-8 shadow-xl transition-transform hover:scale-[1.01]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
-                    <div className="text-white">
-                      <h2 className="text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
-                      <p className="text-blue-50 text-lg">
+            <div className="mb-12 w-full max-w-full overflow-x-hidden">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+                  <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+                    <div className="text-5xl sm:text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
+                    <div className="text-white text-center sm:text-right">
+                      <h2 className="text-xl sm:text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
+                      <p className="text-blue-50 text-base sm:text-lg break-words">
                         {recentConversation.topics?.title || recentConversation.title}
                       </p>
                     </div>
                   </div>
                   <Button
                     size="lg"
-                    className="bg-white text-blue-600 hover:bg-blue-50 font-bold text-lg px-8 py-6 rounded-2xl shadow-lg"
+                    className="bg-white text-blue-600 hover:bg-blue-50 font-bold text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 rounded-2xl shadow-lg whitespace-nowrap"
                     onClick={() => navigate(`/lesson/${recentConversation.id}`)}
                   >
                     המשך ללמוד
@@ -499,7 +499,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full max-w-full">
             <Card
               className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
               onClick={handleOpenDialog}
@@ -569,9 +569,9 @@ const Dashboard = () => {
   // --- High Version (Grades 7-12) ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 theme-high">
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex-row flex items-center justify-between">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-10 w-full max-w-full overflow-x-hidden">
+        <div className="container mx-auto px-4 sm:px-6 py-4 max-w-full">
+          <div className="flex-row flex items-center justify-between gap-2 sm:gap-4">
             {" "}
             {/* Fixed justify-center to between */}
             <div className="flex items-center gap-4">
@@ -598,31 +598,31 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
-      <div className="container mx-auto px-6 py-12 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl overflow-x-hidden">
         {/* HERO SECTION - HIGH */}
         <div className="mb-12 text-right">
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-3">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-3 break-words">
             {greeting}, {userName} 👋
           </h1>
-          <p className="text-xl text-slate-600 font-light">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
+          <p className="text-lg sm:text-xl text-slate-600 font-light break-words">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
         </div>
 
         {recentConversation && (
-          <div className="mb-12">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-8 shadow-xl transition-transform hover:scale-[1.01]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-6">
-                  <div className="text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
-                  <div className="text-white">
-                    <h2 className="text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
-                    <p className="text-blue-50 text-lg">
+          <div className="mb-12 w-full max-w-full overflow-x-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+                <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+                  <div className="text-5xl sm:text-7xl">{recentConversation.topics?.icon || "🎯"}</div>
+                  <div className="text-white text-center sm:text-right">
+                    <h2 className="text-xl sm:text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
+                    <p className="text-blue-50 text-base sm:text-lg break-words">
                       {recentConversation.topics?.title || recentConversation.title}
                     </p>
                   </div>
                 </div>
                 <Button
                   size="lg"
-                  className="bg-white text-blue-700 hover:bg-blue-50 font-bold text-lg px-8 py-6 rounded-2xl shadow-lg"
+                  className="bg-white text-blue-700 hover:bg-blue-50 font-bold text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 rounded-2xl shadow-lg whitespace-nowrap"
                   onClick={() => navigate(`/lesson/${recentConversation.id}`)}
                 >
                   המשך ללמוד
@@ -632,7 +632,7 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 w-full max-w-full">
           <Card
             className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
             onClick={handleOpenDialog}
