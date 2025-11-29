@@ -148,6 +148,69 @@ export type Database = {
           },
         ]
       }
+      lesson_sessions: {
+        Row: {
+          accuracy: number | null
+          completed_at: string | null
+          conversation_id: string | null
+          correct_answers: number | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          mode: string
+          questions_answered: number | null
+          started_at: string
+          topic_id: string
+          total_messages: number | null
+          user_id: string
+        }
+        Insert: {
+          accuracy?: number | null
+          completed_at?: string | null
+          conversation_id?: string | null
+          correct_answers?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          mode: string
+          questions_answered?: number | null
+          started_at?: string
+          topic_id: string
+          total_messages?: number | null
+          user_id: string
+        }
+        Update: {
+          accuracy?: number | null
+          completed_at?: string | null
+          conversation_id?: string | null
+          correct_answers?: number | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          mode?: string
+          questions_answered?: number | null
+          started_at?: string
+          topic_id?: string
+          total_messages?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_sessions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_sessions_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "curriculum_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           ai_assessment: Json | null
@@ -204,29 +267,50 @@ export type Database = {
       }
       user_topics: {
         Row: {
+          assessment_score: number | null
+          concept_score: number | null
+          correct_answers: number | null
           created_at: string
           id: string
           last_accessed_at: string
+          overall_progress: number | null
+          practice_score: number | null
           started_at: string
+          subtopics_covered: Json | null
           topic_id: string
+          total_questions_answered: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          assessment_score?: number | null
+          concept_score?: number | null
+          correct_answers?: number | null
           created_at?: string
           id?: string
           last_accessed_at?: string
+          overall_progress?: number | null
+          practice_score?: number | null
           started_at?: string
+          subtopics_covered?: Json | null
           topic_id: string
+          total_questions_answered?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          assessment_score?: number | null
+          concept_score?: number | null
+          correct_answers?: number | null
           created_at?: string
           id?: string
           last_accessed_at?: string
+          overall_progress?: number | null
+          practice_score?: number | null
           started_at?: string
+          subtopics_covered?: Json | null
           topic_id?: string
+          total_questions_answered?: number | null
           updated_at?: string
           user_id?: string
         }

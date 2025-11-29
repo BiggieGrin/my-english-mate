@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Progress } from "@/components/ui/progress";
+import { useProgressTracking } from "@/hooks/useProgressTracking";
 
 interface Conversation {
   id: string;
@@ -40,6 +41,7 @@ const Topic = () => {
   const [topic, setTopic] = useState<Topic | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { progress, isLoading: progressLoading } = useProgressTracking(topicId);
 
   useEffect(() => {
     loadTopicAndConversations();
@@ -180,10 +182,10 @@ const Topic = () => {
     );
   }
 
-  // Calculate mock progress data
+  // Calculate progress data from actual metrics or fallback to mock
   const totalConversations = conversations.length;
-  const mockProgress = Math.min((totalConversations / 5) * 100, 100); // Example: 5 conversations = 100%
-  const lessonsCount = conversations.filter((c) => c.title?.includes("ללמוד")).length;
+  const overallProgress = progress?.overall || Math.min((totalConversations / 5) * 100, 100);
+  const lessonsCount = progress?.totalQuestions ? Math.floor(progress.totalQuestions / 10) : conversations.filter((c) => c.title?.includes("ללמוד")).length;
   const homeworkCount = conversations.filter((c) => c.title?.includes("שיעורי בית")).length;
   const testsCount = conversations.filter((c) => c.title?.includes("מבחן")).length;
 
@@ -226,9 +228,9 @@ const Topic = () => {
           <div className="bg-card rounded-3xl border border-border p-6 sm:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm sm:text-base text-muted-foreground">התקדמות שלך</span>
-              <span className="text-sm sm:text-base font-semibold text-blue-600">{Math.round(mockProgress)}%</span>
+              <span className="text-sm sm:text-base font-semibold text-blue-600">{Math.round(overallProgress)}%</span>
             </div>
-            <Progress value={mockProgress} className="h-2 mb-8" />
+            <Progress value={overallProgress} className="h-2 mb-8" />
 
             {/* Stats Pills */}
             <div className="grid grid-cols-3 gap-3 sm:gap-4">
