@@ -201,12 +201,7 @@ const Topic = () => {
             <div className="absolute top-4 left-1/2 -translate-x-20 w-12 h-12 rounded-full bg-blue-100 opacity-50"></div>
             <div className="absolute top-8 right-1/2 translate-x-16 w-8 h-8 rounded-full bg-blue-200 opacity-40"></div>
             <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-              <svg className="w-14 h-14 sm:w-16 sm:h-16 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                <path d="M16 16h5v5" />
-              </svg>
+              <span className="text-5xl sm:text-6xl">{topic.icon}</span>
             </div>
           </div>
           
