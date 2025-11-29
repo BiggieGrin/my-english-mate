@@ -333,15 +333,19 @@ const Dashboard = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-900 mb-3 break-words">
               {greeting}, {userName} 👋
             </h1>
-            <p className="text-lg sm:text-xl text-purple-600 font-medium opacity-90 break-words">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
+            <p className="text-lg sm:text-xl text-purple-600 font-medium opacity-90 break-words">
+              בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.
+            </p>
           </div>
 
           {recentConversation && (
-            <div className="mb-12 w-full max-w-full overflow-x-hidden">
+            <div className="mb-12 w-full max-w-full ">
               <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
                   <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
-                    <div className="text-5xl sm:text-7xl animate-bounce-slow">{recentConversation.topics?.icon || "🎯"}</div>
+                    <div className="text-5xl sm:text-7xl animate-bounce-slow">
+                      {recentConversation.topics?.icon || "🎯"}
+                    </div>
                     <div className="text-white text-center sm:text-right">
                       <h2 className="text-xl sm:text-2xl font-bold mb-2">המשך מאיפה שהפסקת</h2>
                       <p className="text-purple-50 text-base sm:text-lg break-words">
@@ -471,11 +475,13 @@ const Dashboard = () => {
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800 mb-3 break-words">
               {greeting}, {userName} 👋
             </h1>
-            <p className="text-lg sm:text-xl text-slate-600 font-medium break-words">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
+            <p className="text-lg sm:text-xl text-slate-600 font-medium break-words">
+              בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.
+            </p>
           </div>
 
           {recentConversation && (
-            <div className="mb-12 w-full max-w-full overflow-x-hidden">
+            <div className="mb-12 w-full max-w-full ">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
                   <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
@@ -604,11 +610,13 @@ const Dashboard = () => {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-3 break-words">
             {greeting}, {userName} 👋
           </h1>
-          <p className="text-lg sm:text-xl text-slate-600 font-light break-words">בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.</p>
+          <p className="text-lg sm:text-xl text-slate-600 font-light break-words">
+            בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.
+          </p>
         </div>
 
         {recentConversation && (
-          <div className="mb-12 w-full max-w-full overflow-x-hidden">
+          <div className="mb-12 w-full max-w-full ">
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
                 <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
