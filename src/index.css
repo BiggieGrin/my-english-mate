@@ -104,6 +104,14 @@ All colors MUST be HSL.
     --background: var(--high-bg);
   }
 }
+html::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
 
 .scrollbar-hide {
   -ms-overflow-style: none;
