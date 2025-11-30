@@ -8,7 +8,6 @@ import {
   Brain,
   ArrowRight,
   MessageSquare,
-  Clock,
   CheckCircle2,
   ClipboardList,
   Trophy,
@@ -41,7 +40,61 @@ const Topic = () => {
   const [topic, setTopic] = useState<Topic | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { progress, isLoading: progressLoading } = useProgressTracking(topicId);
+
+  // Get active conversation for progress tracking
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchActiveConversation = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !topicId) return;
+
+      const { data } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('topic_id', topicId)
+        .order('last_message_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setActiveConversationId(data.id);
+      }
+    };
+
+    fetchActiveConversation();
+  }, [topicId]);
+
+  const { progress, isLoading: progressLoading } = useProgressTracking(activeConversationId);
+
+  // Get completed sessions count for stats
+  const [completedStats, setCompletedStats] = useState({ lessons: 0, homework: 0, tests: 0 });
+  
+  useEffect(() => {
+    const fetchCompletedStats = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !topicId) return;
+
+      const { data } = await supabase
+        .from('lesson_sessions')
+        .select('mode')
+        .eq('user_id', user.id)
+        .eq('topic_id', topicId)
+        .not('completed_at', 'is', null);
+
+      if (data) {
+        const stats = {
+          lessons: data.filter(s => s.mode === 'learn').length,
+          homework: data.filter(s => s.mode === 'homework').length,
+          tests: data.filter(s => s.mode === 'exam_prep').length,
+        };
+        setCompletedStats(stats);
+      }
+    };
+
+    fetchCompletedStats();
+  }, [topicId]);
 
   useEffect(() => {
     loadTopicAndConversations();
@@ -182,13 +235,6 @@ const Topic = () => {
     );
   }
 
-  // Calculate progress data from actual metrics or fallback to mock
-  const totalConversations = conversations.length;
-  const overallProgress = progress?.overall || Math.min((totalConversations / 5) * 100, 100);
-  const lessonsCount = progress?.totalQuestions ? Math.floor(progress.totalQuestions / 10) : conversations.filter((c) => c.title?.includes("ללמוד")).length;
-  const homeworkCount = conversations.filter((c) => c.title?.includes("שיעורי בית")).length;
-  const testsCount = conversations.filter((c) => c.title?.includes("מבחן")).length;
-
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Header */}
@@ -223,73 +269,44 @@ const Topic = () => {
           )}
         </div>
 
-        {/* Progress Section */}
+        {/* Progress Section - SINGLE PROGRESS BAR ONLY */}
         <div className="max-w-5xl mx-auto mb-12 sm:mb-16">
           <div className="bg-card rounded-3xl border border-border p-6 sm:p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm sm:text-base text-muted-foreground">התקדמות שלך</span>
-              <span className="text-sm sm:text-base font-semibold text-blue-600">
-                {progress?.overall ? `${progress.overall.toFixed(1)}%` : `${Math.round(overallProgress)}%`}
-              </span>
-            </div>
-            <Progress value={progress?.overall || overallProgress} className="h-2 mb-6" />
-
-            {/* Detailed Progress Breakdown */}
-            {progress && (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs sm:text-sm">
-                    <span className="text-muted-foreground">כיסוי נושאים</span>
-                    <span className="font-semibold text-blue-600">{progress.coverage.toFixed(1)}%</span>
-                  </div>
-                  <Progress value={progress.coverage} className="h-1.5" />
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">התקדמות שיעור נוכחי</span>
+                  <span className="text-sm font-bold">
+                    {progress?.sessionProgress.toFixed(progress.sessionProgress % 1 === 0 ? 0 : 1)}%
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs sm:text-sm">
-                    <span className="text-muted-foreground">דיוק</span>
-                    <span className="font-semibold text-green-600">{progress.accuracy.toFixed(1)}%</span>
-                  </div>
-                  <Progress value={progress.accuracy} className="h-1.5" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs sm:text-sm">
-                    <span className="text-muted-foreground">שטף</span>
-                    <span className="font-semibold text-purple-600">{progress.fluency.toFixed(1)}%</span>
-                  </div>
-                  <Progress value={progress.fluency} className="h-1.5" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs sm:text-sm">
-                    <span className="text-muted-foreground">שימור</span>
-                    <span className="font-semibold text-amber-600">{progress.retention.toFixed(1)}%</span>
-                  </div>
-                  <Progress value={progress.retention} className="h-1.5" />
-                </div>
+                <Progress value={progress?.sessionProgress || 0} className="h-3" />
               </div>
-            )}
+
+              <div className="text-xs text-muted-foreground text-center">
+                {progress ? (
+                  <>
+                    {progress.questionsAnswered} שאלות נענו • {progress.correctAnswers} נכונות
+                  </>
+                ) : (
+                  'התחל שיעור כדי לעקוב אחר ההתקדמות'
+                )}
+              </div>
+            </div>
 
             {/* Stats Pills */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-4">
-              <div className="flex flex-col items-center gap-2 bg-blue-50 rounded-2xl p-3 sm:p-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                </div>
-                <div className="text-xl sm:text-2xl font-bold text-foreground">{lessonsCount}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">שיעורים</div>
+            <div className="grid grid-cols-3 gap-4 mt-6">
+              <div className="bg-primary/10 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-primary">{completedStats.lessons}</div>
+                <div className="text-xs text-muted-foreground mt-1">שיעורים הושלמו</div>
               </div>
-              <div className="flex flex-col items-center gap-2 bg-green-50 rounded-2xl p-3 sm:p-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-green-100 flex items-center justify-center">
-                  <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-                </div>
-                <div className="text-xl sm:text-2xl font-bold text-foreground">{homeworkCount}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">תרגילים</div>
+              <div className="bg-secondary/10 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-secondary-foreground">{completedStats.homework}</div>
+                <div className="text-xs text-muted-foreground mt-1">שיעורי בית הושלמו</div>
               </div>
-              <div className="flex flex-col items-center gap-2 bg-purple-50 rounded-2xl p-3 sm:p-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                </div>
-                <div className="text-xl sm:text-2xl font-bold text-foreground">{testsCount}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">מבחנים</div>
+              <div className="bg-accent/10 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-accent-foreground">{completedStats.tests}</div>
+                <div className="text-xs text-muted-foreground mt-1">מבחנים הושלמו</div>
               </div>
             </div>
           </div>

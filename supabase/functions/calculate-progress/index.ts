@@ -34,169 +34,131 @@ serve(async (req) => {
       });
     }
 
-    const { topicId } = await req.json();
+    const { sessionId } = await req.json();
 
-    if (!topicId) {
-      return new Response(JSON.stringify({ error: 'Missing topicId' }), {
+    if (!sessionId) {
+      return new Response(JSON.stringify({ error: 'Missing sessionId' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Calculating progress for user ${user.id}, topic ${topicId}`);
+    console.log(`Calculating progress for session ${sessionId}`);
 
-    // Fetch all completed sessions for this topic
-    const { data: sessions, error: sessionsError } = await supabase
+    // Fetch the current session
+    const { data: session, error: sessionError } = await supabase
       .from('lesson_sessions')
       .select('*')
+      .eq('id', sessionId)
       .eq('user_id', user.id)
-      .eq('topic_id', topicId)
-      .not('completed_at', 'is', null)
-      .order('completed_at', { ascending: false });
-
-    if (sessionsError) {
-      console.error('Error fetching sessions:', sessionsError);
-      return new Response(JSON.stringify({ error: 'Failed to fetch sessions' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Get user_topics record
-    const { data: userTopic, error: userTopicError } = await supabase
-      .from('user_topics')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('topic_id', topicId)
       .single();
 
-    if (userTopicError) {
-      console.error('Error fetching user_topic:', userTopicError);
-      return new Response(JSON.stringify({ error: 'Failed to fetch user topic' }), {
-        status: 500,
+    if (sessionError || !session) {
+      console.error('Error fetching session:', sessionError);
+      return new Response(JSON.stringify({ error: 'Session not found' }), {
+        status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // ====================
-    // 1. COVERAGE SCORE (40%)
-    // ====================
-    // A subskill is "mastered" when the user got 2 consecutive correct answers for that subskill,
-    // AND one of them was without hints.
+    // Calculate session progress based on actual work completed
+    // Progress is a continuous value from 0-100 based on real metrics
     
-    const subskillsMastered = userTopic.subskills_mastered || [];
-    const totalSubskills = 10; // In production, fetch from curriculum definition
-    const coverageScore = Math.min(subskillsMastered.length / totalSubskills, 1.0);
+    const questionsAnswered = session.questions_answered || 0;
+    const correctAnswers = session.correct_answers || 0;
+    const totalMessages = session.total_messages || 0;
+    const mode = session.mode;
 
-    console.log(`Coverage: ${subskillsMastered.length}/${totalSubskills} subskills mastered = ${(coverageScore * 100).toFixed(2)}%`);
+    let sessionProgress = 0;
 
-    // ====================
-    // 2. ACCURACY SCORE (30%)
-    // ====================
-    // Rolling accuracy over last 20 relevant answers
-    // Formula: (Correct*1.0 + CorrectAfterHint*0.5) / TotalItems
-    
-    const accuracyLog = (userTopic.accuracy_log || []).slice(0, 20); // Last 20 items
-    let correctCount = 0;
-    let correctAfterHintCount = 0;
-    
-    for (const item of accuracyLog) {
-      if (item.correct && !item.hinted) {
-        correctCount++;
-      } else if (item.correct && item.hinted) {
-        correctAfterHintCount++;
-      }
+    // Different progress calculation based on mode
+    if (mode === 'exam_prep') {
+      // Test mode: Progress based on questions answered
+      // Assuming 15-20 questions for a full test
+      const expectedQuestions = 15;
+      const questionProgress = Math.min((questionsAnswered / expectedQuestions) * 100, 100);
+      
+      // Factor in accuracy for quality
+      const accuracyMultiplier = questionsAnswered > 0 
+        ? (correctAnswers / questionsAnswered) 
+        : 0;
+      
+      sessionProgress = questionProgress * (0.7 + (accuracyMultiplier * 0.3));
+      
+    } else if (mode === 'homework') {
+      // Homework mode: More sophisticated - based on understanding demonstrated
+      // Progress increases with correct answers and decreases with hints
+      const correctAfterHint = session.correct_after_hint || 0;
+      const hintsUsed = session.hints_used || 0;
+      
+      // Base progress on interactions
+      const interactionProgress = Math.min((totalMessages / 30) * 100, 100);
+      
+      // Quality factor based on correctness
+      const qualityFactor = questionsAnswered > 0
+        ? ((correctAnswers * 1.0 + correctAfterHint * 0.5) / questionsAnswered)
+        : 0;
+      
+      // Penalty for excessive hints
+      const hintPenalty = hintsUsed > 5 ? Math.min((hintsUsed - 5) * 2, 20) : 0;
+      
+      sessionProgress = Math.max(
+        (interactionProgress * qualityFactor) - hintPenalty,
+        0
+      );
+      
+    } else if (mode === 'learn') {
+      // Practice mode: Progress based on coverage and mastery
+      const fluentAnswers = session.fluent_answers || 0;
+      
+      // Coverage progress (interactions)
+      const coverageProgress = Math.min((totalMessages / 40) * 50, 50);
+      
+      // Mastery progress (quality of answers)
+      const masteryProgress = questionsAnswered > 0
+        ? ((correctAnswers / questionsAnswered) * 30)
+        : 0;
+      
+      // Fluency bonus
+      const fluencyBonus = questionsAnswered > 0
+        ? ((fluentAnswers / questionsAnswered) * 20)
+        : 0;
+      
+      sessionProgress = coverageProgress + masteryProgress + fluencyBonus;
     }
-    
-    const accuracyScore = accuracyLog.length > 0
-      ? (correctCount * 1.0 + correctAfterHintCount * 0.5) / accuracyLog.length
-      : 0;
 
-    console.log(`Accuracy: ${correctCount} correct + ${correctAfterHintCount} hinted / ${accuracyLog.length} total = ${(accuracyScore * 100).toFixed(2)}%`);
+    // Ensure progress is between 0 and 100
+    sessionProgress = Math.max(0, Math.min(sessionProgress, 100));
 
-    // ====================
-    // 3. FLUENCY SCORE (20%)
-    // ====================
-    // Measures naturalness: answers correctly without hints, within reasonable time, using complete sentences
-    // Formula: (#FluentAnswers / #FluencyOpportunities)
-    
-    const fluentAnswers = sessions.reduce((sum, s) => sum + (s.fluent_answers || 0), 0);
-    const totalOpportunities = sessions.reduce((sum, s) => sum + (s.questions_answered || 0), 0);
-    
-    const fluencyScore = totalOpportunities > 0
-      ? fluentAnswers / totalOpportunities
-      : 0;
+    // Round to 2 decimal places for precision
+    sessionProgress = parseFloat(sessionProgress.toFixed(2));
 
-    console.log(`Fluency: ${fluentAnswers} fluent / ${totalOpportunities} opportunities = ${(fluencyScore * 100).toFixed(2)}%`);
-
-    // ====================
-    // 4. RETENTION SCORE (10%)
-    // ====================
-    // Measures if the user remembers content after time gaps
-    // Formula: 1 - (DecayFactor) where DecayFactor is based on time since last session
-    
-    const lastSessionAt = userTopic.last_session_at;
-    let retentionScore = 1.0;
-    
-    if (lastSessionAt) {
-      const daysSinceLastSession = (Date.now() - new Date(lastSessionAt).getTime()) / (1000 * 60 * 60 * 24);
-      // Decay factor: 0.05 per day (5% decay per day), max 0.5 decay (so minimum 50% retention)
-      const decayFactor = Math.min(daysSinceLastSession * 0.05, 0.5);
-      retentionScore = Math.max(1.0 - decayFactor, 0.5);
-    }
-
-    console.log(`Retention: Days since last session = ${lastSessionAt ? ((Date.now() - new Date(lastSessionAt).getTime()) / (1000 * 60 * 60 * 24)).toFixed(1) : 'N/A'}, Score = ${(retentionScore * 100).toFixed(2)}%`);
-
-    // ====================
-    // FINAL PROGRESS CALCULATION (Continuous, not rounded)
-    // ====================
-    const overallProgress = (
-      coverageScore * 0.40 +
-      accuracyScore * 0.30 +
-      fluencyScore * 0.20 +
-      retentionScore * 0.10
-    ) * 100;
-
-    // Calculate total stats
-    const totalQuestions = sessions.reduce((sum, s) => sum + (s.questions_answered || 0), 0);
-    const totalCorrect = sessions.reduce((sum, s) => sum + (s.correct_answers || 0), 0);
-
-    // Update user_topics with new scores (continuous values, not rounded)
+    // Update session with calculated progress
     const { error: updateError } = await supabase
-      .from('user_topics')
+      .from('lesson_sessions')
       .update({
-        coverage_score: coverageScore,
-        accuracy_score: accuracyScore,
-        fluency_score: fluencyScore,
-        retention_score: retentionScore,
-        overall_progress: Math.round(overallProgress), // Round only for display
-        total_questions_answered: totalQuestions,
-        correct_answers: totalCorrect,
-        last_session_at: new Date().toISOString(),
+        session_progress: sessionProgress,
       })
-      .eq('user_id', user.id)
-      .eq('topic_id', topicId);
+      .eq('id', sessionId);
 
     if (updateError) {
-      console.error('Error updating user_topics:', updateError);
+      console.error('Error updating session:', updateError);
       return new Response(JSON.stringify({ error: 'Failed to update progress' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Progress calculated: Overall=${overallProgress.toFixed(2)}%, Coverage=${(coverageScore * 100).toFixed(2)}%, Accuracy=${(accuracyScore * 100).toFixed(2)}%, Fluency=${(fluencyScore * 100).toFixed(2)}%, Retention=${(retentionScore * 100).toFixed(2)}%`);
+    console.log(`Session progress calculated: ${sessionProgress}% (Mode: ${mode}, Questions: ${questionsAnswered}, Correct: ${correctAnswers})`);
 
     return new Response(JSON.stringify({
       success: true,
-      progress: {
-        overall: parseFloat(overallProgress.toFixed(2)),
-        coverage: parseFloat((coverageScore * 100).toFixed(2)),
-        accuracy: parseFloat((accuracyScore * 100).toFixed(2)),
-        fluency: parseFloat((fluencyScore * 100).toFixed(2)),
-        retention: parseFloat((retentionScore * 100).toFixed(2)),
-        totalQuestions,
-        totalCorrect,
+      sessionProgress,
+      sessionStats: {
+        questionsAnswered,
+        correctAnswers,
+        totalMessages,
+        mode,
       },
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
