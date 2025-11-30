@@ -75,15 +75,15 @@ serve(async (req) => {
     if (!sessions || sessions.length === 0) {
       const { error: updateError } = await supabase
         .from('user_topics')
-        .upsert({
-          user_id: user.id,
-          topic_id: topicId,
+        .update({
           overall_progress: 0,
           total_questions_answered: 0,
           correct_answers: 0,
-        }, {
-          onConflict: 'user_id,topic_id'
-        });
+          last_accessed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id)
+        .eq('topic_id', topicId);
 
       if (updateError) {
         console.error('Error updating user_topics:', updateError);
@@ -133,17 +133,15 @@ serve(async (req) => {
     // Update user_topics with calculated progress
     const { error: updateError } = await supabase
       .from('user_topics')
-      .upsert({
-        user_id: user.id,
-        topic_id: topicId,
+      .update({
         overall_progress: topicProgress,
         total_questions_answered: totalQuestions,
         correct_answers: totalCorrect,
         last_accessed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,topic_id'
-      });
+      })
+      .eq('user_id', user.id)
+      .eq('topic_id', topicId);
 
     if (updateError) {
       console.error('Error updating user_topics:', updateError);
