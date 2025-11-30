@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TopicOption } from "@/data/englishTopics";
+import { Progress } from "@/components/ui/progress";
 
 type AgeGroup = "young" | "middle" | "high";
 
@@ -16,6 +17,7 @@ interface Topic {
   icon: string;
   description: string | null;
   conversationCount: number;
+  progress: number; // Topic progress 0-100 with decimals
 }
 
 const Dashboard = () => {
@@ -102,6 +104,7 @@ const Dashboard = () => {
         .select(
           `
           topic_id,
+          overall_progress,
           curriculum_topics (
             id,
             title,
@@ -129,6 +132,7 @@ const Dashboard = () => {
             icon: topic.icon,
             description: topic.description,
             conversationCount: count || 0,
+            progress: userTopic.overall_progress || 0,
           };
         }),
       );
@@ -272,6 +276,7 @@ const Dashboard = () => {
           icon: curriculumTopic.icon,
           description: curriculumTopic.description,
           conversationCount: 0,
+          progress: 0,
         },
       ]);
 
@@ -413,6 +418,15 @@ const Dashboard = () => {
                   <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
                     <div className="flex flex-row-reverse items-center gap-3 mb-3 sm:mb-4">
                       <span className="text-3xl sm:text-4xl md:text-5xl">{topic.icon}</span>
+                    </div>
+                    <div className="mb-3">
+                      <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-2">{topic.title}</h3>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-purple-600 font-semibold">
+                          {topic.progress.toFixed(topic.progress % 1 === 0 ? 0 : 1)}%
+                        </span>
+                      </div>
+                      <Progress value={topic.progress} className="h-2 mt-1" />
                     </div>
                     {topic.description && (
                       <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">
@@ -557,6 +571,14 @@ const Dashboard = () => {
                       <span className="text-3xl sm:text-4xl md:text-5xl">{topic.icon}</span>
                       <h3 className="text-base sm:text-lg font-bold text-slate-800">{topic.title}</h3>
                     </div>
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-sm mb-1">
+                        <span className="text-blue-600 font-semibold">
+                          {topic.progress.toFixed(topic.progress % 1 === 0 ? 0 : 1)}%
+                        </span>
+                      </div>
+                      <Progress value={topic.progress} className="h-2" />
+                    </div>
                     {topic.description && (
                       <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">
                         {topic.description}
@@ -693,6 +715,14 @@ const Dashboard = () => {
                   <div className="flex flex-row-reverse items-center gap-3 mb-3 sm:mb-4">
                     <span className="text-3xl sm:text-4xl md:text-5xl">{topic.icon}</span>
                     <h3 className="text-base sm:text-lg font-bold text-slate-800">{topic.title}</h3>
+                  </div>
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-blue-600 font-semibold">
+                        {topic.progress.toFixed(topic.progress % 1 === 0 ? 0 : 1)}%
+                      </span>
+                    </div>
+                    <Progress value={topic.progress} className="h-2" />
                   </div>
                   {topic.description && (
                     <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">
