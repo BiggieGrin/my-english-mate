@@ -97,6 +97,11 @@ export const useSessionTracking = (
           correct_answers: newCorrectAnswers,
         })
         .eq('id', sessionId);
+
+      // Trigger real-time progress calculation
+      await supabase.functions.invoke('calculate-progress', {
+        body: { sessionId },
+      });
     } catch (error) {
       console.error('Error tracking message:', error);
     }

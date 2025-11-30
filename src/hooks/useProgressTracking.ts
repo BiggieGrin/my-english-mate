@@ -2,21 +2,18 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ProgressData {
-  overall: number; // Continuous value, e.g., 68.4, 73.1
-  coverage: number; // 0-100
-  accuracy: number; // 0-100
-  fluency: number; // 0-100
-  retention: number; // 0-100
-  totalQuestions: number;
-  totalCorrect: number;
+  sessionProgress: number; // Continuous value 0-100, e.g., 68.43, 73.1, 91.85
+  questionsAnswered: number;
+  correctAnswers: number;
+  mode: string;
 }
 
-export const useProgressTracking = (topicId: string | undefined) => {
+export const useProgressTracking = (conversationId: string | undefined) => {
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!topicId) {
+    if (!conversationId) {
       setIsLoading(false);
       return;
     }
@@ -26,11 +23,13 @@ export const useProgressTracking = (topicId: string | undefined) => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        // Fetch the current active session for this conversation
         const { data, error } = await supabase
-          .from('user_topics')
-          .select('coverage_score, accuracy_score, fluency_score, retention_score, overall_progress, total_questions_answered, correct_answers')
+          .from('lesson_sessions')
+          .select('session_progress, questions_answered, correct_answers, mode')
+          .eq('conversation_id', conversationId)
           .eq('user_id', user.id)
-          .eq('topic_id', topicId)
+          .is('completed_at', null)
           .maybeSingle();
 
         if (error) {
@@ -40,13 +39,10 @@ export const useProgressTracking = (topicId: string | undefined) => {
 
         if (data) {
           setProgress({
-            overall: data.overall_progress || 0,
-            coverage: parseFloat(((data.coverage_score || 0) * 100).toFixed(2)),
-            accuracy: parseFloat(((data.accuracy_score || 0) * 100).toFixed(2)),
-            fluency: parseFloat(((data.fluency_score || 0) * 100).toFixed(2)),
-            retention: parseFloat(((data.retention_score || 0) * 100).toFixed(2)),
-            totalQuestions: data.total_questions_answered || 0,
-            totalCorrect: data.correct_answers || 0,
+            sessionProgress: parseFloat((data.session_progress || 0).toFixed(2)),
+            questionsAnswered: data.questions_answered || 0,
+            correctAnswers: data.correct_answers || 0,
+            mode: data.mode || '',
           });
         }
       } catch (error) {
@@ -58,27 +54,24 @@ export const useProgressTracking = (topicId: string | undefined) => {
 
     fetchProgress();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates on lesson_sessions
     const channel = supabase
-      .channel(`progress-${topicId}`)
+      .channel(`session-progress-${conversationId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'user_topics',
-          filter: `topic_id=eq.${topicId}`,
+          table: 'lesson_sessions',
+          filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
           const data = payload.new;
           setProgress({
-            overall: data.overall_progress || 0,
-            coverage: parseFloat(((data.coverage_score || 0) * 100).toFixed(2)),
-            accuracy: parseFloat(((data.accuracy_score || 0) * 100).toFixed(2)),
-            fluency: parseFloat(((data.fluency_score || 0) * 100).toFixed(2)),
-            retention: parseFloat(((data.retention_score || 0) * 100).toFixed(2)),
-            totalQuestions: data.total_questions_answered || 0,
-            totalCorrect: data.correct_answers || 0,
+            sessionProgress: parseFloat((data.session_progress || 0).toFixed(2)),
+            questionsAnswered: data.questions_answered || 0,
+            correctAnswers: data.correct_answers || 0,
+            mode: data.mode || '',
           });
         }
       )
@@ -87,17 +80,17 @@ export const useProgressTracking = (topicId: string | undefined) => {
     return () => {
       channel.unsubscribe();
     };
-  }, [topicId]);
+  }, [conversationId]);
 
-  const recalculateProgress = async () => {
-    if (!topicId) return;
+  const recalculateProgress = async (sessionId: string) => {
+    if (!sessionId) return;
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
       await supabase.functions.invoke('calculate-progress', {
-        body: { topicId },
+        body: { sessionId },
       });
     } catch (error) {
       console.error('Error recalculating progress:', error);

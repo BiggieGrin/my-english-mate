@@ -157,12 +157,15 @@ export type Database = {
           correct_after_hint: number | null
           correct_answers: number | null
           created_at: string
+          difficulty_level: string | null
           fluent_answers: number | null
           hints_used: number | null
           id: string
           metadata: Json | null
           mode: string
           questions_answered: number | null
+          response_time_avg: number | null
+          session_progress: number | null
           started_at: string
           subskills_practiced: Json | null
           topic_id: string
@@ -177,12 +180,15 @@ export type Database = {
           correct_after_hint?: number | null
           correct_answers?: number | null
           created_at?: string
+          difficulty_level?: string | null
           fluent_answers?: number | null
           hints_used?: number | null
           id?: string
           metadata?: Json | null
           mode: string
           questions_answered?: number | null
+          response_time_avg?: number | null
+          session_progress?: number | null
           started_at?: string
           subskills_practiced?: Json | null
           topic_id: string
@@ -197,12 +203,15 @@ export type Database = {
           correct_after_hint?: number | null
           correct_answers?: number | null
           created_at?: string
+          difficulty_level?: string | null
           fluent_answers?: number | null
           hints_used?: number | null
           id?: string
           metadata?: Json | null
           mode?: string
           questions_answered?: number | null
+          response_time_avg?: number | null
+          session_progress?: number | null
           started_at?: string
           subskills_practiced?: Json | null
           topic_id?: string
