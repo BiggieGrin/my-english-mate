@@ -139,6 +139,8 @@ serve(async (req) => {
         correct_answers: totalCorrect,
         last_accessed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,topic_id'
       });
 
     if (updateError) {
