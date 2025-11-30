@@ -139,7 +139,7 @@ serve(async (req) => {
     // Update user_topics with calculated progress
     const { error: updateError } = await supabase
       .from("user_topics")
-      .upsert({
+      .update({
         overall_progress: topicProgress,
         total_questions_answered: totalQuestions,
         correct_answers: totalCorrect,
