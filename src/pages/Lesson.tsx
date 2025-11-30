@@ -122,7 +122,14 @@ const Lesson = () => {
   const mode = location.state?.mode || "";
   
   // Session tracking for progress calculation
-  const { trackMessage } = useSessionTracking(conversationId, topicId, mode);
+  const { trackMessage, recalculateProgress } = useSessionTracking(conversationId, topicId, mode);
+
+  // Recalculate progress when user leaves the page
+  useEffect(() => {
+    return () => {
+      recalculateProgress();
+    };
+  }, []);
 
   // Handle image selection
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
