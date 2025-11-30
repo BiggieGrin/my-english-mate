@@ -91,7 +91,7 @@ const Lesson = () => {
       .replace(/צברת עוד \d+ נקודות XP!.*/g, "")
       .replace(/יש לך כעת \d+ מתוך \d+ לרמה הבאה\./g, "")
       .replace(/xp_detected/g, "")
-      .replace(/\\\\/g, "_") // Convert escaped backslashes to underscores
+      .replace(/\\_/g, "_") // Convert escaped underscores ("\___") from AI into real blanks
       .trim();
   };
 
