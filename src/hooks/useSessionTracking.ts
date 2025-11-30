@@ -98,10 +98,12 @@ export const useSessionTracking = (
         })
         .eq('id', sessionId);
 
-      // Trigger real-time progress calculation
-      await supabase.functions.invoke('calculate-progress', {
-        body: { sessionId },
-      });
+      // Trigger topic progress recalculation
+      if (topicId) {
+        await supabase.functions.invoke('calculate-topic-progress', {
+          body: { topicId },
+        });
+      }
     } catch (error) {
       console.error('Error tracking message:', error);
     }

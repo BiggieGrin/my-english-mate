@@ -185,26 +185,25 @@ serve(async (req) => {
     }
 
     if (shouldComplete) {
-      // Mark session as complete with progress at 100%
+      // Mark session as complete
       await supabase
         .from('lesson_sessions')
         .update({
           completed_at: new Date().toISOString(),
-          session_progress: 100.00,
           completion_criteria_met: criteriaMet,
         })
         .eq('id', session.id)
 
-      console.log(`Session ${session.id} marked as complete at 100%: ${completionReason}`)
+      console.log(`Session ${session.id} marked as complete: ${completionReason}`)
       
       // Trigger topic progress recalculation
       await supabase.functions.invoke('calculate-topic-progress', {
         body: { topicId },
       })
     } else {
-      // Update session progress based on current state
-      await supabase.functions.invoke('calculate-progress', {
-        body: { sessionId: session.id },
+      // Still in progress, recalculate topic progress
+      await supabase.functions.invoke('calculate-topic-progress', {
+        body: { topicId },
       })
     }
 

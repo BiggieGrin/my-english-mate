@@ -165,7 +165,6 @@ export type Database = {
           mode: string
           questions_answered: number | null
           response_time_avg: number | null
-          session_progress: number | null
           started_at: string
           subskills_practiced: Json | null
           topic_id: string
@@ -188,7 +187,6 @@ export type Database = {
           mode: string
           questions_answered?: number | null
           response_time_avg?: number | null
-          session_progress?: number | null
           started_at?: string
           subskills_practiced?: Json | null
           topic_id: string
@@ -211,7 +209,6 @@ export type Database = {
           mode?: string
           questions_answered?: number | null
           response_time_avg?: number | null
-          session_progress?: number | null
           started_at?: string
           subskills_practiced?: Json | null
           topic_id?: string
@@ -303,7 +300,7 @@ export type Database = {
           id: string
           last_accessed_at: string
           last_session_at: string | null
-          overall_progress: number | null
+          overall_progress: number
           practice_score: number | null
           retention_score: number | null
           started_at: string
@@ -327,7 +324,7 @@ export type Database = {
           id?: string
           last_accessed_at?: string
           last_session_at?: string | null
-          overall_progress?: number | null
+          overall_progress?: number
           practice_score?: number | null
           retention_score?: number | null
           started_at?: string
@@ -351,7 +348,7 @@ export type Database = {
           id?: string
           last_accessed_at?: string
           last_session_at?: string | null
-          overall_progress?: number | null
+          overall_progress?: number
           practice_score?: number | null
           retention_score?: number | null
           started_at?: string

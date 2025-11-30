@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface TopicProgressData {
   topicId: string;
-  progress: number; // 0-100, one decimal (e.g., 39.5, 62.0)
+  progress: number; // 0-100, continuous (e.g., 64.73)
   totalSessions: number;
   totalQuestions: number;
   totalCorrect: number;
