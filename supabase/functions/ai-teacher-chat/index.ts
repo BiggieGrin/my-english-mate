@@ -268,6 +268,20 @@ ${modeInstructions}
     console.log("Calling AI for user:", profile.full_name, "Mode:", currentMode);
     console.log("Has image in last message:", !!image);
 
+    // Analyze if the last user message was answering a question
+    const lastUserMessage = messages[messages.length - 1]?.content || "";
+    const previousBotMessage = messages.length >= 2 ? messages[messages.length - 2]?.content || "" : "";
+    
+    // Check if bot asked a question and user is responding
+    const botAskedQuestion = previousBotMessage.includes("?") || 
+                            previousBotMessage.includes("השלימ") ||
+                            previousBotMessage.includes("בחר") ||
+                            previousBotMessage.includes("תרגם") ||
+                            previousBotMessage.includes("מצא");
+    
+    const userIsAnswering = botAskedQuestion && lastUserMessage.trim().length > 0;
+
+    // First call to get AI response
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -301,7 +315,105 @@ ${modeInstructions}
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
-    return new Response(response.body, {
+    // Stream response back and collect full message for analysis
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("No reader available");
+    }
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    let fullAiResponse = "";
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              // After streaming is complete, analyze the interaction
+              if (userIsAnswering && fullAiResponse) {
+                // Analyze if answer was correct based on AI's response
+                const isCorrect = 
+                  fullAiResponse.includes("מצוין") ||
+                  fullAiResponse.includes("נכון") ||
+                  fullAiResponse.includes("מדויק") ||
+                  fullAiResponse.includes("בדיוק") ||
+                  fullAiResponse.includes("כל הכבוד") ||
+                  fullAiResponse.includes("יפה מאוד") ||
+                  fullAiResponse.includes("perfect") ||
+                  fullAiResponse.includes("correct");
+                
+                const isIncorrect =
+                  fullAiResponse.includes("לא נכון") ||
+                  fullAiResponse.includes("טעות") ||
+                  fullAiResponse.includes("שגיאה") ||
+                  fullAiResponse.includes("נסה שוב") ||
+                  fullAiResponse.includes("קרוב") ||
+                  fullAiResponse.includes("כמעט");
+
+                const usedHint = 
+                  fullAiResponse.includes("רמז") ||
+                  fullAiResponse.includes("עזרה") ||
+                  fullAiResponse.includes("hint");
+
+                // Fluency: correct without hints
+                const isFluent = isCorrect && !usedHint;
+
+                // Send metadata as a final data event
+                const metadata = {
+                  isQuestion: true,
+                  isCorrect: isCorrect && !isIncorrect,
+                  isFluent,
+                  usedHint,
+                };
+                
+                const metadataEvent = `data: ${JSON.stringify({
+                  choices: [{
+                    delta: { 
+                      content: `##METADATA##${JSON.stringify(metadata)}` 
+                    }
+                  }]
+                })}\n\n`;
+                
+                controller.enqueue(encoder.encode(metadataEvent));
+              }
+              
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              controller.close();
+              break;
+            }
+
+            // Collect full response for analysis
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const data = line.slice(6).trim();
+                if (data !== "[DONE]") {
+                  try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.choices?.[0]?.delta?.content;
+                    if (content) {
+                      fullAiResponse += content;
+                    }
+                  } catch (e) {
+                    // Skip parse errors
+                  }
+                }
+              }
+            }
+
+            // Forward the chunk
+            controller.enqueue(value);
+          }
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
