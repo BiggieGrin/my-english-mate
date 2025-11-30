@@ -45,14 +45,23 @@ serve(async (req) => {
 
     console.log(`Calculating topic progress for user ${user.id}, topic ${topicId}`);
 
-    // Fetch all completed sessions for this topic
-    const { data: completedSessions, error: sessionsError } = await supabase
+    // Get current topic progress for consistency bonus
+    const { data: currentTopic } = await supabase
+      .from('user_topics')
+      .select('overall_progress')
+      .eq('user_id', user.id)
+      .eq('topic_id', topicId)
+      .maybeSingle();
+
+    const previousProgress = currentTopic?.overall_progress || 0;
+
+    // Fetch all sessions for this topic (completed and in-progress)
+    const { data: sessions, error: sessionsError } = await supabase
       .from('lesson_sessions')
       .select('*')
       .eq('user_id', user.id)
       .eq('topic_id', topicId)
-      .not('completed_at', 'is', null)
-      .order('completed_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (sessionsError) {
       console.error('Error fetching sessions:', sessionsError);
@@ -62,8 +71,8 @@ serve(async (req) => {
       });
     }
 
-    // If no completed sessions, topic progress is 0
-    if (!completedSessions || completedSessions.length === 0) {
+    // If no sessions, progress is 0
+    if (!sessions || sessions.length === 0) {
       const { error: updateError } = await supabase
         .from('user_topics')
         .upsert({
@@ -79,38 +88,45 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({
-        success: true,
+        topicId,
         topicProgress: 0,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Calculate topic-level progress based on all completed sessions
-    const totalSessions = completedSessions.length;
-    const totalQuestions = completedSessions.reduce((sum, s) => sum + (s.questions_answered || 0), 0);
-    const totalCorrect = completedSessions.reduce((sum, s) => sum + (s.correct_answers || 0), 0);
-    
-    // Average session completion rate (how well sessions were completed)
-    const avgSessionProgress = completedSessions.reduce((sum, s) => sum + (s.session_progress || 0), 0) / totalSessions;
-    
-    // Overall accuracy across all sessions
-    const overallAccuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0;
-    
-    // Topic mastery formula:
-    // - Session completion quality: 50% weight
-    // - Overall accuracy: 30% weight  
-    // - Session count bonus: 20% weight (more sessions = better mastery, capped at 10 sessions)
-    const sessionCountBonus = Math.min(totalSessions / 10, 1.0) * 20;
-    
-    const topicProgress = (
-      (avgSessionProgress * 0.50) +
-      (overallAccuracy * 0.30) +
-      sessionCountBonus
-    );
+    // Aggregate metrics across all sessions
+    const totalQuestions = sessions.reduce((sum, s) => sum + (s.questions_answered || 0), 0);
+    const totalCorrect = sessions.reduce((sum, s) => sum + (s.correct_answers || 0), 0);
+    const totalFluent = sessions.reduce((sum, s) => sum + (s.fluent_answers || 0), 0);
+    const totalMessages = sessions.reduce((sum, s) => sum + (s.total_messages || 0), 0);
+    const totalHints = sessions.reduce((sum, s) => sum + (s.hints_used || 0), 0);
 
-    // Round to 1 decimal place for clean display
-    const finalProgress = parseFloat(Math.min(topicProgress, 100).toFixed(1));
+    // Calculate topic progress using the EXACT required formula
+    let topicProgress = 0;
+
+    if (totalQuestions > 0) {
+      // Mastery quality (40%)
+      const mastery = (totalCorrect / totalQuestions) * 40;
+
+      // Fluency (20%)
+      const fluency = (totalFluent / totalQuestions) * 20;
+
+      // Coverage / effort (25%)
+      const coverage = Math.min(totalMessages / 40, 1) * 25;
+
+      // Consistency bonus (15%)
+      const consistencyBonus = previousProgress * 0.15;
+
+      // Penalties: hints over 5 reduce progress
+      const penalty = totalHints > 5 ? (totalHints - 5) * 1.5 : 0;
+
+      // Final calculation
+      topicProgress = mastery + fluency + coverage + consistencyBonus - penalty;
+      
+      // Clamp to 0-100
+      topicProgress = Math.max(0, Math.min(100, topicProgress));
+    }
 
     // Update user_topics with calculated progress
     const { error: updateError } = await supabase
@@ -118,7 +134,7 @@ serve(async (req) => {
       .upsert({
         user_id: user.id,
         topic_id: topicId,
-        overall_progress: finalProgress,
+        overall_progress: topicProgress,
         total_questions_answered: totalQuestions,
         correct_answers: totalCorrect,
         last_accessed_at: new Date().toISOString(),
@@ -133,17 +149,11 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Topic progress calculated: ${finalProgress}% (Sessions: ${totalSessions}, Questions: ${totalQuestions}, Correct: ${totalCorrect})`);
+    console.log(`Topic progress calculated: ${topicProgress.toFixed(2)}% (Questions: ${totalQuestions}, Correct: ${totalCorrect}, Fluent: ${totalFluent}, Messages: ${totalMessages}, Hints: ${totalHints})`);
 
     return new Response(JSON.stringify({
-      success: true,
-      topicProgress: finalProgress,
-      stats: {
-        totalSessions,
-        totalQuestions,
-        totalCorrect,
-        overallAccuracy: parseFloat(overallAccuracy.toFixed(1)),
-      },
+      topicId,
+      topicProgress: parseFloat(topicProgress.toFixed(2)),
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

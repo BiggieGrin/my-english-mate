@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ProgressData {
-  sessionProgress: number; // Continuous value 0-100, e.g., 68.43, 73.1, 91.85
   questionsAnswered: number;
   correctAnswers: number;
   mode: string;
@@ -26,7 +25,7 @@ export const useProgressTracking = (conversationId: string | undefined) => {
         // Fetch the current active session for this conversation
         const { data, error } = await supabase
           .from('lesson_sessions')
-          .select('session_progress, questions_answered, correct_answers, mode')
+          .select('questions_answered, correct_answers, mode')
           .eq('conversation_id', conversationId)
           .eq('user_id', user.id)
           .is('completed_at', null)
@@ -39,7 +38,6 @@ export const useProgressTracking = (conversationId: string | undefined) => {
 
         if (data) {
           setProgress({
-            sessionProgress: parseFloat((data.session_progress || 0).toFixed(2)),
             questionsAnswered: data.questions_answered || 0,
             correctAnswers: data.correct_answers || 0,
             mode: data.mode || '',
@@ -68,7 +66,6 @@ export const useProgressTracking = (conversationId: string | undefined) => {
         (payload) => {
           const data = payload.new;
           setProgress({
-            sessionProgress: parseFloat((data.session_progress || 0).toFixed(2)),
             questionsAnswered: data.questions_answered || 0,
             correctAnswers: data.correct_answers || 0,
             mode: data.mode || '',
@@ -82,20 +79,5 @@ export const useProgressTracking = (conversationId: string | undefined) => {
     };
   }, [conversationId]);
 
-  const recalculateProgress = async (sessionId: string) => {
-    if (!sessionId) return;
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      await supabase.functions.invoke('calculate-progress', {
-        body: { sessionId },
-      });
-    } catch (error) {
-      console.error('Error recalculating progress:', error);
-    }
-  };
-
-  return { progress, isLoading, recalculateProgress };
+  return { progress, isLoading };
 };
