@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ProgressData {
-  overall: number;
-  concept: number;
-  practice: number;
-  assessment: number;
+  overall: number; // Continuous value, e.g., 68.4, 73.1
+  coverage: number; // 0-100
+  accuracy: number; // 0-100
+  fluency: number; // 0-100
+  retention: number; // 0-100
   totalQuestions: number;
   totalCorrect: number;
 }
@@ -27,7 +28,7 @@ export const useProgressTracking = (topicId: string | undefined) => {
 
         const { data, error } = await supabase
           .from('user_topics')
-          .select('concept_score, practice_score, assessment_score, overall_progress, total_questions_answered, correct_answers')
+          .select('coverage_score, accuracy_score, fluency_score, retention_score, overall_progress, total_questions_answered, correct_answers')
           .eq('user_id', user.id)
           .eq('topic_id', topicId)
           .maybeSingle();
@@ -40,9 +41,10 @@ export const useProgressTracking = (topicId: string | undefined) => {
         if (data) {
           setProgress({
             overall: data.overall_progress || 0,
-            concept: data.concept_score || 0,
-            practice: data.practice_score || 0,
-            assessment: data.assessment_score || 0,
+            coverage: parseFloat(((data.coverage_score || 0) * 100).toFixed(2)),
+            accuracy: parseFloat(((data.accuracy_score || 0) * 100).toFixed(2)),
+            fluency: parseFloat(((data.fluency_score || 0) * 100).toFixed(2)),
+            retention: parseFloat(((data.retention_score || 0) * 100).toFixed(2)),
             totalQuestions: data.total_questions_answered || 0,
             totalCorrect: data.correct_answers || 0,
           });
@@ -71,9 +73,10 @@ export const useProgressTracking = (topicId: string | undefined) => {
           const data = payload.new;
           setProgress({
             overall: data.overall_progress || 0,
-            concept: data.concept_score || 0,
-            practice: data.practice_score || 0,
-            assessment: data.assessment_score || 0,
+            coverage: parseFloat(((data.coverage_score || 0) * 100).toFixed(2)),
+            accuracy: parseFloat(((data.accuracy_score || 0) * 100).toFixed(2)),
+            fluency: parseFloat(((data.fluency_score || 0) * 100).toFixed(2)),
+            retention: parseFloat(((data.retention_score || 0) * 100).toFixed(2)),
             totalQuestions: data.total_questions_answered || 0,
             totalCorrect: data.correct_answers || 0,
           });
