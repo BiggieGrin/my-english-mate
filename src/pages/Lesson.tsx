@@ -122,7 +122,7 @@ const Lesson = () => {
   const topic = location.state?.topic || "English";
   const topicId = location.state?.topicId;
   const mode = location.state?.mode || "";
-
+  
   // Session tracking for progress calculation
   const { trackMessage } = useSessionTracking(conversationId, topicId, mode);
 
@@ -223,7 +223,7 @@ const Lesson = () => {
                   .select("image_data")
                   .eq("id", msg.image_id)
                   .maybeSingle();
-
+                
                 return {
                   role: msg.role,
                   content: msg.content,
@@ -232,9 +232,9 @@ const Lesson = () => {
                 };
               }
               return { role: msg.role, content: msg.content };
-            }),
+            })
           );
-
+          
           setMessages(messagesWithImages);
           const completedSet = new Set<number>();
           messagesWithImages.forEach((_, idx) => completedSet.add(idx));
@@ -263,10 +263,10 @@ const Lesson = () => {
   }, [isInitialized, conversationId]);
 
   const streamChat = async (userMessage: string, isInitial: boolean = false, imageData?: string | null) => {
-    const newMessage: ChatMessage = {
-      role: "user",
+    const newMessage: ChatMessage = { 
+      role: "user", 
       content: userMessage,
-      ...(imageData && { image: imageData }),
+      ...(imageData && { image: imageData })
     };
     const newMessages = [...messages, newMessage];
     setMessages(newMessages);
@@ -298,7 +298,7 @@ const Lesson = () => {
 
       if (user && conversationId) {
         let imageId: string | null = null;
-
+        
         // If there's an image, save it to lesson_images first
         if (imageData) {
           const { data: savedImage, error: imageError } = await supabase
@@ -309,12 +309,12 @@ const Lesson = () => {
             })
             .select("id")
             .single();
-
+          
           if (!imageError && savedImage) {
             imageId = savedImage.id;
           }
         }
-
+        
         await supabase.from("lesson_messages").insert({
           user_id: user.id,
           conversation_id: conversationId,
@@ -326,9 +326,9 @@ const Lesson = () => {
       }
 
       // Prepare messages for API (without image data in content to reduce payload for history)
-      const messagesForApi = newMessages.map((msg) => ({
+      const messagesForApi = newMessages.map(msg => ({
         role: msg.role,
-        content: msg.content,
+        content: msg.content
       }));
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-chat`, {
@@ -337,11 +337,11 @@ const Lesson = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          messages: messagesForApi,
-          topic,
+        body: JSON.stringify({ 
+          messages: messagesForApi, 
+          topic, 
           mode,
-          image: imageData || undefined,
+          image: imageData || undefined
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -395,20 +395,6 @@ const Lesson = () => {
               if (content) {
                 assistantMessage += content;
 
-                // Check for metadata and extract it
-                const metadataMatch = assistantMessage.match(/##METADATA##(\{[^}]+\})/);
-                if (metadataMatch) {
-                  try {
-                    const metadata = JSON.parse(metadataMatch[1]);
-                    // Track the metadata if needed
-                    if (metadata.isCorrect !== undefined) {
-                      trackMessage(true, metadata.isCorrect);
-                    }
-                  } catch (e) {
-                    console.error("Failed to parse metadata:", e);
-                  }
-                }
-
                 const xpMatch = assistantMessage.match(/\+(\d+)\s*XP/);
 
                 let xpGain = undefined;
@@ -450,12 +436,7 @@ const Lesson = () => {
                   }
                 }
 
-                // Clean message from all internal markers
-                const cleanedMessage = assistantMessage
-                  .replace(/##METADATA##\{[^}]+\}/g, "")
-                  .replace(" xp_detected", "")
-                  .replace(" level_detected", "")
-                  .trim();
+                const cleanedMessage = assistantMessage.replace(" xp_detected", "").replace(" level_detected", "");
 
                 setMessages((prev) => {
                   const newMsgs = [...prev];
@@ -593,20 +574,22 @@ const Lesson = () => {
                   ) : (
                     <div className="space-y-2">
                       {/* Display image if found in database */}
-                      {message.image && (
-                        <div className="mb-2 w-full">
-                          <img
-                            src={message.image}
-                            alt="תמונה שהועלתה"
-                            className="w-full max-w-full h-auto max-h-64 rounded-lg object-contain"
-                          />
-                        </div>
-                      )}
-
+                       {message.image && (
+                         <div className="mb-2 w-full">
+                           <img 
+                             src={message.image} 
+                             alt="תמונה שהועלתה" 
+                             className="w-full max-w-full h-auto max-h-64 rounded-lg object-contain"
+                           />
+                         </div>
+                       )}
+                      
                       {/* If image was deleted (has imageId but no image data), show fallback text */}
                       {message.imageId && !message.image && (
                         <div dir="rtl">
-                          <p className="text-lg leading-relaxed text-muted-foreground">[תמונה מצורפת]</p>
+                          <p className="text-lg leading-relaxed text-muted-foreground">
+                            [תמונה מצורפת]
+                          </p>
                           {/* If there's also text content, add line break and show it */}
                           {message.content && message.content.trim() && (
                             <div className="mt-2">
@@ -624,21 +607,18 @@ const Lesson = () => {
                           )}
                         </div>
                       )}
-
+                      
                       {/* Display text content only if there's no deleted image (otherwise it's shown above) */}
-                      {!(message.imageId && !message.image) &&
-                        message.content &&
-                        message.content.trim() &&
-                        splitByLanguage(message.content).map((segment, idx) => (
-                          <p
-                            key={idx}
-                            className="text-lg leading-relaxed"
-                            dir={segment.direction}
-                            style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
-                          >
-                            {segment.text || "\u00A0"}
-                          </p>
-                        ))}
+                      {!(message.imageId && !message.image) && message.content && message.content.trim() && splitByLanguage(message.content).map((segment, idx) => (
+                        <p
+                          key={idx}
+                          className="text-lg leading-relaxed"
+                          dir={segment.direction}
+                          style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
+                        >
+                          {segment.text || "\u00A0"}
+                        </p>
+                      ))}
                     </div>
                   )}
                 </Card>
@@ -662,9 +642,9 @@ const Lesson = () => {
           {/* Image Preview */}
           {selectedImage && (
             <div className="mb-3 relative inline-block max-w-full">
-              <img
-                src={selectedImage}
-                alt="תצוגה מקדימה"
+              <img 
+                src={selectedImage} 
+                alt="תצוגה מקדימה" 
                 className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border-2 border-primary"
               />
               <button
@@ -676,27 +656,22 @@ const Lesson = () => {
               </button>
             </div>
           )}
-
+          
           <div className="flex items-center gap-2 w-full">
             {isLoading ? (
               <Button size="icon" variant="destructive" onClick={handleStop} className="shrink-0">
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             ) : (
-              <Button
-                size="icon"
-                onClick={handleSend}
-                disabled={(!input.trim() && !selectedImage) || isLoading}
-                className="shrink-0"
-              >
+              <Button size="icon" onClick={handleSend} disabled={(!input.trim() && !selectedImage) || isLoading} className="shrink-0">
                 <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             )}
-
+            
             {/* Image Upload Button */}
-            <Button
-              size="icon"
-              variant="outline"
+            <Button 
+              size="icon" 
+              variant="outline" 
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
               className="shrink-0"
@@ -710,7 +685,7 @@ const Lesson = () => {
               onChange={handleImageSelect}
               className="hidden"
             />
-
+            
             <Input
               placeholder="הקלד/י את התשובה שלך כאן..."
               value={input}

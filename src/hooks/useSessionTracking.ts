@@ -75,13 +75,8 @@ export const useSessionTracking = (
     initSession();
   }, [conversationId, topicId, mode]);
 
-  // Track messages and questions with detailed metrics
-  const trackMessage = async (
-    isQuestion: boolean, 
-    isCorrect?: boolean, 
-    isFluent?: boolean, 
-    usedHint?: boolean
-  ) => {
+  // Track messages and questions
+  const trackMessage = async (isQuestion: boolean, isCorrect?: boolean) => {
     if (!sessionId) return;
 
     try {
@@ -93,99 +88,26 @@ export const useSessionTracking = (
       setQuestionsAnswered(newQuestionsAnswered);
       setCorrectAnswers(newCorrectAnswers);
 
-      // Build update object with all metrics
-      const updateData: any = {
-        total_messages: newTotalMessages,
-        questions_answered: newQuestionsAnswered,
-        correct_answers: newCorrectAnswers,
-      };
-
-      // Track fluent answers (correct without hints)
-      if (isQuestion && isFluent) {
-        const { data: currentSession } = await supabase
-          .from('lesson_sessions')
-          .select('fluent_answers')
-          .eq('id', sessionId)
-          .single();
-        
-        updateData.fluent_answers = (currentSession?.fluent_answers || 0) + 1;
-      }
-
-      // Track hints used
-      if (isQuestion && usedHint) {
-        const { data: currentSession } = await supabase
-          .from('lesson_sessions')
-          .select('hints_used, correct_after_hint')
-          .eq('id', sessionId)
-          .single();
-        
-        updateData.hints_used = (currentSession?.hints_used || 0) + 1;
-        
-        // If they got it correct after a hint
-        if (isCorrect) {
-          updateData.correct_after_hint = (currentSession?.correct_after_hint || 0) + 1;
-        }
-      }
-
-      // Update session in database (but don't recalculate progress yet)
+      // Update session in database
       await supabase
         .from('lesson_sessions')
-        .update(updateData)
+        .update({
+          total_messages: newTotalMessages,
+          questions_answered: newQuestionsAnswered,
+          correct_answers: newCorrectAnswers,
+        })
         .eq('id', sessionId);
+
+      // Trigger topic progress recalculation
+      if (topicId) {
+        await supabase.functions.invoke('calculate-topic-progress', {
+          body: { topicId },
+        });
+      }
     } catch (error) {
       console.error('Error tracking message:', error);
     }
   };
-
-  // Recalculate progress manually (called on inactivity or unmount)
-  const recalculateProgress = async () => {
-    if (!topicId) return;
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      await supabase.functions.invoke('calculate-topic-progress', {
-        body: { topicId },
-      });
-      
-      console.log('Progress recalculated for topic:', topicId);
-    } catch (error) {
-      console.error('Error recalculating progress:', error);
-    }
-  };
-
-  // Debounced progress recalculation after inactivity
-  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  useEffect(() => {
-    // Clear existing timer
-    if (inactivityTimerRef.current) {
-      clearTimeout(inactivityTimerRef.current);
-    }
-
-    // Set new timer: recalculate after 30 seconds of inactivity
-    if (totalMessages > 0) {
-      inactivityTimerRef.current = setTimeout(() => {
-        recalculateProgress();
-      }, 30000); // 30 seconds of inactivity
-    }
-
-    return () => {
-      if (inactivityTimerRef.current) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-    };
-  }, [totalMessages, topicId]);
-
-  // Cleanup: recalculate progress when component unmounts (user leaves)
-  useEffect(() => {
-    return () => {
-      if (totalMessages > 0) {
-        recalculateProgress();
-      }
-    };
-  }, [totalMessages, topicId]);
 
   // Check for completion periodically
   useEffect(() => {
@@ -227,7 +149,6 @@ export const useSessionTracking = (
   return {
     sessionId,
     trackMessage,
-    recalculateProgress,
     stats: {
       questionsAnswered,
       correctAnswers,
