@@ -395,6 +395,20 @@ const Lesson = () => {
               if (content) {
                 assistantMessage += content;
 
+                // Check for metadata and extract it
+                const metadataMatch = assistantMessage.match(/##METADATA##(\{[^}]+\})/);
+                if (metadataMatch) {
+                  try {
+                    const metadata = JSON.parse(metadataMatch[1]);
+                    // Track the metadata if needed
+                    if (metadata.isCorrect !== undefined) {
+                      trackMessage(true, metadata.isCorrect);
+                    }
+                  } catch (e) {
+                    console.error("Failed to parse metadata:", e);
+                  }
+                }
+
                 const xpMatch = assistantMessage.match(/\+(\d+)\s*XP/);
 
                 let xpGain = undefined;
@@ -436,7 +450,12 @@ const Lesson = () => {
                   }
                 }
 
-                const cleanedMessage = assistantMessage.replace(" xp_detected", "").replace(" level_detected", "");
+                // Clean message from all internal markers
+                const cleanedMessage = assistantMessage
+                  .replace(/##METADATA##\{[^}]+\}/g, "")
+                  .replace(" xp_detected", "")
+                  .replace(" level_detected", "")
+                  .trim();
 
                 setMessages((prev) => {
                   const newMsgs = [...prev];
