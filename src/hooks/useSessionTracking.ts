@@ -40,7 +40,7 @@ export const useSessionTracking = (
           .from('lesson_sessions')
           .select('id')
           .eq('conversation_id', conversationId)
-          .eq('completed_at', null)
+          .is('completed_at', null)
           .maybeSingle();
 
         if (existingSession) {
