@@ -2,44 +2,47 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
+    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'No authorization header' }), {
+      return new Response(JSON.stringify({ error: "No authorization header" }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { topicId } = await req.json();
 
     if (!topicId) {
-      return new Response(JSON.stringify({ error: 'Missing topicId' }), {
+      return new Response(JSON.stringify({ error: "Missing topicId" }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -47,34 +50,34 @@ serve(async (req) => {
 
     // Get current topic progress for consistency bonus
     const { data: currentTopic } = await supabase
-      .from('user_topics')
-      .select('overall_progress')
-      .eq('user_id', user.id)
-      .eq('topic_id', topicId)
+      .from("user_topics")
+      .select("overall_progress")
+      .eq("user_id", user.id)
+      .eq("topic_id", topicId)
       .maybeSingle();
 
     const previousProgress = currentTopic?.overall_progress || 0;
 
     // Fetch all sessions for this topic (completed and in-progress)
     const { data: sessions, error: sessionsError } = await supabase
-      .from('lesson_sessions')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('topic_id', topicId)
-      .order('created_at', { ascending: false });
+      .from("lesson_sessions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("topic_id", topicId)
+      .order("created_at", { ascending: false });
 
     if (sessionsError) {
-      console.error('Error fetching sessions:', sessionsError);
-      return new Response(JSON.stringify({ error: 'Failed to fetch sessions' }), {
+      console.error("Error fetching sessions:", sessionsError);
+      return new Response(JSON.stringify({ error: "Failed to fetch sessions" }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // If no sessions, progress is 0
     if (!sessions || sessions.length === 0) {
       const { error: updateError } = await supabase
-        .from('user_topics')
+        .from("user_topics")
         .update({
           overall_progress: 0,
           total_questions_answered: 0,
@@ -82,19 +85,22 @@ serve(async (req) => {
           last_accessed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('user_id', user.id)
-        .eq('topic_id', topicId);
+        .eq("user_id", user.id)
+        .eq("topic_id", topicId);
 
       if (updateError) {
-        console.error('Error updating user_topics:', updateError);
+        console.error("Error updating user_topics:", updateError);
       }
 
-      return new Response(JSON.stringify({
-        topicId,
-        topicProgress: 0,
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({
+          topicId,
+          topicProgress: 0,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     // Aggregate metrics across all sessions
@@ -125,46 +131,50 @@ serve(async (req) => {
 
       // Final calculation
       topicProgress = mastery + fluency + coverage + consistencyBonus - penalty;
-      
+
       // Clamp to 0-100
       topicProgress = Math.max(0, Math.min(100, topicProgress));
     }
 
     // Update user_topics with calculated progress
     const { error: updateError } = await supabase
-      .from('user_topics')
-      .update({
+      .from("user_topics")
+      .upsert({
         overall_progress: topicProgress,
         total_questions_answered: totalQuestions,
         correct_answers: totalCorrect,
         last_accessed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', user.id)
-      .eq('topic_id', topicId);
+      .eq("user_id", user.id)
+      .eq("topic_id", topicId);
 
     if (updateError) {
-      console.error('Error updating user_topics:', updateError);
-      return new Response(JSON.stringify({ error: 'Failed to update progress' }), {
+      console.error("Error updating user_topics:", updateError);
+      return new Response(JSON.stringify({ error: "Failed to update progress" }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Topic progress calculated: ${topicProgress.toFixed(2)}% (Questions: ${totalQuestions}, Correct: ${totalCorrect}, Fluent: ${totalFluent}, Messages: ${totalMessages}, Hints: ${totalHints})`);
+    console.log(
+      `Topic progress calculated: ${topicProgress.toFixed(2)}% (Questions: ${totalQuestions}, Correct: ${totalCorrect}, Fluent: ${totalFluent}, Messages: ${totalMessages}, Hints: ${totalHints})`,
+    );
 
-    return new Response(JSON.stringify({
-      topicId,
-      topicProgress: parseFloat(topicProgress.toFixed(2)),
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-
+    return new Response(
+      JSON.stringify({
+        topicId,
+        topicProgress: parseFloat(topicProgress.toFixed(2)),
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (error) {
-    console.error('Error in calculate-topic-progress:', error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
+    console.error("Error in calculate-topic-progress:", error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
