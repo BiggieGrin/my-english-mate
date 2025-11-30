@@ -81,6 +81,8 @@ serve(async (req) => {
           overall_progress: 0,
           total_questions_answered: 0,
           correct_answers: 0,
+        }, {
+          onConflict: 'user_id,topic_id'
         });
 
       if (updateError) {
@@ -139,6 +141,8 @@ serve(async (req) => {
         correct_answers: totalCorrect,
         last_accessed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,topic_id'
       });
 
     if (updateError) {
