@@ -78,97 +78,101 @@ serve(async (req) => {
       });
     }
 
-    // Separate sessions by mode
-    const learnSessions = sessions.filter(s => s.mode === 'learn');
-    const homeworkSessions = sessions.filter(s => s.mode === 'homework');
-    const examSessions = sessions.filter(s => s.mode === 'exam_prep');
+    // ====================
+    // 1. COVERAGE SCORE (40%)
+    // ====================
+    // A subskill is "mastered" when the user got 2 consecutive correct answers for that subskill,
+    // AND one of them was without hints.
+    
+    const subskillsMastered = userTopic.subskills_mastered || [];
+    const totalSubskills = 10; // In production, fetch from curriculum definition
+    const coverageScore = Math.min(subskillsMastered.length / totalSubskills, 1.0);
+
+    console.log(`Coverage: ${subskillsMastered.length}/${totalSubskills} subskills mastered = ${(coverageScore * 100).toFixed(2)}%`);
 
     // ====================
-    // 1. CONCEPT MASTERY (35%)
+    // 2. ACCURACY SCORE (30%)
     // ====================
-    let conceptScore = 0;
-    if (learnSessions.length > 0) {
-      // Calculate subtopic coverage (mock: assume 10 subtopics, each session covers 1-2)
-      const subtopicsCovered = userTopic.subtopics_covered || [];
-      const totalSubtopics = 10; // In production, fetch from curriculum
-      const subtopicCoverage = Math.min(subtopicsCovered.length / totalSubtopics, 1);
-
-      // Calculate concept accuracy from recent learn sessions
-      const recentLearn = learnSessions.slice(0, 5);
-      const conceptAccuracy = recentLearn.reduce((sum, s) => sum + (s.accuracy || 0), 0) / recentLearn.length / 100;
-
-      // Formula: ConceptScore = 0.7 * (%SubtopicsCovered) + 0.3 * (ConceptAccuracy)
-      conceptScore = Math.round((0.7 * subtopicCoverage + 0.3 * conceptAccuracy) * 100);
-    }
-
-    // ====================
-    // 2. PRACTICE MASTERY (40%)
-    // ====================
-    let practiceScore = 0;
-    if (homeworkSessions.length > 0) {
-      // Recent accuracy (last 5 sessions)
-      const recentHomework = homeworkSessions.slice(0, 5);
-      const recentAccuracy = recentHomework.reduce((sum, s) => sum + (s.accuracy || 0), 0) / recentHomework.length / 100;
-
-      // Error reduction over time (compare first 3 vs last 3)
-      let errorReduction = 0;
-      if (homeworkSessions.length >= 6) {
-        const firstThree = homeworkSessions.slice(-3).reduce((sum, s) => sum + (s.accuracy || 0), 0) / 3;
-        const lastThree = homeworkSessions.slice(0, 3).reduce((sum, s) => sum + (s.accuracy || 0), 0) / 3;
-        errorReduction = Math.max((lastThree - firstThree) / 100, 0);
+    // Rolling accuracy over last 20 relevant answers
+    // Formula: (Correct*1.0 + CorrectAfterHint*0.5) / TotalItems
+    
+    const accuracyLog = (userTopic.accuracy_log || []).slice(0, 20); // Last 20 items
+    let correctCount = 0;
+    let correctAfterHintCount = 0;
+    
+    for (const item of accuracyLog) {
+      if (item.correct && !item.hinted) {
+        correctCount++;
+      } else if (item.correct && item.hinted) {
+        correctAfterHintCount++;
       }
+    }
+    
+    const accuracyScore = accuracyLog.length > 0
+      ? (correctCount * 1.0 + correctAfterHintCount * 0.5) / accuracyLog.length
+      : 0;
 
-      // Self-correction ability (mock: based on metadata)
-      const selfCorrection = homeworkSessions.slice(0, 3).reduce((sum, s) => {
-        return sum + ((s.metadata as any)?.selfCorrections || 0);
-      }, 0) / Math.min(homeworkSessions.length, 3) / 5; // Assume max 5 corrections per session
+    console.log(`Accuracy: ${correctCount} correct + ${correctAfterHintCount} hinted / ${accuracyLog.length} total = ${(accuracyScore * 100).toFixed(2)}%`);
 
-      // Formula: PracticeScore = 0.6 * (RecentAccuracy) + 0.3 * (ErrorReduction) + 0.1 * (SelfCorrection)
-      practiceScore = Math.round((0.6 * recentAccuracy + 0.3 * errorReduction + 0.1 * selfCorrection) * 100);
+    // ====================
+    // 3. FLUENCY SCORE (20%)
+    // ====================
+    // Measures naturalness: answers correctly without hints, within reasonable time, using complete sentences
+    // Formula: (#FluentAnswers / #FluencyOpportunities)
+    
+    const fluentAnswers = sessions.reduce((sum, s) => sum + (s.fluent_answers || 0), 0);
+    const totalOpportunities = sessions.reduce((sum, s) => sum + (s.questions_answered || 0), 0);
+    
+    const fluencyScore = totalOpportunities > 0
+      ? fluentAnswers / totalOpportunities
+      : 0;
+
+    console.log(`Fluency: ${fluentAnswers} fluent / ${totalOpportunities} opportunities = ${(fluencyScore * 100).toFixed(2)}%`);
+
+    // ====================
+    // 4. RETENTION SCORE (10%)
+    // ====================
+    // Measures if the user remembers content after time gaps
+    // Formula: 1 - (DecayFactor) where DecayFactor is based on time since last session
+    
+    const lastSessionAt = userTopic.last_session_at;
+    let retentionScore = 1.0;
+    
+    if (lastSessionAt) {
+      const daysSinceLastSession = (Date.now() - new Date(lastSessionAt).getTime()) / (1000 * 60 * 60 * 24);
+      // Decay factor: 0.05 per day (5% decay per day), max 0.5 decay (so minimum 50% retention)
+      const decayFactor = Math.min(daysSinceLastSession * 0.05, 0.5);
+      retentionScore = Math.max(1.0 - decayFactor, 0.5);
     }
 
-    // ====================
-    // 3. ASSESSMENT MASTERY (25%)
-    // ====================
-    let assessmentScore = 0;
-    if (examSessions.length > 0) {
-      // Test accuracy (recent exams)
-      const recentExams = examSessions.slice(0, 3);
-      const testAccuracy = recentExams.reduce((sum, s) => sum + (s.accuracy || 0), 0) / recentExams.length / 100;
-
-      // Difficulty factor (mock: based on questions_answered - harder tests have more questions)
-      const difficultyFactor = recentExams.reduce((sum, s) => {
-        const difficulty = Math.min(s.questions_answered / 20, 1); // Assume 20 questions = max difficulty
-        return sum + difficulty;
-      }, 0) / recentExams.length;
-
-      // Formula: AssessmentScore = 0.7 * (TestAccuracy) + 0.3 * (DifficultyFactor)
-      assessmentScore = Math.round((0.7 * testAccuracy + 0.3 * difficultyFactor) * 100);
-    }
+    console.log(`Retention: Days since last session = ${lastSessionAt ? ((Date.now() - new Date(lastSessionAt).getTime()) / (1000 * 60 * 60 * 24)).toFixed(1) : 'N/A'}, Score = ${(retentionScore * 100).toFixed(2)}%`);
 
     // ====================
-    // FINAL PROGRESS CALCULATION
+    // FINAL PROGRESS CALCULATION (Continuous, not rounded)
     // ====================
-    const overallProgress = Math.round(
-      conceptScore * 0.35 +
-      practiceScore * 0.40 +
-      assessmentScore * 0.25
-    );
+    const overallProgress = (
+      coverageScore * 0.40 +
+      accuracyScore * 0.30 +
+      fluencyScore * 0.20 +
+      retentionScore * 0.10
+    ) * 100;
 
     // Calculate total stats
-    const totalQuestions = sessions.reduce((sum, s) => sum + s.questions_answered, 0);
-    const totalCorrect = sessions.reduce((sum, s) => sum + s.correct_answers, 0);
+    const totalQuestions = sessions.reduce((sum, s) => sum + (s.questions_answered || 0), 0);
+    const totalCorrect = sessions.reduce((sum, s) => sum + (s.correct_answers || 0), 0);
 
-    // Update user_topics with new scores
+    // Update user_topics with new scores (continuous values, not rounded)
     const { error: updateError } = await supabase
       .from('user_topics')
       .update({
-        concept_score: conceptScore,
-        practice_score: practiceScore,
-        assessment_score: assessmentScore,
-        overall_progress: overallProgress,
+        coverage_score: coverageScore,
+        accuracy_score: accuracyScore,
+        fluency_score: fluencyScore,
+        retention_score: retentionScore,
+        overall_progress: Math.round(overallProgress), // Round only for display
         total_questions_answered: totalQuestions,
         correct_answers: totalCorrect,
+        last_session_at: new Date().toISOString(),
       })
       .eq('user_id', user.id)
       .eq('topic_id', topicId);
@@ -181,15 +185,16 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Progress calculated: Overall=${overallProgress}%, Concept=${conceptScore}%, Practice=${practiceScore}%, Assessment=${assessmentScore}%`);
+    console.log(`Progress calculated: Overall=${overallProgress.toFixed(2)}%, Coverage=${(coverageScore * 100).toFixed(2)}%, Accuracy=${(accuracyScore * 100).toFixed(2)}%, Fluency=${(fluencyScore * 100).toFixed(2)}%, Retention=${(retentionScore * 100).toFixed(2)}%`);
 
     return new Response(JSON.stringify({
       success: true,
       progress: {
-        overall: overallProgress,
-        concept: conceptScore,
-        practice: practiceScore,
-        assessment: assessmentScore,
+        overall: parseFloat(overallProgress.toFixed(2)),
+        coverage: parseFloat((coverageScore * 100).toFixed(2)),
+        accuracy: parseFloat((accuracyScore * 100).toFixed(2)),
+        fluency: parseFloat((fluencyScore * 100).toFixed(2)),
+        retention: parseFloat((retentionScore * 100).toFixed(2)),
         totalQuestions,
         totalCorrect,
       },

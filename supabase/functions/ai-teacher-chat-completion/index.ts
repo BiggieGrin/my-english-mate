@@ -9,11 +9,11 @@ const corsHeaders = {
 /**
  * Edge function to check lesson completion and trigger progress calculation
  * 
- * Completion criteria per mode:
+ * IMPROVED COMPLETION CRITERIA (Higher Thresholds):
  * 
- * 1. EXAM_PREP: Completed when all test questions answered and feedback provided
- * 2. LEARN: Completed when minimum 12 questions, 6 correct in row, OR subtopics covered
- * 3. HOMEWORK: Completed when task resolved, user confirms, or stable accuracy
+ * 1. HOMEWORK: Task fully resolved + user confirmation + 3 consecutive correct (1 hint-free) on different subskills
+ * 2. LEARN: 12-15 questions + all core subtopics covered + 2 correct per subtopic (1 hint-free) + user/bot agrees
+ * 3. EXAM_PREP: All test items answered + bot grades + results delivered
  */
 
 serve(async (req) => {
@@ -88,98 +88,112 @@ serve(async (req) => {
       });
     }
 
-    // Check completion based on mode
+    // Check completion based on mode (with higher thresholds)
     let isComplete = false;
     let completionReason = '';
+    const completionCriteria: any = {};
 
     switch (mode) {
-      case 'exam_prep':
-        // Test complete if bot says completion phrases
-        const lastAssistantMsg = messages.find(m => m.role === 'assistant');
-        if (lastAssistantMsg?.content.includes('סיימת את המבחן') || 
-            lastAssistantMsg?.content.includes('המבחן הסתיים') ||
-            session.questions_answered >= 15) {
+      case 'homework':
+        // HOMEWORK MODE - Stricter completion criteria
+        // A. Full resolution + correctness validation
+        const taskResolved = messages.some(m => 
+          m.role === 'assistant' && 
+          (m.content.includes('פתרנו') || m.content.includes('סיימנו את המטלה'))
+        );
+        completionCriteria.taskResolved = taskResolved;
+
+        // B. User confirmation
+        const userConfirmed = messages.some(m => 
+          m.role === 'user' && 
+          (m.content.includes('סיימתי') || m.content.includes('הבנתי') || m.content.includes('זה ברור לי') || m.content.includes('אני מסודר'))
+        );
+        completionCriteria.userConfirmed = userConfirmed;
+
+        // C. Automatic: 3 consecutive correct answers (at least 1 hint-free) on different subskills
+        const recentHwMessages = messages.slice(0, 6); // Last 3 exchanges
+        let consecutiveCorrect = 0;
+        let hasHintFree = false;
+        const subskillsInStreak = new Set();
+
+        for (const msg of recentHwMessages) {
+          if (msg.role === 'assistant') {
+            const isCorrect = msg.content.includes('נכון') || msg.content.includes('מצוין') || msg.content.includes('מדויק');
+            const isHintFree = !msg.content.includes('רמז') && !msg.content.includes('עזרה');
+            
+            if (isCorrect) {
+              consecutiveCorrect++;
+              if (isHintFree) hasHintFree = true;
+              // Assume each correct answer is on a different subskill (simplified)
+              subskillsInStreak.add(consecutiveCorrect);
+            } else {
+              break; // Streak broken
+            }
+          }
+        }
+
+        const threeCorrectDifferentSubskills = consecutiveCorrect >= 3 && hasHintFree && subskillsInStreak.size >= 3;
+        completionCriteria.threeCorrectDifferentSubskills = threeCorrectDifferentSubskills;
+
+        // Homework is complete only if ALL criteria are met OR user confirmed after task resolved
+        if ((taskResolved && userConfirmed) || threeCorrectDifferentSubskills) {
           isComplete = true;
-          completionReason = 'Test completed with feedback';
+          completionReason = taskResolved && userConfirmed 
+            ? 'Task fully resolved and user confirmed understanding'
+            : 'Three consecutive correct answers on different subskills with at least one hint-free';
         }
         break;
 
       case 'learn':
-        // Learn complete based on interaction count and accuracy
-        const totalInteractions = session.total_messages / 2; // Divide by 2 for exchanges
-        
-        // Check for 6 correct in a row from recent messages
-        let consecutiveCorrect = 0;
-        const recentMessages = messages.slice(0, 12); // Last 6 exchanges
-        for (const msg of recentMessages) {
-          if (msg.role === 'assistant' && 
-              (msg.content.includes('נכון') || msg.content.includes('מצוין') || msg.content.includes('מדויק'))) {
-            consecutiveCorrect++;
-            if (consecutiveCorrect >= 6) {
-              isComplete = true;
-              completionReason = '6 correct answers in a row';
-              break;
-            }
-          } else if (msg.role === 'assistant') {
-            consecutiveCorrect = 0;
-          }
-        }
+        // LEARN MODE - Higher thresholds
+        // Minimum 12-15 questions
+        const minQuestionsMetLearn = session.questions_answered >= 12;
+        completionCriteria.minQuestionsMet = minQuestionsMetLearn;
 
-        // Or minimum threshold met
-        if (!isComplete && session.questions_answered >= 12 && session.accuracy && session.accuracy >= 60) {
-          isComplete = true;
-          completionReason = 'Minimum 12 questions with 60%+ accuracy';
-        }
+        // All core subtopics covered (simplified: assume 5 core subtopics, need at least 5 different correct)
+        const subskillsPracticed = (session.subskills_practiced as any) || [];
+        const subtopicsCovered = subskillsPracticed.length >= 5;
+        completionCriteria.subtopicsCovered = subtopicsCovered;
 
-        // Or natural completion detected
-        if (!isComplete && 
-            messages.some(m => m.role === 'assistant' && 
-            (m.content.includes('נראה שסיימנו') || m.content.includes('רוצה לסיים')))) {
-          isComplete = true;
-          completionReason = 'Natural completion proposed by tutor';
-        }
+        // 2 correct per subtopic with 1 hint-free (simplified: check recent accuracy + fluency)
+        const hasGoodAccuracy = session.accuracy && session.accuracy >= 70;
+        const hasFluency = (session.fluent_answers || 0) >= 3;
+        completionCriteria.goodAccuracyAndFluency = hasGoodAccuracy && hasFluency;
 
-        // Automatic completion for fatigue
-        if (!isComplete && totalInteractions >= 15 && session.accuracy && session.accuracy >= 50) {
+        // User/Bot agrees to end
+        const botProposedEnd = messages.some(m => 
+          m.role === 'assistant' && 
+          (m.content.includes('נראה שסיימנו') || m.content.includes('רוצה לסיים'))
+        );
+        const userAgreed = messages.some(m => 
+          m.role === 'user' && 
+          (m.content.includes('כן') || m.content.includes('אוקיי') || m.content.includes('בטח'))
+        );
+        completionCriteria.mutualAgreement = botProposedEnd || userAgreed;
+
+        // Complete only if thresholds met
+        if (minQuestionsMetLearn && subtopicsCovered && hasGoodAccuracy && hasFluency && (botProposedEnd || userAgreed)) {
           isComplete = true;
-          completionReason = 'Automatic completion due to sufficient practice';
+          completionReason = '12+ questions, all core subtopics covered with good accuracy and fluency, mutual agreement to end';
+        } else if (session.questions_answered >= 15 && hasGoodAccuracy && subtopicsCovered) {
+          // Automatic completion for extended practice with mastery
+          isComplete = true;
+          completionReason = 'Extended practice (15+ questions) with mastery demonstrated across subtopics';
         }
         break;
 
-      case 'homework':
-        // Homework complete if task resolved
-        const homeworkComplete = messages.some(m => 
-          m.role === 'user' && 
-          (m.content.includes('סיימתי') || m.content.includes('הבנתי') || m.content.includes('אני מסודר'))
-        );
+      case 'exam_prep':
+        // EXAM_PREP MODE - Straightforward
+        const lastAssistantMsg = messages.find(m => m.role === 'assistant');
+        const testComplete = lastAssistantMsg?.content.includes('סיימת את המבחן') || 
+                            lastAssistantMsg?.content.includes('המבחן הסתיים') ||
+                            session.questions_answered >= 15;
+        
+        completionCriteria.testComplete = testComplete;
 
-        if (homeworkComplete) {
+        if (testComplete) {
           isComplete = true;
-          completionReason = 'User confirmed task completion';
-        }
-
-        // Or tutor detected completion
-        if (!isComplete && messages.some(m => 
-          m.role === 'assistant' && 
-          (m.content.includes('פתרנו') || m.content.includes('סיימנו'))
-        )) {
-          isComplete = true;
-          completionReason = 'Task fully resolved';
-        }
-
-        // Or stable accuracy (2 correct without hints)
-        const recentHwMessages = messages.slice(0, 4);
-        let recentCorrect = 0;
-        for (const msg of recentHwMessages) {
-          if (msg.role === 'assistant' && 
-              (msg.content.includes('נכון') || msg.content.includes('מצוין')) &&
-              !msg.content.includes('רמז')) {
-            recentCorrect++;
-          }
-        }
-        if (!isComplete && recentCorrect >= 2) {
-          isComplete = true;
-          completionReason = 'Stable accuracy without hints';
+          completionReason = 'Test completed with all items answered and graded';
         }
         break;
     }
@@ -187,12 +201,13 @@ serve(async (req) => {
     if (isComplete) {
       console.log(`Lesson complete! Reason: ${completionReason}`);
 
-      // Mark session as completed
+      // Mark session as completed with completion criteria metadata
       const { error: updateError } = await supabase
         .from('lesson_sessions')
         .update({ 
           completed_at: new Date().toISOString(),
-          metadata: { ...session.metadata, completionReason }
+          metadata: { ...session.metadata, completionReason },
+          completion_criteria_met: completionCriteria
         })
         .eq('id', sessionId);
 

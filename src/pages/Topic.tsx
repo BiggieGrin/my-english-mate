@@ -228,9 +228,45 @@ const Topic = () => {
           <div className="bg-card rounded-3xl border border-border p-6 sm:p-8 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm sm:text-base text-muted-foreground">התקדמות שלך</span>
-              <span className="text-sm sm:text-base font-semibold text-blue-600">{Math.round(overallProgress)}%</span>
+              <span className="text-sm sm:text-base font-semibold text-blue-600">
+                {progress?.overall ? `${progress.overall.toFixed(1)}%` : `${Math.round(overallProgress)}%`}
+              </span>
             </div>
-            <Progress value={overallProgress} className="h-2 mb-8" />
+            <Progress value={progress?.overall || overallProgress} className="h-2 mb-6" />
+
+            {/* Detailed Progress Breakdown */}
+            {progress && (
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                    <span className="text-muted-foreground">כיסוי נושאים</span>
+                    <span className="font-semibold text-blue-600">{progress.coverage.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={progress.coverage} className="h-1.5" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                    <span className="text-muted-foreground">דיוק</span>
+                    <span className="font-semibold text-green-600">{progress.accuracy.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={progress.accuracy} className="h-1.5" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                    <span className="text-muted-foreground">שטף</span>
+                    <span className="font-semibold text-purple-600">{progress.fluency.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={progress.fluency} className="h-1.5" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs sm:text-sm">
+                    <span className="text-muted-foreground">שימור</span>
+                    <span className="font-semibold text-amber-600">{progress.retention.toFixed(1)}%</span>
+                  </div>
+                  <Progress value={progress.retention} className="h-1.5" />
+                </div>
+              </div>
+            )}
 
             {/* Stats Pills */}
             <div className="grid grid-cols-3 gap-3 sm:gap-4">

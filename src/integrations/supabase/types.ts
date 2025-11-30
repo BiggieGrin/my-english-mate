@@ -152,14 +152,19 @@ export type Database = {
         Row: {
           accuracy: number | null
           completed_at: string | null
+          completion_criteria_met: Json | null
           conversation_id: string | null
+          correct_after_hint: number | null
           correct_answers: number | null
           created_at: string
+          fluent_answers: number | null
+          hints_used: number | null
           id: string
           metadata: Json | null
           mode: string
           questions_answered: number | null
           started_at: string
+          subskills_practiced: Json | null
           topic_id: string
           total_messages: number | null
           user_id: string
@@ -167,14 +172,19 @@ export type Database = {
         Insert: {
           accuracy?: number | null
           completed_at?: string | null
+          completion_criteria_met?: Json | null
           conversation_id?: string | null
+          correct_after_hint?: number | null
           correct_answers?: number | null
           created_at?: string
+          fluent_answers?: number | null
+          hints_used?: number | null
           id?: string
           metadata?: Json | null
           mode: string
           questions_answered?: number | null
           started_at?: string
+          subskills_practiced?: Json | null
           topic_id: string
           total_messages?: number | null
           user_id: string
@@ -182,14 +192,19 @@ export type Database = {
         Update: {
           accuracy?: number | null
           completed_at?: string | null
+          completion_criteria_met?: Json | null
           conversation_id?: string | null
+          correct_after_hint?: number | null
           correct_answers?: number | null
           created_at?: string
+          fluent_answers?: number | null
+          hints_used?: number | null
           id?: string
           metadata?: Json | null
           mode?: string
           questions_answered?: number | null
           started_at?: string
+          subskills_practiced?: Json | null
           topic_id?: string
           total_messages?: number | null
           user_id?: string
@@ -267,15 +282,23 @@ export type Database = {
       }
       user_topics: {
         Row: {
+          accuracy_log: Json | null
+          accuracy_score: number | null
           assessment_score: number | null
           concept_score: number | null
           correct_answers: number | null
+          coverage_score: number | null
           created_at: string
+          fluency_events: Json | null
+          fluency_score: number | null
           id: string
           last_accessed_at: string
+          last_session_at: string | null
           overall_progress: number | null
           practice_score: number | null
+          retention_score: number | null
           started_at: string
+          subskills_mastered: Json | null
           subtopics_covered: Json | null
           topic_id: string
           total_questions_answered: number | null
@@ -283,15 +306,23 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accuracy_log?: Json | null
+          accuracy_score?: number | null
           assessment_score?: number | null
           concept_score?: number | null
           correct_answers?: number | null
+          coverage_score?: number | null
           created_at?: string
+          fluency_events?: Json | null
+          fluency_score?: number | null
           id?: string
           last_accessed_at?: string
+          last_session_at?: string | null
           overall_progress?: number | null
           practice_score?: number | null
+          retention_score?: number | null
           started_at?: string
+          subskills_mastered?: Json | null
           subtopics_covered?: Json | null
           topic_id: string
           total_questions_answered?: number | null
@@ -299,15 +330,23 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accuracy_log?: Json | null
+          accuracy_score?: number | null
           assessment_score?: number | null
           concept_score?: number | null
           correct_answers?: number | null
+          coverage_score?: number | null
           created_at?: string
+          fluency_events?: Json | null
+          fluency_score?: number | null
           id?: string
           last_accessed_at?: string
+          last_session_at?: string | null
           overall_progress?: number | null
           practice_score?: number | null
+          retention_score?: number | null
           started_at?: string
+          subskills_mastered?: Json | null
           subtopics_covered?: Json | null
           topic_id?: string
           total_questions_answered?: number | null
