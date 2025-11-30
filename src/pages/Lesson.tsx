@@ -47,7 +47,7 @@ const Lesson = () => {
   const [input, setInput] = useState("");
   const [level, setLevel] = useState(1);
   const [currentXp, setCurrentXp] = useState(0);
-  const [totalPoints, setTotalPoiesson_sessionnts] = useState(0);
+  const [totalPoints, setTotalPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [completedTyping, setCompletedTyping] = useState<Set<number>>(new Set());
