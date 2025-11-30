@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Progress } from "@/components/ui/progress";
-import { useProgressTracking } from "@/hooks/useProgressTracking";
+import { useTopicProgress } from "@/hooks/useTopicProgress";
 
 interface Conversation {
   id: string;
@@ -41,60 +41,8 @@ const Topic = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get active conversation for progress tracking
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  
-  useEffect(() => {
-    const fetchActiveConversation = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !topicId) return;
-
-      const { data } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('topic_id', topicId)
-        .order('last_message_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (data) {
-        setActiveConversationId(data.id);
-      }
-    };
-
-    fetchActiveConversation();
-  }, [topicId]);
-
-  const { progress, isLoading: progressLoading } = useProgressTracking(activeConversationId);
-
-  // Get completed sessions count for stats
-  const [completedStats, setCompletedStats] = useState({ lessons: 0, homework: 0, tests: 0 });
-  
-  useEffect(() => {
-    const fetchCompletedStats = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user || !topicId) return;
-
-      const { data } = await supabase
-        .from('lesson_sessions')
-        .select('mode')
-        .eq('user_id', user.id)
-        .eq('topic_id', topicId)
-        .not('completed_at', 'is', null);
-
-      if (data) {
-        const stats = {
-          lessons: data.filter(s => s.mode === 'learn').length,
-          homework: data.filter(s => s.mode === 'homework').length,
-          tests: data.filter(s => s.mode === 'exam_prep').length,
-        };
-        setCompletedStats(stats);
-      }
-    };
-
-    fetchCompletedStats();
-  }, [topicId]);
+  // Get topic progress (accumulated across all completed sessions)
+  const { progress: topicProgress, isLoading: progressLoading } = useTopicProgress(topicId);
 
   useEffect(() => {
     loadTopicAndConversations();
@@ -269,24 +217,24 @@ const Topic = () => {
           )}
         </div>
 
-        {/* Progress Section - SINGLE PROGRESS BAR ONLY */}
+        {/* Progress Section - Topic-Level Progress */}
         <div className="max-w-5xl mx-auto mb-12 sm:mb-16">
           <div className="bg-card rounded-3xl border border-border p-6 sm:p-8 shadow-sm">
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">התקדמות שיעור נוכחי</span>
+                  <span className="text-sm font-medium">התקדמות בנושא</span>
                   <span className="text-sm font-bold">
-                    {progress?.sessionProgress.toFixed(progress.sessionProgress % 1 === 0 ? 0 : 1)}%
+                    {topicProgress?.progress.toFixed(topicProgress.progress % 1 === 0 ? 0 : 1)}%
                   </span>
                 </div>
-                <Progress value={progress?.sessionProgress || 0} className="h-3" />
+                <Progress value={topicProgress?.progress || 0} className="h-3" />
               </div>
 
               <div className="text-xs text-muted-foreground text-center">
-                {progress ? (
+                {topicProgress && topicProgress.totalSessions > 0 ? (
                   <>
-                    {progress.questionsAnswered} שאלות נענו • {progress.correctAnswers} נכונות
+                    {topicProgress.totalSessions} שיעורים הושלמו • {topicProgress.totalQuestions} שאלות נענו • {topicProgress.totalCorrect} נכונות
                   </>
                 ) : (
                   'התחל שיעור כדי לעקוב אחר ההתקדמות'
@@ -297,16 +245,16 @@ const Topic = () => {
             {/* Stats Pills */}
             <div className="grid grid-cols-3 gap-4 mt-6">
               <div className="bg-primary/10 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-primary">{completedStats.lessons}</div>
+                <div className="text-2xl font-bold text-primary">{topicProgress?.totalSessions || 0}</div>
                 <div className="text-xs text-muted-foreground mt-1">שיעורים הושלמו</div>
               </div>
               <div className="bg-secondary/10 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-secondary-foreground">{completedStats.homework}</div>
-                <div className="text-xs text-muted-foreground mt-1">שיעורי בית הושלמו</div>
+                <div className="text-2xl font-bold text-secondary-foreground">{topicProgress?.totalQuestions || 0}</div>
+                <div className="text-xs text-muted-foreground mt-1">שאלות נענו</div>
               </div>
               <div className="bg-accent/10 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-accent-foreground">{completedStats.tests}</div>
-                <div className="text-xs text-muted-foreground mt-1">מבחנים הושלמו</div>
+                <div className="text-2xl font-bold text-accent-foreground">{topicProgress?.totalCorrect || 0}</div>
+                <div className="text-xs text-muted-foreground mt-1">תשובות נכונות</div>
               </div>
             </div>
           </div>

@@ -196,6 +196,11 @@ serve(async (req) => {
         .eq('id', session.id)
 
       console.log(`Session ${session.id} marked as complete at 100%: ${completionReason}`)
+      
+      // Trigger topic progress recalculation
+      await supabase.functions.invoke('calculate-topic-progress', {
+        body: { topicId },
+      })
     } else {
       // Update session progress based on current state
       await supabase.functions.invoke('calculate-progress', {
