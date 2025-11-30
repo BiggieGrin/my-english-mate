@@ -34,8 +34,6 @@ interface ChatMessage {
   content: string;
   image?: string; // base64 data URL
   imageId?: string; // reference to lesson_images table
-  xpGain?: number;
-  levelUp?: number;
 }
 
 const Lesson = () => {
@@ -395,57 +393,32 @@ const Lesson = () => {
               if (content) {
                 assistantMessage += content;
 
-                const xpMatch = assistantMessage.match(/\+(\d+)\s*XP/);
-
-                let xpGain = undefined;
-                let levelUp = undefined;
-
-                if (xpMatch && !assistantMessage.includes("xp_detected")) {
-                  xpGain = parseInt(xpMatch[1]);
-
-                  let newCurrentXp = currentXp + xpGain;
-                  let newTotalPoints = totalPoints + xpGain;
-                  let newLevel = level;
-
-                  while (newCurrentXp >= getXpToNextLevel(newLevel)) {
-                    newCurrentXp -= getXpToNextLevel(newLevel);
-                    newLevel++;
-                    levelUp = newLevel;
-                  }
-
-                  setCurrentXp(newCurrentXp);
-                  setTotalPoints(newTotalPoints);
-                  setLevel(newLevel);
-                  assistantMessage += " xp_detected";
-
-                  // Track this as a correct answer
-                  trackMessage(true, true);
-
-                  const {
-                    data: { user },
-                  } = await supabase.auth.getUser();
-                  if (user) {
-                    await supabase
-                      .from("profiles")
-                      .update({
-                        current_xp: newCurrentXp,
-                        total_points: newTotalPoints,
-                        level: newLevel,
-                      })
-                      .eq("id", user.id);
+                // Check for metadata from AI
+                const metadataMatch = assistantMessage.match(/##METADATA##(\{.*?\})/);
+                
+                if (metadataMatch) {
+                  try {
+                    const metadata = JSON.parse(metadataMatch[1]);
+                    // Remove metadata from visible message
+                    assistantMessage = assistantMessage.replace(/##METADATA##\{.*?\}/, "");
+                    
+                    // Track the interaction with real data
+                    if (metadata.isQuestion) {
+                      trackMessage(true, metadata.isCorrect, metadata.isFluent, metadata.usedHint);
+                    }
+                  } catch (e) {
+                    console.error("Error parsing metadata:", e);
                   }
                 }
 
-                const cleanedMessage = assistantMessage.replace(" xp_detected", "").replace(" level_detected", "");
+                const cleanedMessage = assistantMessage;
 
                 setMessages((prev) => {
                   const newMsgs = [...prev];
                   newMsgs[newMsgs.length - 1] = {
                     role: "assistant",
-                    content: cleanedMessage,
-                    xpGain,
-                    levelUp,
-                  };
+                  content: cleanedMessage,
+                };
                   return newMsgs;
                 });
               }
@@ -545,15 +518,13 @@ const Lesson = () => {
                         <>
                           {cleanContent.includes("___") ? (
                             <FillInTheBlankInput content={cleanContent} />
-                          ) : (
+                           ) : (
                             <MultipleChoiceButtons
                               content={cleanContent}
                               onSelect={(choice) => streamChat(choice)}
                               disabled={isLoading}
                             />
                           )}
-                          {message.xpGain && <XpGainAnimation amount={message.xpGain} />}
-                          {message.levelUp && <LevelUpAnimation level={message.levelUp} />}
                         </>
                       ) : isStreamingMessage ? (
                         <Loader2 className="w-5 h-5 animate-spin" />

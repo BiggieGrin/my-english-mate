@@ -75,8 +75,13 @@ export const useSessionTracking = (
     initSession();
   }, [conversationId, topicId, mode]);
 
-  // Track messages and questions
-  const trackMessage = async (isQuestion: boolean, isCorrect?: boolean) => {
+  // Track messages and questions with detailed metrics
+  const trackMessage = async (
+    isQuestion: boolean, 
+    isCorrect?: boolean, 
+    isFluent?: boolean, 
+    usedHint?: boolean
+  ) => {
     if (!sessionId) return;
 
     try {
@@ -88,17 +93,47 @@ export const useSessionTracking = (
       setQuestionsAnswered(newQuestionsAnswered);
       setCorrectAnswers(newCorrectAnswers);
 
+      // Build update object with all metrics
+      const updateData: any = {
+        total_messages: newTotalMessages,
+        questions_answered: newQuestionsAnswered,
+        correct_answers: newCorrectAnswers,
+      };
+
+      // Track fluent answers (correct without hints)
+      if (isQuestion && isFluent) {
+        const { data: currentSession } = await supabase
+          .from('lesson_sessions')
+          .select('fluent_answers')
+          .eq('id', sessionId)
+          .single();
+        
+        updateData.fluent_answers = (currentSession?.fluent_answers || 0) + 1;
+      }
+
+      // Track hints used
+      if (isQuestion && usedHint) {
+        const { data: currentSession } = await supabase
+          .from('lesson_sessions')
+          .select('hints_used, correct_after_hint')
+          .eq('id', sessionId)
+          .single();
+        
+        updateData.hints_used = (currentSession?.hints_used || 0) + 1;
+        
+        // If they got it correct after a hint
+        if (isCorrect) {
+          updateData.correct_after_hint = (currentSession?.correct_after_hint || 0) + 1;
+        }
+      }
+
       // Update session in database
       await supabase
         .from('lesson_sessions')
-        .update({
-          total_messages: newTotalMessages,
-          questions_answered: newQuestionsAnswered,
-          correct_answers: newCorrectAnswers,
-        })
+        .update(updateData)
         .eq('id', sessionId);
 
-      // Trigger topic progress recalculation
+      // Trigger topic progress recalculation after each message
       if (topicId) {
         await supabase.functions.invoke('calculate-topic-progress', {
           body: { topicId },
