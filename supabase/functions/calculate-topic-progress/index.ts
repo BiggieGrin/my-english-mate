@@ -57,17 +57,17 @@ serve(async (req) => {
     // Fetch existing user_topics record
     const { data: existingTopic } = await supabase
       .from('user_topics')
-      .select('*')
+      .select('overall_progress')
       .eq('user_id', user.id)
       .eq('topic_id', topicId)
       .maybeSingle();
 
-    // Fetch the latest session for this topic (current session)
+    // Fetch the latest session for this topic
     let latestSession = null;
     if (conversationId) {
       const { data: session } = await supabase
         .from('lesson_sessions')
-        .select('*')
+        .select('questions_answered, correct_answers, hints_used, fluent_answers, correct_after_hint, difficulty_level, subskills_practiced')
         .eq('user_id', user.id)
         .eq('topic_id', topicId)
         .eq('conversation_id', conversationId)
@@ -75,11 +75,10 @@ serve(async (req) => {
       latestSession = session;
     }
 
-    // If no conversation provided, get the most recent session
     if (!latestSession) {
       const { data: sessions } = await supabase
         .from('lesson_sessions')
-        .select('*')
+        .select('questions_answered, correct_answers, hints_used, fluent_answers, correct_after_hint, difficulty_level, subskills_practiced')
         .eq('user_id', user.id)
         .eq('topic_id', topicId)
         .order('created_at', { ascending: false })
@@ -87,138 +86,70 @@ serve(async (req) => {
       latestSession = sessions?.[0] || null;
     }
 
-    // If no session found, return early with 0 progress
     if (!latestSession) {
       console.log('No session found, returning 0 progress');
       return new Response(JSON.stringify({
-        topic_id: topicId,
-        topic_name: topicName,
-        overall_progress: 0,
-        status: 'no_session',
-        message: 'No session data found for this topic.',
+        topic: topicName,
+        session_progress: 0,
+        previous_total_progress: existingTopic?.overall_progress || 0,
+        new_total_progress: existingTopic?.overall_progress || 0,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // ===== 1. COMPUTE SESSION-LEVEL SCORES =====
-    const sessionQuestionsAnswered = latestSession.questions_answered || 0;
-    const sessionCorrectAnswers = latestSession.correct_answers || 0;
-    const sessionHintsUsed = latestSession.hints_used || 0;
-    const sessionFluentAnswers = latestSession.fluent_answers || 0;
-    const sessionCorrectAfterHint = latestSession.correct_after_hint || 0;
-    const sessionSubskillsPracticed = Array.isArray(latestSession.subskills_practiced) 
+    // ===== CALCULATE SESSION PROGRESS =====
+    const questionsAnswered = latestSession.questions_answered || 0;
+    const correctAnswers = latestSession.correct_answers || 0;
+    const hintsUsed = latestSession.hints_used || 0;
+    const fluentAnswers = latestSession.fluent_answers || 0;
+    const correctAfterHint = latestSession.correct_after_hint || 0;
+    const subskillsPracticed = Array.isArray(latestSession.subskills_practiced) 
       ? latestSession.subskills_practiced 
       : [];
     const difficultyLevel = latestSession.difficulty_level || 'medium';
 
-    // Accuracy Score (0-1)
-    const accuracyScoreSession = sessionQuestionsAnswered > 0 
-      ? sessionCorrectAnswers / sessionQuestionsAnswered 
-      : 0;
+    // Accuracy (0-1)
+    const accuracy = questionsAnswered > 0 ? correctAnswers / questionsAnswered : 0;
 
-    // Hint Penalty (max 0.25)
-    const hintPenalty = Math.min(0.25, sessionHintsUsed * 0.05);
+    // Hint penalty (max 0.25)
+    const hintPenalty = Math.min(0.25, hintsUsed * 0.05);
 
-    // Fluency Bonus (max 0.15)
-    const fluencyBonus = Math.min(0.15, sessionFluentAnswers * 0.03);
+    // Fluency bonus (max 0.15)
+    const fluencyBonus = Math.min(0.15, fluentAnswers * 0.03);
 
-    // Correct After Hint Factor
-    const correctAfterHintFactor = sessionCorrectAfterHint * 0.02;
+    // Correct after hint factor
+    const correctAfterHintFactor = correctAfterHint * 0.02;
 
-    // Coverage Score (subskills practiced, max 1.0)
-    const coverageScoreSession = Math.min(1.0, sessionSubskillsPracticed.length * 0.1);
+    // Coverage (max 1.0)
+    const coverage = Math.min(1.0, subskillsPracticed.length * 0.1);
 
-    // Difficulty Weight
-    const difficultyWeights: Record<string, number> = {
-      'easy': 0.9,
-      'medium': 1.0,
-      'hard': 1.1,
-    };
+    // Difficulty weight
+    const difficultyWeights: Record<string, number> = { easy: 0.9, medium: 1.0, hard: 1.1 };
     const difficultyWeight = difficultyWeights[difficultyLevel] || 1.0;
 
-    // Final Session Score (0-1)
-    let sessionScore = (
-      accuracyScoreSession 
-      - hintPenalty 
-      + fluencyBonus 
-      + correctAfterHintFactor 
-      + coverageScoreSession
-    ) * difficultyWeight;
-    
-    // Clamp to 0-1
+    // Session score (0-1)
+    let sessionScore = (accuracy - hintPenalty + fluencyBonus + correctAfterHintFactor + coverage) * difficultyWeight;
     sessionScore = Math.max(0, Math.min(1, sessionScore));
 
-    console.log(`Session Score Breakdown:
-      - Accuracy: ${accuracyScoreSession.toFixed(3)}
-      - Hint Penalty: -${hintPenalty.toFixed(3)}
-      - Fluency Bonus: +${fluencyBonus.toFixed(3)}
-      - Correct After Hint: +${correctAfterHintFactor.toFixed(3)}
-      - Coverage: +${coverageScoreSession.toFixed(3)}
-      - Difficulty Weight: x${difficultyWeight}
-      - Final Session Score: ${sessionScore.toFixed(3)}`);
+    // Convert to percentage (0-100)
+    const sessionProgress = Math.round(sessionScore * 100);
 
-    // ===== 2. INTEGRATE SESSION SCORE WITH TOPIC HISTORY =====
-    const oldTotalQuestions = existingTopic?.total_questions_answered || 0;
-    const oldCorrectAnswers = existingTopic?.correct_answers || 0;
-    const oldSubskillsMastered = Array.isArray(existingTopic?.subskills_mastered) 
-      ? existingTopic.subskills_mastered 
-      : [];
-    const oldFluencyScore = existingTopic?.fluency_score || 0;
-    const oldRetentionScore = existingTopic?.retention_score || 1.0;
+    console.log(`Session Progress: ${sessionProgress}% (accuracy: ${accuracy.toFixed(2)}, hints: -${hintPenalty.toFixed(2)}, fluency: +${fluencyBonus.toFixed(2)})`);
 
-    // Update totals
-    const newTotalQuestions = oldTotalQuestions + sessionQuestionsAnswered;
-    const newCorrectAnswers = oldCorrectAnswers + sessionCorrectAnswers;
+    // ===== ADDITIVE PROGRESS UPDATE =====
+    const previousTotalProgress = existingTopic?.overall_progress || 0;
+    const newTotalProgress = Math.min(100, previousTotalProgress + sessionProgress);
 
-    // New accuracy (overall)
-    const newAccuracy = newTotalQuestions > 0 
-      ? newCorrectAnswers / newTotalQuestions 
-      : 0;
+    console.log(`Progress Update: ${previousTotalProgress}% + ${sessionProgress}% = ${newTotalProgress}%`);
 
-    // Merge & deduplicate subskills
-    const combinedSubskills = [...new Set([...oldSubskillsMastered, ...sessionSubskillsPracticed])];
-    const coverageScore = Math.min(1.0, combinedSubskills.length * 0.08);
-
-    // New fluency score (additive with session fluency events)
-    const newFluencyScore = Math.min(1.0, oldFluencyScore + (sessionFluentAnswers * 0.02));
-
-    // Retention score stays unchanged (future: decay over time)
-    const retentionScore = oldRetentionScore;
-
-    // ===== 3. COMPUTE UPDATED OVERALL PROGRESS (0-100%) =====
-    // Formula: accuracy (55%) + coverage (20%) + fluency (15%) + retention (10%)
-    const overallProgressRaw = (
-      newAccuracy * 0.55 +
-      coverageScore * 0.20 +
-      newFluencyScore * 0.15 +
-      retentionScore * 0.10
-    );
-
-    // Clamp to 0-1 and convert to percentage
-    const overallProgress = Math.max(0, Math.min(100, overallProgressRaw * 100));
-
-    console.log(`Overall Progress Calculation:
-      - New Accuracy: ${newAccuracy.toFixed(3)} (weight 55%) = ${(newAccuracy * 0.55 * 100).toFixed(2)}%
-      - Coverage: ${coverageScore.toFixed(3)} (weight 20%) = ${(coverageScore * 0.20 * 100).toFixed(2)}%
-      - Fluency: ${newFluencyScore.toFixed(3)} (weight 15%) = ${(newFluencyScore * 0.15 * 100).toFixed(2)}%
-      - Retention: ${retentionScore.toFixed(3)} (weight 10%) = ${(retentionScore * 0.10 * 100).toFixed(2)}%
-      - Overall Progress: ${overallProgress.toFixed(2)}%`);
-
-    // ===== 4. UPDATE USER_TOPICS TABLE =====
+    // Update database
     const { error: updateError } = await supabase
       .from('user_topics')
       .upsert({
         user_id: user.id,
         topic_id: topicId,
-        overall_progress: Math.round(overallProgress * 100) / 100, // Round to 2 decimal places
-        total_questions_answered: newTotalQuestions,
-        correct_answers: newCorrectAnswers,
-        accuracy_score: newAccuracy,
-        fluency_score: newFluencyScore,
-        retention_score: retentionScore,
-        coverage_score: coverageScore,
-        subskills_mastered: combinedSubskills,
+        overall_progress: newTotalProgress,
         last_accessed_at: new Date().toISOString(),
         last_session_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -234,15 +165,12 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Topic progress updated successfully: ${overallProgress.toFixed(2)}%`);
-
-    // ===== 5. RETURN OUTPUT FORMAT =====
+    // Return structured JSON response
     return new Response(JSON.stringify({
-      topic_id: topicId,
-      topic_name: topicName,
-      overall_progress: Math.round(overallProgress),
-      status: 'updated',
-      message: 'Progress recalculated based on the latest session.',
+      topic: topicName,
+      session_progress: sessionProgress,
+      previous_total_progress: previousTotalProgress,
+      new_total_progress: newTotalProgress,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
