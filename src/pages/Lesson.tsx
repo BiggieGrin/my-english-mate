@@ -500,6 +500,35 @@ const Lesson = () => {
     streamChat(input || "", false, selectedImage);
   };
 
+  // Handle back button - calculate progress before navigating
+  const handleBack = async () => {
+    if (topicId) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          toast({
+            title: "מחשב התקדמות...",
+            description: "אנא המתן/י רגע",
+          });
+          
+          const response = await supabase.functions.invoke('calculate-topic-progress', {
+            body: { topicId, conversationId },
+          });
+          
+          if (response.data && response.data.overall_progress !== undefined) {
+            toast({
+              title: `${response.data.topic_name} — ${response.data.overall_progress}%`,
+              description: response.data.message,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error calculating progress on back:', error);
+      }
+    }
+    navigate(topicId ? `/topic/${topicId}` : "/dashboard");
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -507,7 +536,7 @@ const Lesson = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <XpProgressBar currentXp={currentXp} requiredXp={getXpToNextLevel(level)} level={level} />
-            <Button variant="ghost" onClick={() => navigate(topicId ? `/topic/${topicId}` : "/dashboard")}>
+            <Button variant="ghost" onClick={handleBack}>
               <ArrowRight className="ml-2" />
               חזרה
             </Button>
