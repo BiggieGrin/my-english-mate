@@ -43,9 +43,12 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Calculating topic progress for user ${user.id}, topic ${topicId}, conversation ${conversationId || 'N/A'}`);
+    console.log(`PROCESS_SESSION_END: user=${user.id}, topic=${topicId}, conversation=${conversationId || 'N/A'}`);
 
-    // Fetch the topic name
+    // Mastery Goal: 100 correct answers = 100% progress
+    const Q_GOAL = 100;
+
+    // 3.1 Data Retrieval - Fetch topic name
     const { data: topicData } = await supabase
       .from('curriculum_topics')
       .select('title')
@@ -54,103 +57,93 @@ serve(async (req) => {
     
     const topicName = topicData?.title || 'Unknown Topic';
 
-    // Fetch existing user_topics record
-    const { data: existingTopic } = await supabase
-      .from('user_topics')
-      .select('overall_progress')
-      .eq('user_id', user.id)
-      .eq('topic_id', topicId)
-      .maybeSingle();
-
-    // Fetch the latest session for this topic
-    let latestSession = null;
+    // 3.1 Data Retrieval - Fetch current session data
+    let sessionData = null;
     if (conversationId) {
       const { data: session } = await supabase
         .from('lesson_sessions')
-        .select('questions_answered, correct_answers, hints_used, fluent_answers, correct_after_hint, difficulty_level, subskills_practiced')
+        .select('questions_answered, correct_answers, hints_used')
         .eq('user_id', user.id)
         .eq('topic_id', topicId)
         .eq('conversation_id', conversationId)
         .maybeSingle();
-      latestSession = session;
+      sessionData = session;
     }
 
-    if (!latestSession) {
+    if (!sessionData) {
       const { data: sessions } = await supabase
         .from('lesson_sessions')
-        .select('questions_answered, correct_answers, hints_used, fluent_answers, correct_after_hint, difficulty_level, subskills_practiced')
+        .select('questions_answered, correct_answers, hints_used')
         .eq('user_id', user.id)
         .eq('topic_id', topicId)
         .order('created_at', { ascending: false })
         .limit(1);
-      latestSession = sessions?.[0] || null;
+      sessionData = sessions?.[0] || null;
     }
 
-    if (!latestSession) {
-      console.log('No session found, returning 0 progress');
+    // 3.1 Data Retrieval - Fetch existing progress data
+    const { data: existingTopic } = await supabase
+      .from('user_topics')
+      .select('overall_progress, total_questions_answered, correct_answers')
+      .eq('user_id', user.id)
+      .eq('topic_id', topicId)
+      .maybeSingle();
+
+    const P_OLD = existingTopic?.overall_progress || 0;
+    const UQ_TOTAL_OLD = existingTopic?.total_questions_answered || 0;
+    const UQ_CORRECT_OLD = existingTopic?.correct_answers || 0;
+
+    // 3.2 Check for Session Contribution
+    const Q_TOTAL = sessionData?.questions_answered || 0;
+    const Q_CORRECT = sessionData?.correct_answers || 0;
+
+    if (Q_TOTAL === 0) {
+      console.log('No questions answered in session, updating timestamps only');
+      
+      // Update timestamps only
+      await supabase
+        .from('user_topics')
+        .upsert({
+          user_id: user.id,
+          topic_id: topicId,
+          overall_progress: P_OLD,
+          total_questions_answered: UQ_TOTAL_OLD,
+          correct_answers: UQ_CORRECT_OLD,
+          last_session_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,topic_id'
+        });
+
       return new Response(JSON.stringify({
-        topic: topicName,
-        session_progress: 0,
-        previous_total_progress: existingTopic?.overall_progress || 0,
-        new_total_progress: existingTopic?.overall_progress || 0,
+        status: 'success',
+        topic_id: topicId,
+        new_progress_percentage: P_OLD,
+        progress_display_hebrew: `${topicName} - ${P_OLD}%`,
+        message_hebrew: 'לא נענו שאלות בשיעור זה'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // ===== CALCULATE SESSION PROGRESS =====
-    const questionsAnswered = latestSession.questions_answered || 0;
-    const correctAnswers = latestSession.correct_answers || 0;
-    const hintsUsed = latestSession.hints_used || 0;
-    const fluentAnswers = latestSession.fluent_answers || 0;
-    const correctAfterHint = latestSession.correct_after_hint || 0;
-    const subskillsPracticed = Array.isArray(latestSession.subskills_practiced) 
-      ? latestSession.subskills_practiced 
-      : [];
-    const difficultyLevel = latestSession.difficulty_level || 'medium';
+    // 3.3 Calculate New Additive Progress
+    const UQ_CORRECT_NEW = UQ_CORRECT_OLD + Q_CORRECT;
+    const UQ_TOTAL_NEW = UQ_TOTAL_OLD + Q_TOTAL;
+    const P_NEW = Math.min(1.0, UQ_CORRECT_NEW / Q_GOAL);
+    const P_FINAL = Math.round(P_NEW * 100);
 
-    // Accuracy (0-1)
-    const accuracy = questionsAnswered > 0 ? correctAnswers / questionsAnswered : 0;
+    console.log(`Progress calculation: ${UQ_CORRECT_OLD} + ${Q_CORRECT} = ${UQ_CORRECT_NEW} correct answers`);
+    console.log(`Progress: ${P_FINAL}% (${UQ_CORRECT_NEW}/${Q_GOAL} correct answers)`);
 
-    // Hint penalty (max 0.25)
-    const hintPenalty = Math.min(0.25, hintsUsed * 0.05);
-
-    // Fluency bonus (max 0.15)
-    const fluencyBonus = Math.min(0.15, fluentAnswers * 0.03);
-
-    // Correct after hint factor
-    const correctAfterHintFactor = correctAfterHint * 0.02;
-
-    // Coverage (max 1.0)
-    const coverage = Math.min(1.0, subskillsPracticed.length * 0.1);
-
-    // Difficulty weight
-    const difficultyWeights: Record<string, number> = { easy: 0.9, medium: 1.0, hard: 1.1 };
-    const difficultyWeight = difficultyWeights[difficultyLevel] || 1.0;
-
-    // Session score (0-1)
-    let sessionScore = (accuracy - hintPenalty + fluencyBonus + correctAfterHintFactor + coverage) * difficultyWeight;
-    sessionScore = Math.max(0, Math.min(1, sessionScore));
-
-    // Convert to percentage (0-100)
-    const sessionProgress = Math.round(sessionScore * 100);
-
-    console.log(`Session Progress: ${sessionProgress}% (accuracy: ${accuracy.toFixed(2)}, hints: -${hintPenalty.toFixed(2)}, fluency: +${fluencyBonus.toFixed(2)})`);
-
-    // ===== ADDITIVE PROGRESS UPDATE =====
-    const previousTotalProgress = existingTopic?.overall_progress || 0;
-    const newTotalProgress = Math.min(100, previousTotalProgress + sessionProgress);
-
-    console.log(`Progress Update: ${previousTotalProgress}% + ${sessionProgress}% = ${newTotalProgress}%`);
-
-    // Update database
+    // 3.4 Database Update
     const { error: updateError } = await supabase
       .from('user_topics')
       .upsert({
         user_id: user.id,
         topic_id: topicId,
-        overall_progress: newTotalProgress,
-        last_accessed_at: new Date().toISOString(),
+        overall_progress: P_FINAL,
+        total_questions_answered: UQ_TOTAL_NEW,
+        correct_answers: UQ_CORRECT_NEW,
         last_session_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }, {
@@ -165,12 +158,13 @@ serve(async (req) => {
       });
     }
 
-    // Return structured JSON response
+    // 3.5 Final Output
     return new Response(JSON.stringify({
-      topic: topicName,
-      session_progress: sessionProgress,
-      previous_total_progress: previousTotalProgress,
-      new_total_progress: newTotalProgress,
+      status: 'success',
+      topic_id: topicId,
+      new_progress_percentage: P_FINAL,
+      progress_display_hebrew: `${topicName} - ${P_FINAL}%`,
+      message_hebrew: 'התקדמות עודכנה בהצלחה!'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
