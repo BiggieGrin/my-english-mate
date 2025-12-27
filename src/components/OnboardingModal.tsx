@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -34,9 +33,6 @@ const onboardingSchema = z.object({
     const num = parseInt(val);
     return !isNaN(num) && num >= 1 && num <= 12;
   }, "יש לבחור כיתה תקינה"),
-  level: z.enum(["beginner", "intermediate", "advanced"], {
-    errorMap: () => ({ message: "יש לבחור רמת אנגלית" }),
-  }),
   parentEmail: z
     .string()
     .trim()
@@ -64,7 +60,6 @@ export default function OnboardingModal({
   const [formData, setFormData] = useState({
     name: "",
     grade: "",
-    level: "",
     parentEmail: "",
   });
 
@@ -97,7 +92,6 @@ export default function OnboardingModal({
         .update({
           full_name: formData.name,
           grade: parseInt(formData.grade),
-          english_level: formData.level,
           parent_email: formData.parentEmail,
           onboarding_completed: true,
         })
@@ -204,48 +198,6 @@ export default function OnboardingModal({
             {validationErrors.grade && (
               <p className="text-sm text-destructive mt-1">
                 {validationErrors.grade}
-              </p>
-            )}
-          </div>
-
-          {/* English Level Field */}
-          <div>
-            <Label>רמת אנגלית</Label>
-            <div className="space-y-2 mt-2">
-              {[
-                {
-                  value: "beginner",
-                  label: "מתחיל - רק מתחיל ללמוד",
-                  icon: "🌱",
-                },
-                {
-                  value: "intermediate",
-                  label: "בינוני - יודע בסיס",
-                  icon: "🌿",
-                },
-                { value: "advanced", label: "מתקדם - טוב באנגלית", icon: "🌳" },
-              ].map((level) => (
-                <Button
-                  key={level.value}
-                  type="button"
-                  variant={
-                    formData.level === level.value ? "default" : "outline"
-                  }
-                  className="w-full justify-start text-right h-auto py-3"
-                  onClick={() => {
-                    setFormData({ ...formData, level: level.value });
-                    setValidationErrors({ ...validationErrors, level: "" });
-                  }}
-                  disabled={isLoading}
-                >
-                  <span className="text-2xl ml-3">{level.icon}</span>
-                  <span>{level.label}</span>
-                </Button>
-              ))}
-            </div>
-            {validationErrors.level && (
-              <p className="text-sm text-destructive mt-1">
-                {validationErrors.level}
               </p>
             )}
           </div>

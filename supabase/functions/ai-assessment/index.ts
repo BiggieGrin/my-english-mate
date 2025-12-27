@@ -43,11 +43,9 @@ serve(async (req) => {
     // Build context about user's learning
     const userContext = `
 פרופיל תלמיד:
-- רמה: ${profile.level}
 - נקודות כוללות: ${profile.total_points}
 - שיעורים שהושלמו: ${profile.lessons_completed}
 - רצף למידה נוכחי: ${profile.current_streak} ימים
-- רמת אנגלית: ${profile.english_level}
 - כיתה: ${profile.grade}
 
 נתוני מיומנויות:

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Flame, Brain, Target, Zap, BarChart3 } from "lucide-react";
+import { ArrowRight, Clock, Flame, Brain, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,7 +20,7 @@ import {
   Radar,
 } from "recharts";
 import { useGetUserQuery } from "@/store/api/authApi";
-import { useGetProfileQuery } from "@/store/api/profileApi";
+import { useGetProfileQuery, useUpdateProfileMutation } from "@/store/api/profileApi";
 import { useGetMessagesByUserQuery } from "@/store/api/messagesApi";
 
 const Statistics = () => {
@@ -30,6 +30,7 @@ const Statistics = () => {
   const [strengthsData, setStrengthsData] = useState<any[]>([]);
   const [aiAssessment, setAiAssessment] = useState<any>(null);
   const [assessmentLoading, setAssessmentLoading] = useState(false);
+  const [currentStreak, setCurrentStreak] = useState(0);
 
   // RTK Query hooks
   const { data: user } = useGetUserQuery();
@@ -41,6 +42,8 @@ const Statistics = () => {
   } = useGetProfileQuery(userId, {
     skip: !userId,
   });
+
+  const [updateProfile] = useUpdateProfileMutation();
 
   const {
     data: messages = [],
@@ -60,7 +63,7 @@ const Statistics = () => {
     }
   }, [userId, profile, messages]);
 
-  const calculateStatistics = () => {
+  const calculateStatistics = async () => {
     // Calculate real daily study data from lesson_messages - last 7 days chronologically
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -93,6 +96,22 @@ const Statistics = () => {
 
     setDailyStudyData(last7Days);
 
+    // Calculate day streak based on incremental logic
+    const { newStreak, shouldUpdate } = calculateDayStreak();
+    setCurrentStreak(newStreak);
+
+    // Update profile if streak changed
+    if (shouldUpdate) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      await updateProfile({
+        userId,
+        updates: {
+          current_streak: newStreak,
+          last_chat_date: todayStr,
+        },
+      });
+    }
+
     // Skills will be calculated by AI assessment based on actual conversations
     // Default values in case AI assessment is not available yet
     const defaultStrengthsData = [
@@ -108,6 +127,75 @@ const Statistics = () => {
     if (profile?.ai_assessment) {
       setAiAssessment(profile.ai_assessment);
     }
+  };
+
+  const calculateDayStreak = () => {
+    const currentStreak = profile?.current_streak || 0;
+    const lastChatDate = profile?.last_chat_date;
+
+    if (!messages || messages.length === 0) {
+      return { newStreak: currentStreak, shouldUpdate: false };
+    }
+
+    // Get today's date (normalized to midnight)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0];
+
+    // Get yesterday's date
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // Check if there are any messages from today
+    const hasMessagesToday = messages.some((msg) => {
+      const msgDate = new Date(msg.created_at);
+      msgDate.setHours(0, 0, 0, 0);
+      return msgDate.toISOString().split('T')[0] === todayStr;
+    });
+
+    // If no messages today, keep current streak (don't break it yet)
+    if (!hasMessagesToday) {
+      // Check if last chat was yesterday - if so, streak is still valid
+      // If last chat was 2+ days ago, reset streak
+      if (lastChatDate) {
+        const lastDate = new Date(lastChatDate);
+        const daysDiff = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff > 1) {
+          // More than 1 day gap, reset streak
+          return { newStreak: 0, shouldUpdate: true };
+        }
+      }
+      return { newStreak: currentStreak, shouldUpdate: false };
+    }
+
+    // User has messages today
+    // If last_chat_date is already today, don't increment (already counted)
+    if (lastChatDate === todayStr) {
+      return { newStreak: currentStreak, shouldUpdate: false };
+    }
+
+    // If last chat was yesterday, increment streak
+    if (lastChatDate === yesterdayStr) {
+      return { newStreak: currentStreak + 1, shouldUpdate: true };
+    }
+
+    // If last chat was more than 1 day ago (or never), reset to 1
+    if (!lastChatDate) {
+      return { newStreak: 1, shouldUpdate: true };
+    }
+
+    const lastDate = new Date(lastChatDate);
+    const daysDiff = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (daysDiff > 1) {
+      // Gap in streak, reset to 1 (today is day 1)
+      return { newStreak: 1, shouldUpdate: true };
+    }
+
+    // Fallback
+    return { newStreak: currentStreak, shouldUpdate: false };
   };
 
   const loading = profileLoading;
@@ -146,14 +234,14 @@ const Statistics = () => {
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           <Card className="p-4 border-primary/20">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                 <Flame className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{profile.current_streak || 0}</div>
+                <div className="text-2xl font-bold">{currentStreak}</div>
                 <div className="text-xs text-muted-foreground">רצף ימים</div>
               </div>
             </div>
@@ -171,29 +259,6 @@ const Statistics = () => {
             </div>
           </Card>
 
-          <Card className="p-4 border-primary/20">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                <Target className="w-5 h-5 text-secondary-foreground" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{profile.lessons_completed || 0}</div>
-                <div className="text-xs text-muted-foreground">שיעורים הושלמו</div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-4 border-primary/20">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{profile.level || 1}</div>
-                <div className="text-xs text-muted-foreground">רמה נוכחית</div>
-              </div>
-            </div>
-          </Card>
         </div>
 
         {/* Charts */}

@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, User, Mail, GraduationCap, Settings, LogOut, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { XpProgressBar } from '@/components/XpProgressBar';
 import { formatGrade } from '@/lib/gradeUtils';
 import { useGetUserQuery, useSignOutMutation } from '@/store/api/authApi';
 import { useGetProfileQuery, useUpdateProfileMutation } from '@/store/api/profileApi';
@@ -79,9 +78,6 @@ const Profile = () => {
     navigate('/auth');
   };
 
-  const calculateRequiredXp = (level: number) => level * 100;
-  const requiredXp = calculateRequiredXp(profile?.level || 1);
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
   }
@@ -121,19 +117,6 @@ const Profile = () => {
                 <h2 className="text-3xl font-bold text-foreground mb-1">{profile.full_name}</h2>
                 <p className="text-muted-foreground">כיתה {formatGrade(profile.grade)}</p>
               </div>
-            </div>
-
-            {/* Level Progress */}
-            <div className="mt-6 max-w-md mx-auto">
-              <div className="flex justify-between text-sm mb-2">
-                <span className="text-muted-foreground">רמה {profile.level}</span>
-                <span className="text-muted-foreground">{profile.current_xp} / {requiredXp} XP</span>
-              </div>
-              <XpProgressBar
-                currentXp={profile.current_xp || 0}
-                requiredXp={requiredXp}
-                level={profile.level || 1}
-              />
             </div>
           </div>
         </Card>

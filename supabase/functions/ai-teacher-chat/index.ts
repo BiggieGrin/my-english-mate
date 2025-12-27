@@ -66,7 +66,7 @@ serve(async (req) => {
 
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("full_name, grade, english_level, level")
+      .select("full_name, grade")
       .eq("id", user.id)
       .single();
 

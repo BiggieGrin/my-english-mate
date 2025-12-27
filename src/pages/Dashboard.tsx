@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { BarChart3, Star, User, Plus } from "lucide-react";
+import { BarChart3, User, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -107,12 +107,6 @@ const Dashboard = () => {
     }
   }, [userId, profile, isProfileLoading, profileError, navigate, dispatch]);
 
-  // Calculate XP progress
-  const userLevel = profile?.level || 1;
-  const currentXp = profile?.current_xp || 0;
-  const xpToNext = userLevel * 100;
-  const xpProgress = Math.min((currentXp / xpToNext) * 100, 100);
-
   const isLoading = isUserLoading || isProfileLoading || isTopicsLoading;
 
   const handleCreateTopic = async (topic: TopicOption) => {
@@ -180,12 +174,6 @@ const Dashboard = () => {
             <div className="flex justify-between items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-gradient-to-r from-purple-200 to-pink-200 rounded-xl"></div>
-                <div className="flex items-center gap-3 bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 rounded-full shadow-lg">
-                  <Star className="w-4 h-4 text-white fill-white" />
-                  <span className="text-white font-semibold text-sm">
-                    Level {userLevel}
-                  </span>
-                </div>
               </div>
               <div className="flex items-center gap-3">
                 <Button
@@ -351,17 +339,6 @@ const Dashboard = () => {
             <div className="flex justify-between items-center gap-2 sm:gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 bg-gradient-to-r from-slate-200 to-slate-300 rounded-lg"></div>
-                <div className="flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 rounded-full shadow-lg">
-                  <div className="w-20 bg-white/30 rounded-full h-1.5">
-                    <div
-                      className="bg-white h-1.5 rounded-full transition-all"
-                      style={{ width: `${xpProgress}%` }}
-                    />
-                  </div>
-                  <span className="text-white font-semibold text-sm">
-                    Level {userLevel}
-                  </span>
-                </div>
               </div>
               <div className="flex items-center gap-3">
                 <Button

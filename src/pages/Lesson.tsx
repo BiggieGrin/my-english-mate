@@ -8,9 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MultipleChoiceButtons } from "@/components/MultipleChoiceButtons";
 import { FillInTheBlankInput } from "@/components/FillInTheBlankInput";
-import { XpGainAnimation } from "@/components/XpGainAnimation";
-import { LevelUpAnimation } from "@/components/LevelUpAnimation";
-import { XpProgressBar } from "@/components/XpProgressBar";
 import { CustomTypewriter } from "@/components/CustomTypewriter";
 
 // Detect if text is primarily Hebrew (RTL) or English (LTR)
@@ -39,8 +36,6 @@ interface ChatMessage {
   content: string;
   image?: string; // base64 data URL
   imageId?: string; // reference to lesson_images table
-  xpGain?: number;
-  levelUp?: number;
 }
 
 const Lesson = () => {
@@ -50,9 +45,6 @@ const Lesson = () => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [level, setLevel] = useState(1);
-  const [currentXp, setCurrentXp] = useState(0);
-  const [totalPoints, setTotalPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [completedTyping, setCompletedTyping] = useState<Set<number>>(
@@ -68,8 +60,6 @@ const Lesson = () => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isTypingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const getXpToNextLevel = (lvl: number) => lvl * 100;
 
   // Smooth scroll to bottom
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
@@ -251,18 +241,6 @@ const Lesson = () => {
               conversationId
             );
           }
-        }
-
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("level, current_xp, total_points")
-          .eq("id", user.id)
-          .single();
-
-        if (profile) {
-          setLevel(profile.level || 1);
-          setCurrentXp(profile.current_xp || 0);
-          setTotalPoints(profile.total_points || 0);
         }
 
         const { data: existingMessages, error } = await supabase
@@ -496,55 +474,11 @@ const Lesson = () => {
                 console.log("[streamChat] Got content:", content);
                 assistantMessage += content;
 
-                const xpMatch = assistantMessage.match(/\+(\d+)\s*XP/);
-
-                let xpGain = undefined;
-                let levelUp = undefined;
-
-                if (xpMatch && !assistantMessage.includes("xp_detected")) {
-                  xpGain = parseInt(xpMatch[1]);
-
-                  let newCurrentXp = currentXp + xpGain;
-                  let newTotalPoints = totalPoints + xpGain;
-                  let newLevel = level;
-
-                  while (newCurrentXp >= getXpToNextLevel(newLevel)) {
-                    newCurrentXp -= getXpToNextLevel(newLevel);
-                    newLevel++;
-                    levelUp = newLevel;
-                  }
-
-                  setCurrentXp(newCurrentXp);
-                  setTotalPoints(newTotalPoints);
-                  setLevel(newLevel);
-                  assistantMessage += " xp_detected";
-
-                  const {
-                    data: { user },
-                  } = await supabase.auth.getUser();
-                  if (user) {
-                    await supabase
-                      .from("profiles")
-                      .update({
-                        current_xp: newCurrentXp,
-                        total_points: newTotalPoints,
-                        level: newLevel,
-                      })
-                      .eq("id", user.id);
-                  }
-                }
-
-                const cleanedMessage = assistantMessage
-                  .replace(" xp_detected", "")
-                  .replace(" level_detected", "");
-
                 setMessages((prev) => {
                   const newMsgs = [...prev];
                   newMsgs[newMsgs.length - 1] = {
                     role: "assistant",
-                    content: cleanedMessage,
-                    xpGain,
-                    levelUp,
+                    content: assistantMessage,
                   };
                   return newMsgs;
                 });
@@ -610,12 +544,7 @@ const Lesson = () => {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <XpProgressBar
-              currentXp={currentXp}
-              requiredXp={getXpToNextLevel(level)}
-              level={level}
-            />
+          <div className="flex justify-end items-center">
             <Button variant="ghost" onClick={handleBack}>
               <ArrowRight className="ml-2" />
               חזרה
@@ -673,12 +602,6 @@ const Lesson = () => {
                               onSelect={(choice) => streamChat(choice)}
                               disabled={isLoading}
                             />
-                          )}
-                          {message.xpGain && (
-                            <XpGainAnimation amount={message.xpGain} />
-                          )}
-                          {message.levelUp && (
-                            <LevelUpAnimation level={message.levelUp} />
                           )}
                         </>
                       ) : isStreamingMessage ? (

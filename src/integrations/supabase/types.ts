@@ -156,14 +156,12 @@ export type Database = {
           ai_assessment: Json | null
           created_at: string | null
           current_streak: number | null
-          current_xp: number | null
-          english_level: string
           full_name: string
           grade: number
           id: string
           last_assessment_time: string | null
+          last_chat_date: string | null
           lessons_completed: number | null
-          level: number | null
           parent_email: string
           total_points: number | null
           total_study_minutes: number | null
@@ -173,14 +171,12 @@ export type Database = {
           ai_assessment?: Json | null
           created_at?: string | null
           current_streak?: number | null
-          current_xp?: number | null
-          english_level: string
           full_name: string
           grade: number
           id: string
           last_assessment_time?: string | null
+          last_chat_date?: string | null
           lessons_completed?: number | null
-          level?: number | null
           parent_email: string
           total_points?: number | null
           total_study_minutes?: number | null
@@ -190,14 +186,12 @@ export type Database = {
           ai_assessment?: Json | null
           created_at?: string | null
           current_streak?: number | null
-          current_xp?: number | null
-          english_level?: string
           full_name?: string
           grade?: number
           id?: string
           last_assessment_time?: string | null
+          last_chat_date?: string | null
           lessons_completed?: number | null
-          level?: number | null
           parent_email?: string
           total_points?: number | null
           total_study_minutes?: number | null

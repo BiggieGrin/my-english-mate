@@ -6,11 +6,7 @@ export interface TopicOption {
   description: string;
 }
 
-interface TopicsByLevel {
-  [key: string]: TopicOption[];
-}
-
-// כיתות א-ג (Beginner)
+// כיתות א-ג
 const youngBeginner: TopicOption[] = [
   { title: "צבעים (Colors)", icon: "🎨", description: "לימוד צבעים בסיסיים באנגלית" },
   { title: "מספרים (Numbers)", icon: "🔢", description: "ספירה ומספרים 1-20" },
@@ -113,24 +109,22 @@ const highAdvanced: TopicOption[] = [
   { title: "מחקר באנגלית (Research in English)", icon: "🔬", description: "כתיבת מחקר באנגלית" },
 ];
 
-// מיפוי לפי כיתה ורמה
-export const topicsByGradeAndLevel: { [grade: number]: TopicsByLevel } = {
-  1: { beginner: youngBeginner, intermediate: youngBeginner, advanced: youngBeginner },
-  2: { beginner: youngBeginner, intermediate: youngBeginner, advanced: youngBeginner },
-  3: { beginner: youngBeginner, intermediate: youngBeginner, advanced: youngBeginner },
-  4: { beginner: middleBeginner, intermediate: middleIntermediate, advanced: middleIntermediate },
-  5: { beginner: middleBeginner, intermediate: middleIntermediate, advanced: middleIntermediate },
-  6: { beginner: middleBeginner, intermediate: middleIntermediate, advanced: middleIntermediate },
-  7: { beginner: juniorBeginner, intermediate: juniorIntermediate, advanced: juniorAdvanced },
-  8: { beginner: juniorBeginner, intermediate: juniorIntermediate, advanced: juniorAdvanced },
-  9: { beginner: juniorBeginner, intermediate: juniorIntermediate, advanced: juniorAdvanced },
-  10: { beginner: highBeginner, intermediate: highIntermediate, advanced: highAdvanced },
-  11: { beginner: highBeginner, intermediate: highIntermediate, advanced: highAdvanced },
-  12: { beginner: highBeginner, intermediate: highIntermediate, advanced: highAdvanced },
+// מיפוי לפי כיתה - משלב את כל הנושאים לכל כיתה
+export const topicsByGrade: { [grade: number]: TopicOption[] } = {
+  1: youngBeginner,
+  2: youngBeginner,
+  3: youngBeginner,
+  4: [...middleBeginner, ...middleIntermediate],
+  5: [...middleBeginner, ...middleIntermediate],
+  6: [...middleBeginner, ...middleIntermediate],
+  7: [...juniorBeginner, ...juniorIntermediate, ...juniorAdvanced],
+  8: [...juniorBeginner, ...juniorIntermediate, ...juniorAdvanced],
+  9: [...juniorBeginner, ...juniorIntermediate, ...juniorAdvanced],
+  10: [...highBeginner, ...highIntermediate, ...highAdvanced],
+  11: [...highBeginner, ...highIntermediate, ...highAdvanced],
+  12: [...highBeginner, ...highIntermediate, ...highAdvanced],
 };
 
-export const getTopicsForStudent = (grade: number, level: string): TopicOption[] => {
-  const gradeTopics = topicsByGradeAndLevel[grade];
-  if (!gradeTopics) return [];
-  return gradeTopics[level] || [];
+export const getTopicsForStudent = (grade: number): TopicOption[] => {
+  return topicsByGrade[grade] || [];
 };
