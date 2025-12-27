@@ -13,6 +13,18 @@ const detectTextDirection = (text: string): "rtl" | "ltr" => {
   return hebrewCount > englishCount ? "rtl" : "ltr";
 };
 
+// Remove markdown symbols from text
+const stripMarkdown = (text: string): string => {
+  return text
+    .replace(/\*\*/g, "") // Remove bold
+    .replace(/\*/g, "") // Remove italic
+    .replace(/_{2}/g, "") // Remove underline
+    .replace(/—{2}/g, "") // Remove dash
+    .replace(/_/g, "") // Remove single underscore
+    .replace(/~~(.*?)~~/g, "$1") // Remove strikethrough
+    .trim();
+};
+
 // Split text into segments based on language for proper direction handling
 const splitByLanguage = (text: string): Array<{ text: string; direction: "rtl" | "ltr" }> => {
   if (!text.trim()) return [];
@@ -59,6 +71,9 @@ export const CustomTypewriter = ({
   const timeoutRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // Pre-parse the content once to get the cleaned version
+  const cleanedContent = useRef(stripMarkdown(content)).current;
+
   // Main typing effect
   useEffect(() => {
     // Reset state when content changes
@@ -71,8 +86,8 @@ export const CustomTypewriter = ({
     }
 
     const typeNextCharacter = () => {
-      if (indexRef.current < content.length) {
-        setDisplayedContent(content.slice(0, indexRef.current + 1));
+      if (indexRef.current < cleanedContent.length) {
+        setDisplayedContent(cleanedContent.slice(0, indexRef.current + 1));
         indexRef.current += 1;
         onTypingUpdate?.();
         timeoutRef.current = window.setTimeout(typeNextCharacter, speed);
@@ -89,7 +104,7 @@ export const CustomTypewriter = ({
         window.clearTimeout(timeoutRef.current);
       }
     };
-  }, [content, speed, onComplete]);
+  }, [content, cleanedContent, speed, onComplete, onTypingUpdate]);
 
   // Scrolling during typing is handled by the parent via onTypingUpdate
 
@@ -111,7 +126,7 @@ export const CustomTypewriter = ({
 
   // During typing, show text with proper direction handling per line
   const segments = splitByLanguage(displayedContent);
-  
+
   return (
     <div ref={containerRef} className="space-y-1">
       {segments.length > 0 ? (
