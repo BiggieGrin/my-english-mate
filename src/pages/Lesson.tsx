@@ -12,7 +12,6 @@ import { XpGainAnimation } from "@/components/XpGainAnimation";
 import { LevelUpAnimation } from "@/components/LevelUpAnimation";
 import { XpProgressBar } from "@/components/XpProgressBar";
 import { CustomTypewriter } from "@/components/CustomTypewriter";
-import { useSessionTracking } from "@/hooks/useSessionTracking";
 
 // Detect if text is primarily Hebrew (RTL) or English (LTR)
 const detectTextDirection = (text: string): "rtl" | "ltr" => {
@@ -20,14 +19,20 @@ const detectTextDirection = (text: string): "rtl" | "ltr" => {
   const englishPattern = /[a-zA-Z]/;
 
   const hebrewCount = (text.match(new RegExp(hebrewPattern, "g")) || []).length;
-  const englishCount = (text.match(new RegExp(englishPattern, "g")) || []).length;
+  const englishCount = (text.match(new RegExp(englishPattern, "g")) || [])
+    .length;
 
   return hebrewCount > englishCount ? "rtl" : "ltr";
 };
 
 // Max file size: 10MB
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
 
 interface ChatMessage {
   role: string;
@@ -50,8 +55,14 @@ const Lesson = () => {
   const [totalPoints, setTotalPoints] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [completedTyping, setCompletedTyping] = useState<Set<number>>(new Set());
+  const [completedTyping, setCompletedTyping] = useState<Set<number>>(
+    new Set()
+  );
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [fetchedTopicId, setFetchedTopicId] = useState<string | undefined>(
+    undefined
+  );
+  const [fetchedMode, setFetchedMode] = useState<string | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +107,9 @@ const Lesson = () => {
   };
 
   // Split text into segments based on language for proper direction handling
-  const splitByLanguage = (text: string): Array<{ text: string; direction: "rtl" | "ltr" }> => {
+  const splitByLanguage = (
+    text: string
+  ): Array<{ text: string; direction: "rtl" | "ltr" }> => {
     if (!text.trim()) return [];
 
     const segments: Array<{ text: string; direction: "rtl" | "ltr" }> = [];
@@ -120,11 +133,12 @@ const Lesson = () => {
 
   const conversationId = location.state?.conversationId || lessonId;
   const topic = location.state?.topic || "English";
-  const topicId = location.state?.topicId;
-  const mode = location.state?.mode || "";
-  
-  // Session tracking for progress calculation
-  const { trackMessage } = useSessionTracking(conversationId, topicId, mode);
+  const topicIdFromState = location.state?.topicId;
+  const modeFromState = location.state?.mode;
+
+  // Use fetched values if state values are not available
+  const topicId = topicIdFromState || fetchedTopicId;
+  const mode = modeFromState || fetchedMode || "לימוד";
 
   // Handle image selection
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,12 +192,22 @@ const Lesson = () => {
   useEffect(() => {
     const loadChatHistory = async () => {
       try {
+        console.log("[Lesson] Starting loadChatHistory", {
+          conversationId,
+          topicIdFromState,
+          mode,
+        });
+
         const {
           data: { user },
         } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) {
+          console.log("[Lesson] No user found");
+          return;
+        }
 
-        if (!conversationId) {
+        if (!conversationId || conversationId === "undefined") {
+          console.error("[Lesson] Invalid conversationId:", conversationId);
           toast({
             title: "שגיאה",
             description: "לא נמצא מזהה שיחה.",
@@ -191,6 +215,42 @@ const Lesson = () => {
           });
           navigate("/dashboard");
           return;
+        }
+
+        // If topicId or mode is missing from state, try to fetch from the conversation
+        if (
+          !topicIdFromState ||
+          topicIdFromState === "undefined" ||
+          !modeFromState
+        ) {
+          const { data: conversation } = await supabase
+            .from("conversations")
+            .select("topic_id, mode")
+            .eq("id", conversationId)
+            .single();
+
+          if (conversation?.topic_id) {
+            console.log(
+              "Fetched topicId from conversation:",
+              conversation.topic_id
+            );
+            setFetchedTopicId(conversation.topic_id);
+          } else {
+            console.warn(
+              "Could not fetch topicId for conversation:",
+              conversationId
+            );
+          }
+
+          if (conversation?.mode) {
+            console.log("Fetched mode from conversation:", conversation.mode);
+            setFetchedMode(conversation.mode);
+          } else {
+            console.warn(
+              "Could not fetch mode for conversation:",
+              conversationId
+            );
+          }
         }
 
         const { data: profile } = await supabase
@@ -223,7 +283,7 @@ const Lesson = () => {
                   .select("image_data")
                   .eq("id", msg.image_id)
                   .maybeSingle();
-                
+
                 return {
                   role: msg.role,
                   content: msg.content,
@@ -234,7 +294,7 @@ const Lesson = () => {
               return { role: msg.role, content: msg.content };
             })
           );
-          
+
           setMessages(messagesWithImages);
           const completedSet = new Set<number>();
           messagesWithImages.forEach((_, idx) => completedSet.add(idx));
@@ -243,30 +303,49 @@ const Lesson = () => {
           // Scroll to bottom after loading history
           setTimeout(() => scrollToBottom("auto"), 100);
         } else {
+          console.log(
+            "[Lesson] No existing messages, starting new conversation"
+          );
           const initialMessage = `היי, אני רוצה ${mode} בנושא ${topic}`;
+          console.log("[Lesson] Initial message:", initialMessage);
           await streamChat(initialMessage, true);
           setIsInitialized(true);
         }
       } catch (error) {
-        console.error("Error loading chat history:", error);
+        console.error("[Lesson] Error loading chat history:", error);
         toast({
           title: "שגיאה",
           description: "לא הצלחנו לטעון את ההיסטוריה של השיחה.",
           variant: "destructive",
         });
+        // Set initialized even on error to prevent infinite loading
+        setIsInitialized(true);
       }
     };
 
     if (!isInitialized) {
       loadChatHistory();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized, conversationId]);
 
-  const streamChat = async (userMessage: string, isInitial: boolean = false, imageData?: string | null) => {
-    const newMessage: ChatMessage = { 
-      role: "user", 
+  const streamChat = async (
+    userMessage: string,
+    isInitial: boolean = false,
+    imageData?: string | null
+  ) => {
+    console.log("[streamChat] Starting", {
+      userMessage,
+      isInitial,
+      conversationId,
+      topicId,
+      mode,
+    });
+
+    const newMessage: ChatMessage = {
+      role: "user",
       content: userMessage,
-      ...(imageData && { image: imageData })
+      ...(imageData && { image: imageData }),
     };
     const newMessages = [...messages, newMessage];
     setMessages(newMessages);
@@ -274,23 +353,20 @@ const Lesson = () => {
     setSelectedImage(null);
     setIsLoading(true);
 
-    // Track user message
-    if (!isInitial) {
-      trackMessage(false, undefined);
-    }
-
     // Immediately scroll to bottom when user sends message
     setTimeout(() => scrollToBottom("auto"), 0);
 
     abortControllerRef.current = new AbortController();
 
     try {
+      console.log("[streamChat] Getting session...");
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
         throw new Error("Not authenticated");
       }
+      console.log("[streamChat] Session obtained");
 
       const {
         data: { user },
@@ -298,7 +374,7 @@ const Lesson = () => {
 
       if (user && conversationId) {
         let imageId: string | null = null;
-        
+
         // If there's an image, save it to lesson_images first
         if (imageData) {
           const { data: savedImage, error: imageError } = await supabase
@@ -309,12 +385,12 @@ const Lesson = () => {
             })
             .select("id")
             .single();
-          
+
           if (!imageError && savedImage) {
             imageId = savedImage.id;
           }
         }
-        
+
         await supabase.from("lesson_messages").insert({
           user_id: user.id,
           conversation_id: conversationId,
@@ -326,25 +402,37 @@ const Lesson = () => {
       }
 
       // Prepare messages for API (without image data in content to reduce payload for history)
-      const messagesForApi = newMessages.map(msg => ({
+      const messagesForApi = newMessages.map((msg) => ({
         role: msg.role,
-        content: msg.content
+        content: msg.content,
       }));
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ 
-          messages: messagesForApi, 
-          topic, 
-          mode,
-          image: imageData || undefined
-        }),
-        signal: abortControllerRef.current.signal,
+      console.log("[streamChat] Calling AI teacher API", {
+        topic,
+        mode,
+        messageCount: messagesForApi.length,
       });
+      console.log("[streamChat] Calling AI teacher API", { location });
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            messages: messagesForApi,
+            topic,
+            mode,
+            image: imageData || undefined,
+          }),
+          signal: abortControllerRef.current.signal,
+        }
+      );
+
+      console.log("[streamChat] API response status:", response.status);
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -376,23 +464,36 @@ const Lesson = () => {
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
+      console.log("[streamChat] Starting to read stream...");
+
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          console.log("[streamChat] Stream done");
+          break;
+        }
 
-        buffer += decoder.decode(value, { stream: true });
+        const chunk = decoder.decode(value, { stream: true });
+        console.log("[streamChat] Received chunk:", chunk.substring(0, 100));
+        buffer += chunk;
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
 
         for (const line of lines) {
+          console.log("[streamChat] Processing line:", line.substring(0, 100));
           if (line.startsWith("data: ")) {
             const data = line.slice(6).trim();
-            if (data === "[DONE]") continue;
+            if (data === "[DONE]") {
+              console.log("[streamChat] Received [DONE]");
+              continue;
+            }
 
             try {
               const parsed = JSON.parse(data);
+              console.log("[streamChat] Parsed:", parsed);
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) {
+                console.log("[streamChat] Got content:", content);
                 assistantMessage += content;
 
                 const xpMatch = assistantMessage.match(/\+(\d+)\s*XP/);
@@ -418,9 +519,6 @@ const Lesson = () => {
                   setLevel(newLevel);
                   assistantMessage += " xp_detected";
 
-                  // Track this as a correct answer
-                  trackMessage(true, true);
-
                   const {
                     data: { user },
                   } = await supabase.auth.getUser();
@@ -436,7 +534,9 @@ const Lesson = () => {
                   }
                 }
 
-                const cleanedMessage = assistantMessage.replace(" xp_detected", "").replace(" level_detected", "");
+                const cleanedMessage = assistantMessage
+                  .replace(" xp_detected", "")
+                  .replace(" level_detected", "");
 
                 setMessages((prev) => {
                   const newMsgs = [...prev];
@@ -500,32 +600,8 @@ const Lesson = () => {
     streamChat(input || "", false, selectedImage);
   };
 
-  // Handle back button - calculate progress before navigating
-  const handleBack = async () => {
-    if (topicId) {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          toast({
-            title: "מחשב התקדמות...",
-            description: "אנא המתן/י רגע",
-          });
-          
-          const response = await supabase.functions.invoke('calculate-topic-progress', {
-            body: { topicId, conversationId },
-          });
-          
-          if (response.data && response.data.overall_progress !== undefined) {
-            toast({
-              title: `${response.data.topic_name} — ${response.data.overall_progress}%`,
-              description: response.data.message,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error calculating progress on back:', error);
-      }
-    }
+  // Handle back button - navigate to topic or dashboard
+  const handleBack = () => {
     navigate(topicId ? `/topic/${topicId}` : "/dashboard");
   };
 
@@ -535,7 +611,11 @@ const Lesson = () => {
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
-            <XpProgressBar currentXp={currentXp} requiredXp={getXpToNextLevel(level)} level={level} />
+            <XpProgressBar
+              currentXp={currentXp}
+              requiredXp={getXpToNextLevel(level)}
+              level={level}
+            />
             <Button variant="ghost" onClick={handleBack}>
               <ArrowRight className="ml-2" />
               חזרה
@@ -557,15 +637,28 @@ const Lesson = () => {
             </div>
           )}
           {messages.map((message, index) => {
-            const cleanContent = message.role === "assistant" ? cleanMessageContent(message.content) : message.content;
-            const isStreamingMessage = message.role === "assistant" && index === messages.length - 1 && isLoading;
+            const cleanContent =
+              message.role === "assistant"
+                ? cleanMessageContent(message.content)
+                : message.content;
+            const isStreamingMessage =
+              message.role === "assistant" &&
+              index === messages.length - 1 &&
+              isLoading;
             const hasCompletedTyping = completedTyping.has(index);
 
             return (
-              <div key={index} className={`flex w-full ${message.role === "user" ? "justify-start" : "justify-end"}`}>
+              <div
+                key={index}
+                className={`flex w-full ${
+                  message.role === "user" ? "justify-start" : "justify-end"
+                }`}
+              >
                 <Card
                   className={`p-4 max-w-[85%] sm:max-w-[80%] break-words overflow-wrap-anywhere ${
-                    message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card"
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card"
                   }`}
                 >
                   {message.role === "assistant" ? (
@@ -581,8 +674,12 @@ const Lesson = () => {
                               disabled={isLoading}
                             />
                           )}
-                          {message.xpGain && <XpGainAnimation amount={message.xpGain} />}
-                          {message.levelUp && <LevelUpAnimation level={message.levelUp} />}
+                          {message.xpGain && (
+                            <XpGainAnimation amount={message.xpGain} />
+                          )}
+                          {message.levelUp && (
+                            <LevelUpAnimation level={message.levelUp} />
+                          )}
                         </>
                       ) : isStreamingMessage ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -590,7 +687,9 @@ const Lesson = () => {
                         <CustomTypewriter
                           content={cleanContent}
                           onComplete={() => {
-                            setCompletedTyping((prev) => new Set(prev).add(index));
+                            setCompletedTyping((prev) =>
+                              new Set(prev).add(index)
+                            );
                             isTypingRef.current = false;
                           }}
                           speed={20}
@@ -603,16 +702,16 @@ const Lesson = () => {
                   ) : (
                     <div className="space-y-2">
                       {/* Display image if found in database */}
-                       {message.image && (
-                         <div className="mb-2 w-full">
-                           <img 
-                             src={message.image} 
-                             alt="תמונה שהועלתה" 
-                             className="w-full max-w-full h-auto max-h-64 rounded-lg object-contain"
-                           />
-                         </div>
-                       )}
-                      
+                      {message.image && (
+                        <div className="mb-2 w-full">
+                          <img
+                            src={message.image}
+                            alt="תמונה שהועלתה"
+                            className="w-full max-w-full h-auto max-h-64 rounded-lg object-contain"
+                          />
+                        </div>
+                      )}
+
                       {/* If image was deleted (has imageId but no image data), show fallback text */}
                       {message.imageId && !message.image && (
                         <div dir="rtl">
@@ -622,45 +721,60 @@ const Lesson = () => {
                           {/* If there's also text content, add line break and show it */}
                           {message.content && message.content.trim() && (
                             <div className="mt-2">
-                              {splitByLanguage(message.content).map((segment, idx) => (
-                                <p
-                                  key={idx}
-                                  className="text-lg leading-relaxed"
-                                  dir={segment.direction}
-                                  style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
-                                >
-                                  {segment.text || "\u00A0"}
-                                </p>
-                              ))}
+                              {splitByLanguage(message.content).map(
+                                (segment, idx) => (
+                                  <p
+                                    key={idx}
+                                    className="text-lg leading-relaxed"
+                                    dir={segment.direction}
+                                    style={{
+                                      textAlign:
+                                        segment.direction === "rtl"
+                                          ? "right"
+                                          : "left",
+                                    }}
+                                  >
+                                    {segment.text || "\u00A0"}
+                                  </p>
+                                )
+                              )}
                             </div>
                           )}
                         </div>
                       )}
-                      
+
                       {/* Display text content only if there's no deleted image (otherwise it's shown above) */}
-                      {!(message.imageId && !message.image) && message.content && message.content.trim() && splitByLanguage(message.content).map((segment, idx) => (
-                        <p
-                          key={idx}
-                          className="text-lg leading-relaxed"
-                          dir={segment.direction}
-                          style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
-                        >
-                          {segment.text || "\u00A0"}
-                        </p>
-                      ))}
+                      {!(message.imageId && !message.image) &&
+                        message.content &&
+                        message.content.trim() &&
+                        splitByLanguage(message.content).map((segment, idx) => (
+                          <p
+                            key={idx}
+                            className="text-lg leading-relaxed"
+                            dir={segment.direction}
+                            style={{
+                              textAlign:
+                                segment.direction === "rtl" ? "right" : "left",
+                            }}
+                          >
+                            {segment.text || "\u00A0"}
+                          </p>
+                        ))}
                     </div>
                   )}
                 </Card>
               </div>
             );
           })}
-          {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
-            <div className="flex justify-end">
-              <Card className="p-4 max-w-[80%] bg-card">
-                <Loader2 className="w-5 h-5 animate-spin" />
-              </Card>
-            </div>
-          )}
+          {isLoading &&
+            messages.length > 0 &&
+            messages[messages.length - 1].role === "user" && (
+              <div className="flex justify-end">
+                <Card className="p-4 max-w-[80%] bg-card">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                </Card>
+              </div>
+            )}
           <div ref={messagesEndRef} />
         </div>
       </div>
@@ -671,9 +785,9 @@ const Lesson = () => {
           {/* Image Preview */}
           {selectedImage && (
             <div className="mb-3 relative inline-block max-w-full">
-              <img 
-                src={selectedImage} 
-                alt="תצוגה מקדימה" 
+              <img
+                src={selectedImage}
+                alt="תצוגה מקדימה"
                 className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border-2 border-primary"
               />
               <button
@@ -685,22 +799,32 @@ const Lesson = () => {
               </button>
             </div>
           )}
-          
+
           <div className="flex items-center gap-2 w-full">
             {isLoading ? (
-              <Button size="icon" variant="destructive" onClick={handleStop} className="shrink-0">
+              <Button
+                size="icon"
+                variant="destructive"
+                onClick={handleStop}
+                className="shrink-0"
+              >
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             ) : (
-              <Button size="icon" onClick={handleSend} disabled={(!input.trim() && !selectedImage) || isLoading} className="shrink-0">
+              <Button
+                size="icon"
+                onClick={handleSend}
+                disabled={(!input.trim() && !selectedImage) || isLoading}
+                className="shrink-0"
+              >
                 <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             )}
-            
+
             {/* Image Upload Button */}
-            <Button 
-              size="icon" 
-              variant="outline" 
+            <Button
+              size="icon"
+              variant="outline"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
               className="shrink-0"
@@ -714,7 +838,7 @@ const Lesson = () => {
               onChange={handleImageSelect}
               className="hidden"
             />
-            
+
             <Input
               placeholder="הקלד/י את התשובה שלך כאן..."
               value={input}

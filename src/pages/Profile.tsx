@@ -1,82 +1,64 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, User, Mail, GraduationCap, Settings, LogOut, BarChart3, Edit, Save, X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { ArrowRight, User, Mail, GraduationCap, Settings, LogOut, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { XpProgressBar } from '@/components/XpProgressBar';
 import { formatGrade } from '@/lib/gradeUtils';
+import { useGetUserQuery, useSignOutMutation } from '@/store/api/authApi';
+import { useGetProfileQuery, useUpdateProfileMutation } from '@/store/api/profileApi';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [editForm, setEditForm] = useState({
     full_name: '',
     parent_email: '',
     grade: 0
   });
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  // RTK Query hooks
+  const { data: user } = useGetUserQuery();
+  const userId = user?.id || '';
 
-  const fetchProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/auth');
-        return;
-      }
+  const {
+    data: profile,
+    isLoading: loading,
+  } = useGetProfileQuery(userId, {
+    skip: !userId,
+  });
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+  const [updateProfile] = useUpdateProfileMutation();
+  const [signOut] = useSignOutMutation();
 
-      if (error) throw error;
-
-      setProfile(data);
+  // Initialize edit form when profile loads
+  useState(() => {
+    if (profile) {
       setEditForm({
-        full_name: data.full_name,
-        parent_email: data.parent_email,
-        grade: data.grade
+        full_name: profile.full_name,
+        parent_email: profile.parent_email,
+        grade: profile.grade
       });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן לטעון את הפרופיל",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
     }
-  };
+  });
 
   const handleSaveProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!userId) return;
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({
+      await updateProfile({
+        userId,
+        updates: {
           full_name: editForm.full_name,
           parent_email: editForm.parent_email,
           grade: editForm.grade
-        })
-        .eq('id', user.id);
+        }
+      }).unwrap();
 
-      if (error) throw error;
-
-      await fetchProfile();
       setIsEditing(false);
       toast({
         title: "הצלחה",
@@ -93,7 +75,7 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate('/auth');
   };
 
@@ -147,10 +129,10 @@ const Profile = () => {
                 <span className="text-muted-foreground">רמה {profile.level}</span>
                 <span className="text-muted-foreground">{profile.current_xp} / {requiredXp} XP</span>
               </div>
-              <XpProgressBar 
-                currentXp={profile.current_xp} 
-                requiredXp={requiredXp} 
-                level={profile.level} 
+              <XpProgressBar
+                currentXp={profile.current_xp || 0}
+                requiredXp={requiredXp}
+                level={profile.level || 1}
               />
             </div>
           </div>
@@ -163,7 +145,14 @@ const Profile = () => {
                 פרטים אישיים
               </h3>
               {!isEditing ? (
-                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                <Button variant="ghost" size="sm" onClick={() => {
+                  setEditForm({
+                    full_name: profile.full_name,
+                    parent_email: profile.parent_email,
+                    grade: profile.grade
+                  });
+                  setIsEditing(true);
+                }}>
                   <Edit className="w-4 h-4 ml-2" />
                   ערוך
                 </Button>

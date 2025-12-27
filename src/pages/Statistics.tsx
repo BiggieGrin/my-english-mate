@@ -19,203 +19,122 @@ import {
   PolarRadiusAxis,
   Radar,
 } from "recharts";
+import { useGetUserQuery } from "@/store/api/authApi";
+import { useGetProfileQuery } from "@/store/api/profileApi";
+import { useGetMessagesByUserQuery } from "@/store/api/messagesApi";
 
 const Statistics = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
   const [dailyStudyData, setDailyStudyData] = useState<any[]>([]);
   const [strengthsData, setStrengthsData] = useState<any[]>([]);
   const [aiAssessment, setAiAssessment] = useState<any>(null);
   const [assessmentLoading, setAssessmentLoading] = useState(false);
 
+  // RTK Query hooks
+  const { data: user } = useGetUserQuery();
+  const userId = user?.id || '';
+
+  const {
+    data: profile,
+    isLoading: profileLoading,
+  } = useGetProfileQuery(userId, {
+    skip: !userId,
+  });
+
+  const {
+    data: messages = [],
+  } = useGetMessagesByUserQuery(
+    { userId, limit: 1000 },
+    { skip: !userId }
+  );
+
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!userId) {
+      navigate("/auth");
+      return;
+    }
 
-  const fetchData = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
+    if (profile && messages) {
+      calculateStatistics();
+    }
+  }, [userId, profile, messages]);
 
-      const { data: profileData, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const calculateStatistics = () => {
+    // Calculate real daily study data from lesson_messages - last 7 days chronologically
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-      if (error) throw error;
-      setProfile(profileData);
+    const hebrewDays = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
+    const last7Days = [];
 
-      // Calculate real daily study data from lesson_messages - last 7 days chronologically
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const hebrewDays = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
-      const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
 
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
 
-        const nextDate = new Date(date);
-        nextDate.setDate(nextDate.getDate() + 1);
-
-        const { data: messages } = await supabase
-          .from("lesson_messages")
-          .select("created_at")
-          .eq("user_id", user.id)
-          .gte("created_at", date.toISOString())
-          .lt("created_at", nextDate.toISOString());
-
-        // Each message represents approximately 1 minute of study
-        const minutes = messages ? messages.length : 0;
-        const dayIndex = date.getDay();
-
-        last7Days.push({
-          day: hebrewDays[dayIndex],
-          minutes: minutes,
-        });
-      }
-
-      setDailyStudyData(last7Days);
-
-      // Skills will be calculated by AI assessment based on actual conversations
-      // Default values in case AI assessment is not available yet
-      const defaultStrengthsData = [
-        { skill: "אוצר מילים", score: 50 },
-        { skill: "דקדוק", score: 50 },
-        { skill: "הבנת הנקרא", score: 50 },
-        { skill: "כתיבה", score: 50 },
-        { skill: "שיחה", score: 50 },
-      ];
-      setStrengthsData(defaultStrengthsData);
-
-      // Fetch AI assessment
-      await fetchAIAssessment(user.id, profileData, defaultStrengthsData, last7Days);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      toast({
-        title: "שגיאה",
-        description: "לא ניתן לטעון את הסטטיסטיקות",
-        variant: "destructive",
+      // Filter messages for this day
+      const dayMessages = messages.filter((msg) => {
+        const msgDate = new Date(msg.created_at);
+        return msgDate >= date && msgDate < nextDate;
       });
-    } finally {
-      setLoading(false);
+
+      // Each message represents approximately 1 minute of study
+      const minutes = dayMessages.length;
+      const dayIndex = date.getDay();
+
+      last7Days.push({
+        day: hebrewDays[dayIndex],
+        minutes: minutes,
+      });
+    }
+
+    setDailyStudyData(last7Days);
+
+    // Skills will be calculated by AI assessment based on actual conversations
+    // Default values in case AI assessment is not available yet
+    const defaultStrengthsData = [
+      { skill: "אוצר מילים", score: 50 },
+      { skill: "דקדוק", score: 50 },
+      { skill: "הבנת הנקרא", score: 50 },
+      { skill: "כתיבה", score: 50 },
+      { skill: "שיחה", score: 50 },
+    ];
+    setStrengthsData(defaultStrengthsData);
+
+    // Set AI assessment from profile
+    if (profile?.ai_assessment) {
+      setAiAssessment(profile.ai_assessment);
     }
   };
 
-  const fetchAIAssessment = async (userId: string, profile: any, strengthsData: any[], dailyStudyData: any[]) => {
-    setAssessmentLoading(true);
-    try {
-      // Check if we have a cached assessment
-      if (profile.ai_assessment) {
-        const assessment = profile.ai_assessment;
-        setAiAssessment(assessment);
-
-        // Update skills data from cached assessment
-        if (assessment.skills) {
-          const skillsData = [
-            { skill: "אוצר מילים", score: assessment.skills.vocabulary },
-            { skill: "דקדוק", score: assessment.skills.grammar },
-            { skill: "הבנת הנקרא", score: assessment.skills.reading },
-            { skill: "כתיבה", score: assessment.skills.writing },
-            { skill: "שיחה", score: assessment.skills.speaking },
-          ];
-          setStrengthsData(skillsData);
-        }
-      }
-
-      // Check if we need to update the assessment (every 10 minutes of study)
-      const minutesSinceLastAssessment = profile.last_assessment_time
-        ? Math.floor((Date.now() - new Date(profile.last_assessment_time).getTime()) / 60000)
-        : Infinity;
-      
-      const studyMinutesSinceAssessment = profile.total_study_minutes - (profile.ai_assessment?.study_minutes_at_assessment || 0);
-
-      // Update if: no assessment yet OR 10+ minutes of study since last assessment
-      if (!profile.ai_assessment || studyMinutesSinceAssessment >= 10) {
-        // Get recent lesson messages for context
-        const { data: recentMessages } = await supabase
-          .from("lesson_messages")
-          .select("content, role, created_at")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-          .limit(50);
-
-        const { data, error } = await supabase.functions.invoke("ai-assessment", {
-          body: {
-            profile,
-            strengthsData,
-            dailyStudyData,
-            recentMessages: recentMessages || [],
-          },
-        });
-
-        if (error) throw error;
-
-        const assessment = data as any;
-        setAiAssessment(assessment);
-
-        // Update skills data from new assessment
-        if (assessment.skills) {
-          const skillsData = [
-            { skill: "אוצר מילים", score: assessment.skills.vocabulary },
-            { skill: "דקדוק", score: assessment.skills.grammar },
-            { skill: "הבנת הנקרא", score: assessment.skills.reading },
-            { skill: "כתיבה", score: assessment.skills.writing },
-            { skill: "שיחה", score: assessment.skills.speaking },
-          ];
-          setStrengthsData(skillsData);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching AI assessment:", error);
-      // Fallback to basic assessment
-      setAiAssessment({
-        trend: "לא ניתן לנתח כרגע",
-        strengths: ["המשך ללמוד"],
-        improvements: ["תרגל באופן קבוע"],
-        hasEnoughData: false,
-        skills: {
-          vocabulary: 50,
-          grammar: 50,
-          reading: 50,
-          writing: 50,
-          speaking: 50,
-        },
-      });
-    } finally {
-      setAssessmentLoading(false);
-    }
-  };
-
-  const calculateAverageStudyTime = () => {
-    const total = dailyStudyData.reduce((sum, day) => sum + day.minutes, 0);
-    return Math.round(total / dailyStudyData.length);
-  };
+  const loading = profileLoading;
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
   if (!profile) {
     return null;
   }
 
-  const avgStudyTime = calculateAverageStudyTime();
+  // Calculate total study time from messages (approximately 1 message = 1 minute)
+  const totalStudyMinutes = messages.length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
-      {/* Header */}
       <header className="bg-card/80 backdrop-blur-lg shadow-sm border-b sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
               <BarChart3 className="w-6 h-6 text-primary" />
-              סטטיסטיקות למידה
+              סטטיסטיקות
             </h1>
             <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
               <ArrowRight className="ml-2 w-4 h-4" />
@@ -226,78 +145,74 @@ const Statistics = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="p-6 shadow-md border-primary/10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-primary" />
+        {/* Stats Overview */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <Card className="p-4 border-primary/20">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Flame className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{avgStudyTime} דקות</p>
-                <p className="text-sm text-muted-foreground">ממוצע יומי</p>
+                <div className="text-2xl font-bold">{profile.current_streak || 0}</div>
+                <div className="text-xs text-muted-foreground">רצף ימים</div>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 shadow-md border-accent/10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                <Flame className="w-6 h-6 text-accent" />
+          <Card className="p-4 border-primary/20">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-accent-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{profile.current_streak} ימים</p>
-                <p className="text-sm text-muted-foreground">רצף למידה</p>
+                <div className="text-2xl font-bold">{totalStudyMinutes}</div>
+                <div className="text-xs text-muted-foreground">דקות למידה</div>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 shadow-md border-secondary/10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
-                <Zap className="w-6 h-6 text-secondary" />
+          <Card className="p-4 border-primary/20">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                <Target className="w-5 h-5 text-secondary-foreground" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{profile.lessons_completed}</p>
-                <p className="text-sm text-muted-foreground">שיעורים הושלמו</p>
+                <div className="text-2xl font-bold">{profile.lessons_completed || 0}</div>
+                <div className="text-xs text-muted-foreground">שיעורים הושלמו</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 border-primary/20">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold">{profile.level || 1}</div>
+                <div className="text-xs text-muted-foreground">רמה נוכחית</div>
               </div>
             </div>
           </Card>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* Daily Study Time Chart */}
-          <Card className="p-6 shadow-md border-primary/10">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-foreground">
+        {/* Charts */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          {/* Daily Study Time */}
+          <Card className="p-6 border-primary/10">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary" />
               זמן למידה יומי
             </h3>
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart
-                data={dailyStudyData}
-                margin={{ top: 20, right: 24, left: 24, bottom: 36 }}
-                barCategoryGap="25%"
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="day"
-                  stroke="hsl(var(--muted-foreground))"
-                  interval={0}
-                  tick={{ fontSize: 13 }}
-                  tickMargin={12}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  tickMargin={24}
-                  tick={{ fontSize: 12 }}
-                  allowDecimals={false}
-                />
-
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={dailyStudyData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="day" className="text-xs" />
+                <YAxis className="text-xs" />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
                   }}
                 />
                 <Bar dataKey="minutes" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
@@ -305,72 +220,17 @@ const Statistics = () => {
             </ResponsiveContainer>
           </Card>
 
-          {/* Streak Information */}
-          <Card className="p-6 shadow-md border-accent/10">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-foreground">
-              <Flame className="w-5 h-5 text-accent" />
-              רצף למידה
+          {/* Skills Radar */}
+          <Card className="p-6 border-primary/10">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-primary" />
+              נקודות חוזק
             </h3>
-            <div className="flex flex-col items-center justify-center h-[250px]">
-              <div className="relative w-32 h-32 mb-4">
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-accent/20 to-accent/40 flex items-center justify-center">
-                  <span className="text-5xl font-bold text-accent">{profile.current_streak}</span>
-                </div>
-              </div>
-              <p className="text-lg font-semibold text-foreground">ימי למידה רצופים</p>
-              <p className="text-sm text-muted-foreground mt-2 text-center">
-                {profile.current_streak >= 5
-                  ? "מדהים! המשך כך! 🔥"
-                  : profile.current_streak >= 3
-                    ? "כל הכבוד! המשך לתרגל 💪"
-                    : ""}
-              </p>
-            </div>
-          </Card>
-        </div>
-
-        {/* Skills Radar Chart */}
-        <Card className="p-6 shadow-md border-primary/10 mb-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-foreground">
-            <Target className="w-5 h-5 text-primary" />
-            פיזור מיומנויות
-          </h3>
-          <div dir="ltr">
-            <ResponsiveContainer width="100%" height={420}>
-              <RadarChart
-                data={strengthsData}
-                outerRadius="100%"
-                margin={{ top: 80, right: 120, bottom: 80, left: 120 }}
-              >
-                <PolarGrid stroke="hsl(var(--border))" />
-                <PolarAngleAxis
-                  dataKey="skill"
-                  stroke="hsl(var(--foreground))"
-                  tick={(props) => {
-                    const { x, y, payload } = props;
-                    // Calculate center of chart
-                    const cx = props.cx || 0;
-                    const cy = props.cy || 0;
-                    // Calculate angle and extend distance
-                    const angle = Math.atan2(y - cy, x - cx);
-                    const extendDistance = 15; // Adjust this to move labels further
-                    const newX = x + Math.cos(angle) * extendDistance;
-                    const newY = y + Math.sin(angle) * extendDistance;
-
-                    return (
-                      <text x={newX} y={newY} textAnchor="middle" fill="hsl(var(--foreground))" fontSize={16}>
-                        {payload.value}
-                      </text>
-                    );
-                  }}
-                  tickLine={false}
-                />
-                <PolarRadiusAxis
-                  angle={90}
-                  domain={[0, 100]}
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fontSize: 11 }}
-                />
+            <ResponsiveContainer width="100%" height={200}>
+              <RadarChart data={strengthsData}>
+                <PolarGrid className="stroke-muted" />
+                <PolarAngleAxis dataKey="skill" className="text-xs" />
+                <PolarRadiusAxis angle={90} domain={[0, 100]} className="text-xs" />
                 <Radar
                   name="ציון"
                   dataKey="score"
@@ -378,72 +238,25 @@ const Statistics = () => {
                   fill="hsl(var(--primary))"
                   fillOpacity={0.6}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
               </RadarChart>
             </ResponsiveContainer>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         {/* AI Assessment */}
-        <Card className="p-6 shadow-lg border-primary/20 bg-gradient-to-br from-card via-primary/5 to-accent/5">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-foreground">
-            <Brain className="w-6 h-6 text-primary" />
-            הערכת AI - ניתוח התקדמות
-          </h3>
-
-          {assessmentLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className="mr-3 text-muted-foreground">מנתח את הנתונים שלך...</p>
+        {aiAssessment && (
+          <Card className="p-6 border-primary/10">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-primary" />
+              הערכת AI
+            </h3>
+            <div className="prose prose-sm max-w-none">
+              <p className="text-muted-foreground whitespace-pre-wrap">
+                {typeof aiAssessment === 'string' ? aiAssessment : JSON.stringify(aiAssessment, null, 2)}
+              </p>
             </div>
-          ) : aiAssessment ? (
-            <div className="space-y-4">
-              {!aiAssessment.hasEnoughData && (
-                <div className="p-4 bg-accent/10 rounded-lg border border-accent/20 mb-4">
-                  <p className="text-sm text-foreground">💡 המשך ללמוד כדי לקבל הערכה מפורטת יותר מה-AI</p>
-                </div>
-              )}
-
-              {/* Trend */}
-              <div className="p-4 bg-card rounded-lg border border-primary/10">
-                <p className="text-sm text-muted-foreground mb-1">מגמת התקדמות</p>
-                <p className="text-lg font-semibold text-foreground">{aiAssessment.trend}</p>
-              </div>
-
-              {/* Strengths */}
-              <div className="p-4 bg-card rounded-lg border border-primary/10">
-                <p className="text-sm text-muted-foreground mb-2">נקודות חוזקה 💪</p>
-                <div className="flex flex-wrap gap-2">
-                  {aiAssessment.strengths.map((strength: string, index: number) => (
-                    <span key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                      {strength}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Improvements */}
-              <div className="p-4 bg-card rounded-lg border border-accent/10">
-                <p className="text-sm text-muted-foreground mb-2">תחומים לשיפור 🎯</p>
-                <div className="flex flex-wrap gap-2">
-                  {aiAssessment.improvements.map((area: string, index: number) => (
-                    <span key={index} className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm font-medium">
-                      {area}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">לא ניתן לטעון הערכה כרגע</div>
-          )}
-        </Card>
+          </Card>
+        )}
       </div>
     </div>
   );

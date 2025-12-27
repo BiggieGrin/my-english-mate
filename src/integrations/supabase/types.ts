@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           id: string
           last_message_at: string
+          mode: string | null
           title: string | null
           topic_id: string
           user_id: string
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_message_at?: string
+          mode?: string | null
           title?: string | null
           topic_id: string
           user_id: string
@@ -35,6 +37,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_message_at?: string
+          mode?: string | null
           title?: string | null
           topic_id?: string
           user_id?: string
@@ -144,90 +147,6 @@ export type Database = {
             columns: ["image_id"]
             isOneToOne: false
             referencedRelation: "lesson_images"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      lesson_sessions: {
-        Row: {
-          accuracy: number | null
-          completed_at: string | null
-          completion_criteria_met: Json | null
-          conversation_id: string | null
-          correct_after_hint: number | null
-          correct_answers: number | null
-          created_at: string
-          difficulty_level: string | null
-          fluent_answers: number | null
-          hints_used: number | null
-          id: string
-          metadata: Json | null
-          mode: string
-          questions_answered: number | null
-          response_time_avg: number | null
-          started_at: string
-          subskills_practiced: Json | null
-          topic_id: string
-          total_messages: number | null
-          user_id: string
-        }
-        Insert: {
-          accuracy?: number | null
-          completed_at?: string | null
-          completion_criteria_met?: Json | null
-          conversation_id?: string | null
-          correct_after_hint?: number | null
-          correct_answers?: number | null
-          created_at?: string
-          difficulty_level?: string | null
-          fluent_answers?: number | null
-          hints_used?: number | null
-          id?: string
-          metadata?: Json | null
-          mode: string
-          questions_answered?: number | null
-          response_time_avg?: number | null
-          started_at?: string
-          subskills_practiced?: Json | null
-          topic_id: string
-          total_messages?: number | null
-          user_id: string
-        }
-        Update: {
-          accuracy?: number | null
-          completed_at?: string | null
-          completion_criteria_met?: Json | null
-          conversation_id?: string | null
-          correct_after_hint?: number | null
-          correct_answers?: number | null
-          created_at?: string
-          difficulty_level?: string | null
-          fluent_answers?: number | null
-          hints_used?: number | null
-          id?: string
-          metadata?: Json | null
-          mode?: string
-          questions_answered?: number | null
-          response_time_avg?: number | null
-          started_at?: string
-          subskills_practiced?: Json | null
-          topic_id?: string
-          total_messages?: number | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lesson_sessions_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lesson_sessions_topic_id_fkey"
-            columns: ["topic_id"]
-            isOneToOne: false
-            referencedRelation: "curriculum_topics"
             referencedColumns: ["id"]
           },
         ]

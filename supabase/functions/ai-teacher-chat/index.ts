@@ -42,9 +42,9 @@ serve(async (req) => {
       throw new Error("Invalid messages format");
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
     const authHeader = req.headers.get("authorization");
@@ -240,69 +240,215 @@ ${modeInstructions}
 התחל לפעול כעת בהתאם למצב \`${currentMode}\`.
 `;
 
-    const systemPrompt = {
-      role: "system",
-      content: systemPromptContent,
+    // Convert messages to Gemini format
+    const geminiContents = [];
+
+    // Add system prompt as first user message in Gemini
+    geminiContents.push({
+      role: "user",
+      parts: [{ text: systemPromptContent }]
+    });
+    geminiContents.push({
+      role: "model",
+      parts: [{ text: "אני מבין. אני פועל כמורה פרטי לאנגלית. אני מוכן להתחיל." }]
+    });
+
+    // Process messages
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      const isLastMessage = i === messages.length - 1;
+
+      if (msg.role === "user") {
+        const parts: Array<{ text?: string; inline_data?: { mime_type: string; data: string } }> = [];
+
+        // Add text
+        if (msg.content) {
+          parts.push({ text: msg.content });
+        }
+
+        // Add image if this is the last message and we have an image
+        if (isLastMessage && image) {
+          // Extract base64 data and mime type from data URL
+          const matches = image.match(/^data:([^;]+);base64,(.+)$/);
+          if (matches) {
+            const mimeType = matches[1];
+            const base64Data = matches[2];
+            parts.push({
+              inline_data: {
+                mime_type: mimeType,
+                data: base64Data
+              }
+            });
+          }
+        }
+
+        geminiContents.push({ role: "user", parts });
+      } else if (msg.role === "assistant") {
+        geminiContents.push({
+          role: "model",
+          parts: [{ text: msg.content }]
+        });
+      }
+    }
+
+    console.log("Calling Gemini API for user:", profile.full_name, "Mode:", currentMode);
+    console.log("Has image in last message:", !!image);
+    console.log("Gemini request contents count:", geminiContents.length);
+
+    const geminiRequest = {
+      contents: geminiContents,
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.95,
+        topK: 40,
+        maxOutputTokens: 8192,
+      },
     };
 
-    // Process messages to handle image in the last user message
-    const processedMessages = messages.map((msg: any, index: number) => {
-      // If this is the last message and we have an image, add it
-      if (index === messages.length - 1 && msg.role === "user" && image) {
-        return {
-          role: "user",
-          content: [
-            { type: "text", text: msg.content || "הנה התמונה:" },
-            {
-              type: "image_url",
-              image_url: {
-                url: image, // base64 data URL
-              },
-            },
-          ],
-        };
+    console.log("Gemini request config:", JSON.stringify(geminiRequest, null, 2).substring(0, 500));
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(geminiRequest),
       }
-      return msg;
-    });
+    );
 
-    console.log("Calling AI for user:", profile.full_name, "Mode:", currentMode);
-    console.log("Has image in last message:", !!image);
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [systemPrompt, ...processedMessages],
-        stream: true,
-      }),
-    });
+    console.log("Gemini response status:", response.status);
+    console.log("Gemini response headers:", Object.fromEntries(response.headers.entries()));
+    console.log("Gemini response body exists:", !!response.body);
+    console.log("Gemini response bodyUsed:", response.bodyUsed);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
+      console.error("Gemini API error:", response.status, errorText);
+
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limits exceeded, please try again later." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required, please add funds." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      
-      throw new Error(`AI gateway error: ${response.status}`);
+
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    // Transform Gemini streaming response to OpenAI-compatible format
+    const reader = response.body?.getReader();
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          if (!reader) {
+            throw new Error("No response body");
+          }
+
+          let buffer = "";
+          let chunkCount = 0;
+
+          console.log("[Stream] Starting to read Gemini stream...");
+
+          while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+              console.log("[Stream] Gemini stream done, total chunks:", chunkCount);
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              controller.close();
+              break;
+            }
+
+            const chunk = decoder.decode(value, { stream: true });
+            chunkCount++;
+            console.log(`[Stream] Chunk ${chunkCount}:`, chunk.substring(0, 150));
+
+            buffer += chunk;
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              if (line.trim() === "") continue;
+
+              console.log("[Stream] Raw line:", line.substring(0, 200));
+
+              // Gemini SSE format uses "data: " prefix
+              let jsonData = line;
+              if (line.startsWith("data: ")) {
+                jsonData = line.substring(6); // Remove "data: " prefix
+                console.log("[Stream] Extracted JSON from SSE:", jsonData.substring(0, 200));
+              } else if (!line.startsWith("{")) {
+                console.log("[Stream] Skipping non-JSON line");
+                continue;
+              }
+
+              try {
+                const geminiChunk = JSON.parse(jsonData);
+                console.log("[Stream] Parsed Gemini chunk:", JSON.stringify(geminiChunk).substring(0, 200));
+
+                // Extract text from Gemini response
+                const text = geminiChunk.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                  console.log("[Stream] Extracted text:", text.substring(0, 100));
+                  // Convert to OpenAI-compatible SSE format
+                  const openAIChunk = {
+                    id: "chatcmpl-" + Date.now(),
+                    object: "chat.completion.chunk",
+                    created: Date.now(),
+                    model: "gemini-2.0-flash-exp",
+                    choices: [{
+                      index: 0,
+                      delta: { content: text },
+                      finish_reason: null
+                    }]
+                  };
+
+                  const sseData = `data: ${JSON.stringify(openAIChunk)}\n\n`;
+                  console.log("[Stream] Sending SSE:", sseData.substring(0, 150));
+                  controller.enqueue(encoder.encode(sseData));
+                }
+
+                // Check if generation is finished
+                if (geminiChunk.candidates?.[0]?.finishReason) {
+                  console.log("[Stream] Gemini finished:", geminiChunk.candidates[0].finishReason);
+                  const finishChunk = {
+                    id: "chatcmpl-" + Date.now(),
+                    object: "chat.completion.chunk",
+                    created: Date.now(),
+                    model: "gemini-2.0-flash-exp",
+                    choices: [{
+                      index: 0,
+                      delta: {},
+                      finish_reason: "stop"
+                    }]
+                  };
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(finishChunk)}\n\n`));
+                }
+              } catch (parseError) {
+                console.error("Error parsing Gemini chunk:", parseError, "Line:", line);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Stream error:", error);
+          controller.error(error);
+        }
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+      },
     });
   } catch (e) {
     console.error("Chat error:", e);

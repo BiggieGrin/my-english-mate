@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate, useParams } from "react-router-dom";
@@ -8,144 +7,100 @@ import {
   Brain,
   ArrowRight,
   MessageSquare,
-  CheckCircle2,
-  ClipboardList,
-  Trophy,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Progress } from "@/components/ui/progress";
-import { useTopicProgress } from "@/hooks/useTopicProgress";
-
-interface Conversation {
-  id: string;
-  title: string | null;
-  created_at: string;
-  last_message_at: string;
-  messageCount: number;
-}
-
-interface Topic {
-  id: string;
-  title: string;
-  icon: string;
-  description: string | null;
-}
+import { useGetUserQuery } from "@/store/api/authApi";
+import { useGetCurriculumTopicByIdQuery, useGetUserTopicByTopicIdQuery } from "@/store/api/topicsApi";
+import { useGetConversationsQuery, useCreateConversationMutation } from "@/store/api/conversationsApi";
 
 const Topic = () => {
   const navigate = useNavigate();
-  const { topicId } = useParams();
+  const { topicId } = useParams<{ topicId: string }>();
   const { toast } = useToast();
-  const [topic, setTopic] = useState<Topic | null>(null);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Get topic progress (accumulated across all completed sessions)
-  const { progress: topicProgress, isLoading: progressLoading } = useTopicProgress(topicId);
+  // RTK Query hooks
+  const { data: user } = useGetUserQuery();
+  const userId = user?.id || '';
 
-  useEffect(() => {
-    loadTopicAndConversations();
-  }, [topicId]);
+  const {
+    data: topic,
+    isLoading: isTopicLoading,
+  } = useGetCurriculumTopicByIdQuery(topicId || '', {
+    skip: !topicId,
+  });
 
-  const loadTopicAndConversations = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        navigate("/auth");
-        return;
-      }
+  const {
+    data: enrollment,
+    isLoading: isEnrollmentLoading,
+  } = useGetUserTopicByTopicIdQuery(
+    { userId, topicId: topicId || '' },
+    { skip: !userId || !topicId }
+  );
 
-      // Load topic details from curriculum_topics
-      const { data: topicData, error: topicError } = await supabase
-        .from("curriculum_topics")
-        .select("*")
-        .eq("id", topicId)
-        .single();
+  const {
+    data: conversationsData = [],
+    isLoading: isConversationsLoading,
+  } = useGetConversationsQuery(
+    { userId, topicId },
+    { skip: !userId || !topicId }
+  );
 
-      if (topicError) throw topicError;
+  const [createConversation] = useCreateConversationMutation();
 
-      // Verify user is enrolled in this topic
-      const { data: enrollment } = await supabase
-        .from("user_topics")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("topic_id", topicId)
-        .single();
-
-      if (!enrollment) {
-        toast({
-          title: "שגיאה",
-          description: "אינך רשום לנושא זה.",
-          variant: "destructive",
-        });
-        navigate("/dashboard");
-        return;
-      }
-
-      setTopic(topicData);
-
-      // Load conversations for this topic
-      const { data: conversationsData, error: conversationsError } = await supabase
-        .from("conversations")
-        .select("*")
-        .eq("topic_id", topicId)
-        .eq("user_id", user.id)
-        .order("last_message_at", { ascending: false });
-
-      if (conversationsError) throw conversationsError;
-
-      // For each conversation, count messages
-      const conversationsWithCount = await Promise.all(
-        (conversationsData || []).map(async (conv) => {
-          const { count } = await supabase
-            .from("lesson_messages")
-            .select("*", { count: "exact", head: true })
-            .eq("conversation_id", conv.id);
-
-          return {
-            ...conv,
-            messageCount: count || 0,
-          };
-        }),
-      );
-
-      setConversations(conversationsWithCount);
-    } catch (error) {
-      console.error("Error loading topic and conversations:", error);
-      toast({
-        title: "שגיאה",
-        description: "לא הצלחנו לטעון את הנתונים.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Check enrollment
+  if (!isEnrollmentLoading && !enrollment && userId) {
+    toast({
+      title: "שגיאה",
+      description: "אינך רשום לנושא זה.",
+      variant: "destructive",
+    });
+    navigate("/dashboard");
+    return null;
+  }
 
   const handleStartNewConversation = async (mode: string) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user || !topic) return;
+      console.log('[Topic] Starting new conversation', { userId, topicId: topic?.id, mode });
+
+      if (!userId || !topic) {
+        console.error('[Topic] Missing userId or topic', { userId, topic });
+        toast({
+          title: "שגיאה",
+          description: "לא נמצא מידע על המשתמש או הנושא.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Create a new conversation
-      const { data: conversation, error } = await supabase
-        .from("conversations")
-        .insert({
-          user_id: user.id,
-          topic_id: topic.id,
-          title: `${mode} - ${topic.title}`,
-        })
-        .select()
-        .single();
+      console.log('[Topic] Creating conversation...');
+      const result = await createConversation({
+        userId,
+        topicId: topic.id,
+        title: `${mode} - ${topic.title}`,
+        mode: mode,
+      }).unwrap();
 
-      if (error) throw error;
+      console.log('[Topic] Conversation mutation result:', result);
+
+      // Handle array response (RTK Query might return an array)
+      const conversation = Array.isArray(result) ? result[0] : result;
+
+      console.log('[Topic] Extracted conversation:', conversation);
+
+      if (!conversation || !conversation.id) {
+        console.error('[Topic] Invalid conversation returned:', conversation);
+        toast({
+          title: "שגיאה",
+          description: "לא הצלחנו ליצור שיחה חדשה.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Navigate to the lesson page with the conversation ID
+      console.log('[Topic] Navigating to lesson:', `/lesson/${conversation.id}`);
       navigate(`/lesson/${conversation.id}`, {
         state: {
           topic: topic.title,
@@ -155,7 +110,7 @@ const Topic = () => {
         },
       });
     } catch (error) {
-      console.error("Error creating conversation:", error);
+      console.error("[Topic] Error creating conversation:", error);
       toast({
         title: "שגיאה",
         description: "לא הצלחנו ליצור שיחה חדשה.",
@@ -163,6 +118,8 @@ const Topic = () => {
       });
     }
   };
+
+  const isLoading = isTopicLoading || isEnrollmentLoading || isConversationsLoading;
 
   if (isLoading) {
     return (
@@ -217,49 +174,6 @@ const Topic = () => {
           )}
         </div>
 
-        {/* Progress Section - Topic-Level Progress */}
-        <div className="max-w-5xl mx-auto mb-12 sm:mb-16">
-          <div className="bg-card rounded-3xl border border-border p-6 sm:p-8 shadow-sm">
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">התקדמות בנושא</span>
-                  <span className="text-sm font-bold">
-                    {topicProgress?.progress.toFixed(topicProgress.progress % 1 === 0 ? 0 : 1)}%
-                  </span>
-                </div>
-                <Progress value={topicProgress?.progress || 0} className="h-3" />
-              </div>
-
-              <div className="text-xs text-muted-foreground text-center">
-                {topicProgress && topicProgress.totalSessions > 0 ? (
-                  <>
-                    {topicProgress.totalSessions} שיעורים הושלמו • {topicProgress.totalQuestions} שאלות נענו • {topicProgress.totalCorrect} נכונות
-                  </>
-                ) : (
-                  'התחל שיעור כדי לעקוב אחר ההתקדמות'
-                )}
-              </div>
-            </div>
-
-            {/* Stats Pills */}
-            <div className="grid grid-cols-3 gap-4 mt-6">
-              <div className="bg-primary/10 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-primary">{topicProgress?.totalSessions || 0}</div>
-                <div className="text-xs text-muted-foreground mt-1">שיעורים הושלמו</div>
-              </div>
-              <div className="bg-secondary/10 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-secondary-foreground">{topicProgress?.totalQuestions || 0}</div>
-                <div className="text-xs text-muted-foreground mt-1">שאלות נענו</div>
-              </div>
-              <div className="bg-accent/10 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-accent-foreground">{topicProgress?.totalCorrect || 0}</div>
-                <div className="text-xs text-muted-foreground mt-1">תשובות נכונות</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Action Cards */}
         <div className="space-y-4 sm:space-y-6 mb-12 sm:mb-16 max-w-5xl mx-auto">
           {/* Learn Topic Card */}
@@ -275,7 +189,7 @@ const Topic = () => {
                 </div>
               </div>
               <Button
-                onClick={() => handleStartNewConversation("ללמוד את הנושא")}
+                onClick={() => handleStartNewConversation("לימוד")}
                 className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold rounded-2xl bg-blue-600 hover:bg-blue-700 text-white"
               >
                 התחל ללמוד
@@ -327,12 +241,12 @@ const Topic = () => {
         </div>
 
         {/* Previous Conversations */}
-        {conversations.length > 0 && (
+        {conversationsData.length > 0 && (
           <div className="max-w-5xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-right">שיחות קודמות</h2>
 
             <div className="space-y-3 sm:space-y-4">
-              {conversations.map((conversation) => (
+              {conversationsData.map((conversation) => (
                 <Card
                   key={conversation.id}
                   className="border-2 border-border rounded-2xl overflow-hidden hover:border-blue-300 transition-all hover:shadow-md cursor-pointer"
@@ -357,8 +271,6 @@ const Topic = () => {
                         </h3>
                         <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
                           <span>{format(new Date(conversation.last_message_at), "dd/MM/yyyy")}</span>
-                          <span>•</span>
-                          <span>הודעות {conversation.messageCount}</span>
                         </div>
                       </div>
                       <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0" />

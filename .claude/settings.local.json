@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(psql \"postgresql://postgres:4NxAn@DkA36fQ/j@db.ynzwbttkyjhrqeloquhu.supabase.co:5432/postgres\" -c \"\\dt public.profiles\")",
+      "Bash(supabase --version:*)",
+      "Bash(node --version:*)",
+      "Bash(node migrate.js:*)",
+      "Bash(node migrate.mjs:*)",
+      "Bash(node -e \"\nimport(''@supabase/supabase-js'').then(async ({ createClient }) => {\n  const supabase = createClient(\n    ''https://ynzwbttkyjhrqeloquhu.supabase.co'',\n    ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluendidHRreWpocnFlbG9xdWh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MzEwNDYsImV4cCI6MjA4MTMwNzA0Nn0.Bfc26QYiJf_Bul0nM_ZeaCYqNi9cA2zlkeHP9lWHv0c''\n  );\n  \n  const { data, error } = await supabase\n    .from(''profiles'')\n    .select(''*'')\n    .eq(''id'', ''bdd50bbf-1252-42a6-b190-c4c2701a5c65'');\n  \n  console.log(''Profile data:'', JSON.stringify(data, null, 2));\n  console.log(''Error:'', error);\n});\n\")",
+      "Bash(node -e \"\nimport(''@supabase/supabase-js'').then(async ({ createClient }) => {\n  const supabase = createClient(\n    ''https://ynzwbttkyjhrqeloquhu.supabase.co'',\n    ''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluendidHRreWpocnFlbG9xdWh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MzEwNDYsImV4cCI6MjA4MTMwNzA0Nn0.Bfc26QYiJf_Bul0nM_ZeaCYqNi9cA2zlkeHP9lWHv0c''\n  );\n  \n  // Create profile for the Google OAuth user with onboarding not completed\n  const { data, error } = await supabase\n    .from(''profiles'')\n    .insert({\n      id: ''bdd50bbf-1252-42a6-b190-c4c2701a5c65'',\n      onboarding_completed: false,\n      full_name: null,\n      grade: null,\n      english_level: null,\n      parent_email: null\n    })\n    .select();\n  \n  console.log(''Created profile:'', JSON.stringify(data, null, 2));\n  if (error) console.error(''Error:'', error);\n});\n\")",
+      "Bash(npx supabase:*)",
+      "Bash(supabase migration:*)",
+      "Bash(npx supabase migration:*)",
+      "Bash(node:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx supabase secrets set:*)",
+      "Bash(npx supabase status)",
+      "Bash(grep:*)",
+      "Bash(for version in 20251017105247 20251018121546 20251102184304 20251102184350 20251102184415 20251109212204 20251118160958 20251119141749 20251119142714 20251126192629 20251129213054 20251130161637 20251130172324 20251130175756 20251214000001 20251214000002 20251214000003 20251219000001 20251219000002 20251220000001 20251221000001 20251225000001)",
+      "Bash(do npx supabase migration repair $version --status applied)",
+      "Bash(done)",
+      "Bash(wait)",
+      "Bash(echo:*)"
+    ]
+  }
+}

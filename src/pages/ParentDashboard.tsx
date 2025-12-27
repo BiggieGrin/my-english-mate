@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, TrendingUp, BookOpen, Clock, Award, Activity, Target, Zap } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -15,11 +14,11 @@ const ParentDashboard = () => {
     totalLessons: 23,
     weeklyActivity: 4.5,
     averageScore: 87,
-    topicsProgress: [
-      { topic: 'Present Simple', progress: 65, score: 92 },
-      { topic: 'Colors', progress: 90, score: 95 },
-      { topic: 'Animals', progress: 45, score: 78 },
-      { topic: 'Family', progress: 30, score: 85 },
+    topicsStudied: [
+      { topic: 'Present Simple', score: 92 },
+      { topic: 'Colors', score: 95 },
+      { topic: 'Animals', score: 78 },
+      { topic: 'Family', score: 85 },
     ],
     recentActivity: [
       { date: '2025-01-10', lesson: 'Present Simple - Unit 3', score: 92, duration: 25 },
@@ -114,29 +113,26 @@ const ParentDashboard = () => {
           </Card>
         </div>
 
-        {/* Topics Progress */}
+        {/* Topics Studied */}
         <Card className="p-8 mb-8 shadow-lg">
           <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
             <Target className="w-6 h-6 text-primary" />
-            התקדמות בנושאים
+            נושאים שנלמדו
           </h3>
           <p className="text-muted-foreground mb-6">סקירת ביצועים בנושאים השונים</p>
           <Separator className="mb-6" />
           <div className="space-y-6">
-            {studentData.topicsProgress.map((topic, index) => (
+            {studentData.topicsStudied.map((topic, index) => (
               <div key={index}>
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex-1">
                     <h4 className="font-semibold">{topic.topic}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      ציון אחרון: {topic.score}%
-                    </p>
                   </div>
                   <div className="text-left w-20">
-                    <p className="text-xl font-bold text-primary">{topic.progress}%</p>
+                    <p className="text-xl font-bold text-primary">{topic.score}%</p>
+                    <p className="text-xs text-muted-foreground">ציון אחרון</p>
                   </div>
                 </div>
-                <Progress value={topic.progress} />
               </div>
             ))}
           </div>
