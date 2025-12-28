@@ -128,24 +128,11 @@ const Register = () => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          skipBrowserRedirect: true,
+          redirectTo: `${window.location.origin}/auth`,
         },
       });
 
       if (error) throw error;
-
-      if (data?.url) {
-        try {
-          if (window.top) {
-            window.top.location.href = data.url;
-          } else {
-            window.location.href = data.url;
-          }
-        } catch {
-          window.open(data.url, "_blank", "noopener,noreferrer");
-        }
-      }
     } catch (error: any) {
       toast({
         title: "ההרשמה נכשלה",
