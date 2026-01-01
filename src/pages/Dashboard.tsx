@@ -18,7 +18,7 @@ import {
   useGetCurriculumTopicsQuery,
   useEnrollInTopicMutation,
 } from "@/store/api/topicsApi";
-import { useGetRecentConversationQuery } from "@/store/api/conversationsApi";
+import { useGetRecentConversationQuery, useCreateConversationMutation } from "@/store/api/conversationsApi";
 import {
   selectAgeGroup,
   setAgeGroupFromGrade,
@@ -77,6 +77,12 @@ const Dashboard = () => {
   });
 
   const [enrollInTopic] = useEnrollInTopicMutation();
+  const [createConversation] = useCreateConversationMutation();
+
+  // Filter available topics to show only ones user hasn't enrolled in
+  const unenrolledTopics = availableTopics.filter(
+    (availableTopic) => !topics.some((userTopic) => userTopic.id === availableTopic.id)
+  );
 
   // Check onboarding status
   useEffect(() => {
@@ -165,6 +171,66 @@ const Dashboard = () => {
     dispatch(setTopicDialogOpen(true));
   };
 
+  const handleStartLearning = async (topic: TopicOption) => {
+    try {
+      if (!userId || !profile) {
+        throw new Error("No user or profile found");
+      }
+
+      // Find the curriculum topic
+      const curriculumTopic = availableTopics.find(
+        (t) => t.title === topic.title
+      );
+
+      if (!curriculumTopic) {
+        toast({
+          title: "שגיאה",
+          description: "הנושא לא נמצא עבור הכיתה שלך",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Enroll in the topic first
+      await enrollInTopic({
+        userId,
+        topicId: curriculumTopic.id,
+      }).unwrap();
+
+      // Create a new conversation in learning mode
+      const result = await createConversation({
+        userId,
+        topicId: curriculumTopic.id,
+        title: `${topic.title} - לימוד`,
+        mode: "לימוד",
+      }).unwrap();
+
+      // The result is an array, get the first item
+      const conversation = Array.isArray(result) ? result[0] : result;
+
+      if (!conversation?.id) {
+        throw new Error("Failed to create conversation");
+      }
+
+      // Navigate directly to the lesson chat
+      navigate(`/lesson/${conversation.id}`, {
+        state: {
+          mode: "לימוד",
+          topic: topic.title,
+          topicId: curriculumTopic.id,
+          conversationId: conversation.id,
+        },
+      });
+    } catch (error) {
+      console.error("Error starting learning session:", error);
+      toast({
+        title: "שגיאה",
+        description: "לא הצלחנו להתחיל את הלימוד",
+        variant: "destructive",
+      });
+    }
+  };
+
   // --- Young Version (Grades 1-3) ---
   if (ageGroup === "young") {
     return (
@@ -240,6 +306,36 @@ const Dashboard = () => {
                     המשך ללמוד
                   </Button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {unenrolledTopics.length > 0 && (
+            <div className="mb-12 w-full max-w-full">
+              <h2 className="text-2xl sm:text-3xl font-bold text-purple-900 mb-6 text-right">
+                נושאים חדשים ללמידה
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {unenrolledTopics.map((topic, index) => (
+                  <Card
+                    key={index}
+                    className="cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-100 to-pink-100 border-purple-300 border-2"
+                    onClick={() => handleStartLearning(topic)}
+                  >
+                    <div className="p-6 text-center">
+                      <div className="text-5xl mb-4">{topic.icon}</div>
+                      <h3 className="font-bold text-xl mb-2 text-purple-900">
+                        {topic.title}
+                      </h3>
+                      <p className="text-sm text-purple-700 mb-4">
+                        לחץ להתחלת לימוד
+                      </p>
+                      <div className="bg-purple-500 text-white px-4 py-2 rounded-full text-sm font-bold">
+                        התחל ללמוד
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </div>
           )}
@@ -409,6 +505,36 @@ const Dashboard = () => {
             </div>
           )}
 
+          {unenrolledTopics.length > 0 && (
+            <div className="mb-12 w-full max-w-full">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6 text-right">
+                נושאים חדשים ללמידה
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {unenrolledTopics.map((topic, index) => (
+                  <Card
+                    key={index}
+                    className="cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 border-2"
+                    onClick={() => handleStartLearning(topic)}
+                  >
+                    <div className="p-6 text-center">
+                      <div className="text-5xl mb-4">{topic.icon}</div>
+                      <h3 className="font-bold text-xl mb-2 text-slate-800">
+                        {topic.title}
+                      </h3>
+                      <p className="text-sm text-slate-600 mb-4">
+                        לחץ להתחלת לימוד
+                      </p>
+                      <div className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold">
+                        התחל ללמוד
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full">
             <Card
               className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
@@ -564,6 +690,36 @@ const Dashboard = () => {
                   המשך ללמוד
                 </Button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {unenrolledTopics.length > 0 && (
+          <div className="mb-12 w-full max-w-full">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6 text-right">
+              נושאים חדשים ללמידה
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {unenrolledTopics.map((topic, index) => (
+                <Card
+                  key={index}
+                  className="cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-slate-100 border-blue-300 border-2"
+                  onClick={() => handleStartLearning(topic)}
+                >
+                  <div className="p-6 text-center">
+                    <div className="text-5xl mb-4">{topic.icon}</div>
+                    <h3 className="font-bold text-xl mb-2 text-slate-900">
+                      {topic.title}
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-4">
+                      לחץ להתחלת לימוד
+                    </p>
+                    <div className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold">
+                      התחל ללמוד
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
         )}

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { ArrowRight, Send, Loader2, X, ImagePlus } from "lucide-react";
+import { ArrowRight, Send, Loader2, X, ImagePlus, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MultipleChoiceButtons } from "@/components/MultipleChoiceButtons";
@@ -60,6 +60,7 @@ const Lesson = () => {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isTypingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Smooth scroll to bottom
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
@@ -130,11 +131,8 @@ const Lesson = () => {
   const topicId = topicIdFromState || fetchedTopicId;
   const mode = modeFromState || fetchedMode || "לימוד";
 
-  // Handle image selection
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  // Process image file (used by both file input and paste)
+  const processImageFile = (file: File) => {
     // Validate file type
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       toast({
@@ -168,9 +166,35 @@ const Lesson = () => {
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  // Handle image selection from file input
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    processImageFile(file);
 
     // Reset the input so the same file can be selected again
     event.target.value = "";
+  };
+
+  // Handle paste events for desktop
+  const handlePaste = (event: React.ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file) {
+          event.preventDefault();
+          processImageFile(file);
+          break;
+        }
+      }
+    }
   };
 
   // Clear selected image
@@ -744,13 +768,34 @@ const Lesson = () => {
               </Button>
             )}
 
-            {/* Image Upload Button */}
+            {/* Camera Button (Mobile - opens camera) */}
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => cameraInputRef.current?.click()}
+              disabled={isLoading}
+              className="shrink-0 sm:hidden"
+              title="פתח מצלמה"
+            >
+              <Camera className="w-4 h-4" />
+            </Button>
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              capture="environment"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
+
+            {/* Gallery/File Upload Button */}
             <Button
               size="icon"
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading}
               className="shrink-0"
+              title="בחר תמונה"
             >
               <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5" />
             </Button>
@@ -767,6 +812,7 @@ const Lesson = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              onPaste={handlePaste}
               className="flex-1 min-w-0 text-base sm:text-lg"
               disabled={isLoading}
               dir="auto"
