@@ -61,23 +61,98 @@ const Lesson = () => {
   const isTypingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const isAutoScrollingRef = useRef(false);
 
-  // Smooth scroll to bottom
-  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-    messagesEndRef.current?.scrollIntoView({ behavior, block: "end" });
+  // Check if user is at the bottom of the chat
+  const isAtBottom = () => {
+    const container = chatContainerRef.current;
+    if (!container) return true;
+
+    const threshold = 50;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    return scrollHeight - scrollTop - clientHeight < threshold;
   };
 
-  // Auto-scroll while typing
+  // Force scroll to bottom
+  const scrollToBottom = () => {
+    const endMarker = messagesEndRef.current;
+    if (!endMarker) return;
+
+    isAutoScrollingRef.current = true;
+
+    // Use double requestAnimationFrame to ensure DOM is fully updated
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        endMarker.scrollIntoView({
+          behavior: "auto",
+          block: "nearest",
+          inline: "nearest",
+        });
+
+        // Reset flag after a short delay
+        setTimeout(() => {
+          isAutoScrollingRef.current = false;
+        }, 100);
+      });
+    });
+  };
+
+  // Track user scrolling
   useEffect(() => {
-    if (isTypingRef.current) {
-      scrollToBottom("smooth");
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      // Ignore scroll events we triggered
+      if (isAutoScrollingRef.current) return;
+
+      // User manually scrolled - check if at bottom
+      const atBottom = isAtBottom();
+
+      if (atBottom) {
+        shouldAutoScrollRef.current = true;
+      } else {
+        shouldAutoScrollRef.current = false;
+      }
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Use MutationObserver to watch for content changes
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+
+    const observer = new MutationObserver(() => {
+      if (shouldAutoScrollRef.current) {
+        scrollToBottom();
+      }
+    });
+
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Scroll when messages change
+  useEffect(() => {
+    if (shouldAutoScrollRef.current) {
+      setTimeout(() => scrollToBottom(), 0);
     }
   }, [messages]);
 
-  // Scroll to bottom when loading state changes (new message sent)
+  // Always scroll when sending a new message
   useEffect(() => {
     if (isLoading) {
-      scrollToBottom("auto");
+      shouldAutoScrollRef.current = true;
+      setTimeout(() => scrollToBottom(), 0);
     }
   }, [isLoading]);
 
@@ -186,7 +261,7 @@ const Lesson = () => {
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      if (item.type.indexOf('image') !== -1) {
+      if (item.type.indexOf("image") !== -1) {
         const file = item.getAsFile();
         if (file) {
           event.preventDefault();
@@ -303,7 +378,7 @@ const Lesson = () => {
           setCompletedTyping(completedSet);
           setIsInitialized(true);
           // Scroll to bottom after loading history
-          setTimeout(() => scrollToBottom("auto"), 100);
+          setTimeout(() => scrollToBottom(), 100);
         } else {
           console.log(
             "[Lesson] No existing messages, starting new conversation"
@@ -336,14 +411,6 @@ const Lesson = () => {
     isInitial: boolean = false,
     imageData?: string | null
   ) => {
-    console.log("[streamChat] Starting", {
-      userMessage,
-      isInitial,
-      conversationId,
-      topicId,
-      mode,
-    });
-
     const newMessage: ChatMessage = {
       role: "user",
       content: userMessage,
@@ -356,19 +423,17 @@ const Lesson = () => {
     setIsLoading(true);
 
     // Immediately scroll to bottom when user sends message
-    setTimeout(() => scrollToBottom("auto"), 0);
+    setTimeout(() => scrollToBottom(), 0);
 
     abortControllerRef.current = new AbortController();
 
     try {
-      console.log("[streamChat] Getting session...");
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
         throw new Error("Not authenticated");
       }
-      console.log("[streamChat] Session obtained");
 
       const {
         data: { user },
@@ -409,13 +474,6 @@ const Lesson = () => {
         content: msg.content,
       }));
 
-      console.log("[streamChat] Calling AI teacher API", {
-        topic,
-        mode,
-        messageCount: messagesForApi.length,
-      });
-      console.log("[streamChat] Calling AI teacher API", { location });
-
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-chat`,
         {
@@ -433,8 +491,6 @@ const Lesson = () => {
           signal: abortControllerRef.current.signal,
         }
       );
-
-      console.log("[streamChat] API response status:", response.status);
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -466,36 +522,28 @@ const Lesson = () => {
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-      console.log("[streamChat] Starting to read stream...");
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
-          console.log("[streamChat] Stream done");
           break;
         }
 
         const chunk = decoder.decode(value, { stream: true });
-        console.log("[streamChat] Received chunk:", chunk.substring(0, 100));
         buffer += chunk;
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
 
         for (const line of lines) {
-          console.log("[streamChat] Processing line:", line.substring(0, 100));
           if (line.startsWith("data: ")) {
             const data = line.slice(6).trim();
             if (data === "[DONE]") {
-              console.log("[streamChat] Received [DONE]");
               continue;
             }
 
             try {
               const parsed = JSON.parse(data);
-              console.log("[streamChat] Parsed:", parsed);
               const content = parsed.choices?.[0]?.delta?.content;
               if (content) {
-                console.log("[streamChat] Got content:", content);
                 assistantMessage += content;
 
                 setMessages((prev) => {
@@ -581,7 +629,7 @@ const Lesson = () => {
       <div
         ref={chatContainerRef}
         id="chat"
-        className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 pb-20 overflow-y-auto overflow-x-hidden"
+        className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 pb-16 overflow-y-auto overflow-x-hidden"
       >
         <div className="space-y-4">
           {!isInitialized && messages.length === 0 && (
@@ -722,10 +770,9 @@ const Lesson = () => {
                 </Card>
               </div>
             )}
-          <div ref={messagesEndRef} />
         </div>
       </div>
-
+      <div ref={messagesEndRef} className="h-4" />
       {/* Input Area - Fixed at Bottom */}
       <div className="fixed bottom-0 left-0 right-0 w-full bg-card border-t shadow-lg z-50">
         <div className="w-full max-w-4xl mx-auto px-4 py-3 sm:py-4">

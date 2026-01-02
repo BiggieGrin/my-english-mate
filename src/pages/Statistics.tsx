@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Clock, Flame, Brain, BarChart3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Flame, Clock, Brain } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { PageContainer, PageHeader } from "@/components/layout";
 import {
   BarChart,
   Bar,
@@ -20,7 +19,10 @@ import {
   Radar,
 } from "recharts";
 import { useGetUserQuery } from "@/store/api/authApi";
-import { useGetProfileQuery, useUpdateProfileMutation } from "@/store/api/profileApi";
+import {
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+} from "@/store/api/profileApi";
 import { useGetMessagesByUserQuery } from "@/store/api/messagesApi";
 
 const Statistics = () => {
@@ -29,25 +31,22 @@ const Statistics = () => {
   const [dailyStudyData, setDailyStudyData] = useState<any[]>([]);
   const [strengthsData, setStrengthsData] = useState<any[]>([]);
   const [aiAssessment, setAiAssessment] = useState<any>(null);
-  const [assessmentLoading, setAssessmentLoading] = useState(false);
   const [currentStreak, setCurrentStreak] = useState(0);
 
   // RTK Query hooks
   const { data: user } = useGetUserQuery();
-  const userId = user?.id || '';
+  const userId = user?.id || "";
 
-  const {
-    data: profile,
-    isLoading: profileLoading,
-  } = useGetProfileQuery(userId, {
-    skip: !userId,
-  });
+  const { data: profile, isLoading: profileLoading } = useGetProfileQuery(
+    userId,
+    {
+      skip: !userId,
+    }
+  );
 
   const [updateProfile] = useUpdateProfileMutation();
 
-  const {
-    data: messages = [],
-  } = useGetMessagesByUserQuery(
+  const { data: messages = [] } = useGetMessagesByUserQuery(
     { userId, limit: 1000 },
     { skip: !userId }
   );
@@ -102,7 +101,7 @@ const Statistics = () => {
 
     // Update profile if streak changed
     if (shouldUpdate) {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split("T")[0];
       await updateProfile({
         userId,
         updates: {
@@ -140,18 +139,18 @@ const Statistics = () => {
     // Get today's date (normalized to midnight)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = today.toISOString().split("T")[0];
 
     // Get yesterday's date
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
 
     // Check if there are any messages from today
     const hasMessagesToday = messages.some((msg) => {
       const msgDate = new Date(msg.created_at);
       msgDate.setHours(0, 0, 0, 0);
-      return msgDate.toISOString().split('T')[0] === todayStr;
+      return msgDate.toISOString().split("T")[0] === todayStr;
     });
 
     // If no messages today, keep current streak (don't break it yet)
@@ -160,7 +159,9 @@ const Statistics = () => {
       // If last chat was 2+ days ago, reset streak
       if (lastChatDate) {
         const lastDate = new Date(lastChatDate);
-        const daysDiff = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+        const daysDiff = Math.floor(
+          (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
 
         if (daysDiff > 1) {
           // More than 1 day gap, reset streak
@@ -187,7 +188,9 @@ const Statistics = () => {
     }
 
     const lastDate = new Date(lastChatDate);
-    const daysDiff = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.floor(
+      (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     if (daysDiff > 1) {
       // Gap in streak, reset to 1 (today is day 1)
@@ -203,7 +206,7 @@ const Statistics = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -216,92 +219,97 @@ const Statistics = () => {
   const totalStudyMinutes = messages.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
-      <header className="bg-card/80 backdrop-blur-lg shadow-sm border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
-              <BarChart3 className="w-6 h-6 text-primary" />
-              סטטיסטיקות
-            </h1>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-              <ArrowRight className="ml-2 w-4 h-4" />
-              חזרה
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background">
+      <PageContainer>
+        <PageHeader
+          title="סטטיסטיקות"
+          subtitle="מעקב אחר ההתקדמות שלך"
+          breadcrumbs={[
+            { label: "דף הבית", href: "/dashboard" },
+            { label: "סטטיסטיקות" },
+          ]}
+        />
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-          <Card className="p-4 border-primary/20">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Flame className="w-5 h-5 text-primary" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <Card className="p-6 card-bordered elevation-1">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Flame className="w-6 h-6 text-primary" />
               </div>
-              <div>
-                <div className="text-2xl font-bold">{currentStreak}</div>
-                <div className="text-xs text-muted-foreground">רצף ימים</div>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-4 border-primary/20">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-accent-foreground" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{totalStudyMinutes}</div>
-                <div className="text-xs text-muted-foreground">דקות למידה</div>
+              <div className="flex-1">
+                <div className="text-3xl font-bold text-foreground">{currentStreak}</div>
+                <div className="text-sm text-muted-foreground mt-1">רצף ימים</div>
               </div>
             </div>
           </Card>
 
+          <Card className="p-6 card-bordered elevation-1">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
+                <Clock className="w-6 h-6 text-secondary" />
+              </div>
+              <div className="flex-1">
+                <div className="text-3xl font-bold text-foreground">{totalStudyMinutes}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  סה"כ דקות למידה
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Charts */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Daily Study Time */}
-          <Card className="p-6 border-primary/10">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Card className="p-6 card-bordered elevation-1">
+            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-foreground">
               <Clock className="w-5 h-5 text-primary" />
               זמן למידה יומי
             </h3>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={240}>
               <BarChart data={dailyStudyData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="day" className="text-xs" />
-                <YAxis className="text-xs" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="day" className="text-xs" stroke="hsl(var(--muted-foreground))" />
+                <YAxis className="text-xs" stroke="hsl(var(--muted-foreground))" />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
+                    borderRadius: "0.5rem",
                   }}
                 />
-                <Bar dataKey="minutes" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                <Bar
+                  dataKey="minutes"
+                  fill="hsl(var(--primary))"
+                  radius={[8, 8, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </Card>
 
           {/* Skills Radar */}
-          <Card className="p-6 border-primary/10">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Card className="p-6 card-bordered elevation-1">
+            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-foreground">
               <Brain className="w-5 h-5 text-primary" />
               נקודות חוזק
             </h3>
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={240}>
               <RadarChart data={strengthsData}>
-                <PolarGrid className="stroke-muted" />
-                <PolarAngleAxis dataKey="skill" className="text-xs" />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} className="text-xs" />
+                <PolarGrid stroke="hsl(var(--border))" />
+                <PolarAngleAxis dataKey="skill" className="text-xs" stroke="hsl(var(--foreground))" />
+                <PolarRadiusAxis
+                  angle={90}
+                  domain={[0, 100]}
+                  className="text-xs"
+                  stroke="hsl(var(--muted-foreground))"
+                />
                 <Radar
                   name="ציון"
                   dataKey="score"
                   stroke="hsl(var(--primary))"
                   fill="hsl(var(--primary))"
-                  fillOpacity={0.6}
+                  fillOpacity={0.5}
                 />
               </RadarChart>
             </ResponsiveContainer>
@@ -310,19 +318,21 @@ const Statistics = () => {
 
         {/* AI Assessment */}
         {aiAssessment && (
-          <Card className="p-6 border-primary/10">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <Card className="p-6 card-bordered elevation-1">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-foreground">
               <Brain className="w-5 h-5 text-primary" />
               הערכת AI
             </h3>
             <div className="prose prose-sm max-w-none">
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {typeof aiAssessment === 'string' ? aiAssessment : JSON.stringify(aiAssessment, null, 2)}
+              <p className="text-base text-muted-foreground whitespace-pre-wrap">
+                {typeof aiAssessment === "string"
+                  ? aiAssessment
+                  : JSON.stringify(aiAssessment, null, 2)}
               </p>
             </div>
           </Card>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 };

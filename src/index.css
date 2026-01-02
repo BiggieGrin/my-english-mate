@@ -2,106 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/*
+  Professional Design System
+  Built on the "Three Rules" for professional systems:
+  1. One-Incher Rule: First inch of every page is identical
+  2. Border-Box Rule: Consistent borders and elevation
+  3. Type Scale Rule: Only 4 font sizes
 */
 
 @layer base {
   :root {
-    /* יסודי צעיר - סגול קסום */
-    --young-primary: 270 70% 60%;
-    --young-secondary: 320 65% 65%;
-    --young-accent: 45 95% 60%;
-    --young-bg: 280 25% 97%;
+    /* === Core Color System === */
+    /* Primary - Professional Blue */
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 221 83% 48%;
 
-    /* חטיבה - כחול מודרני */
-    --middle-primary: 217 91% 60%;
-    --middle-secondary: 221 83% 53%;
-    --middle-accent: 224 76% 48%;
-    --middle-bg: 210 20% 98%;
-
-    /* תיכון - כחול מקצועי */
-    --high-primary: 221 83% 53%;
-    --high-secondary: 224 76% 48%;
-    --high-accent: 217 91% 60%;
-    --high-bg: 210 20% 98%;
-
-    /* ברירת מחדל - כחול */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* Neutrals - Professional Gray Scale */
+    --background: 0 0% 98%;
+    --foreground: 215 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    /* Muted for secondary text and backgrounds */
+    --muted: 210 17% 95%;
+    --muted-foreground: 215 14% 45%;
 
-    --secondary: 221 83% 53%;
+    /* Accent - Subtle highlight */
+    --accent: 210 17% 95%;
+    --accent-foreground: 215 25% 15%;
+
+    /* Secondary (rarely used, only for special CTAs) */
+    --secondary: 142 76% 36%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-
-    --accent: 224 76% 48%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 75% 55%;
+    /* Semantic Colors */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
-
-    --radius: 1rem;
-
-    /* Success colors */
-    --success: 145 65% 50%;
+    --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning colors */
-    --warning: 35 90% 55%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
+    /* === Professional Border System === */
+    /* Level 0: Dividers (subtle separation) */
+    --border: 210 17% 90%;
 
-    --sidebar-foreground: 222 47% 11%;
+    /* Level 1: Card borders (slightly more visible) */
+    --border-card: 210 17% 88%;
 
-    --sidebar-primary: 217 91% 60%;
+    /* Level 2: Interactive borders (hover, focus) */
+    --border-interactive: 221 83% 53%;
 
+    /* Input styling */
+    --input: 210 17% 88%;
+    --ring: 221 83% 53%;
+
+    /* === Elevation System === */
+    /* Professional shadow values for depth */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+
+    /* === Spacing System === */
+    /* Standard content width */
+    --content-width: 1280px;
+    --content-width-narrow: 896px;
+    --content-width-wide: 1536px;
+
+    /* Standard page padding */
+    --page-padding-x: 1rem;
+    --page-padding-y: 2rem;
+
+    /* === Border Radius System === */
+    --radius-sm: 0.375rem;
+    --radius: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+
+    /* === Typography Scale === */
+    /* Following the Type Scale Rule: exactly 4 sizes */
+    --text-xs: 0.75rem;      /* 12px - Labels, captions */
+    --text-sm: 0.875rem;     /* 14px - Secondary text */
+    --text-base: 1rem;       /* 16px - Body text */
+    --text-lg: 1.125rem;     /* 18px - Emphasized body */
+    --text-xl: 1.25rem;      /* 20px - Section headings */
+    --text-2xl: 1.5rem;      /* 24px - Card titles */
+    --text-3xl: 1.875rem;    /* 30px - Page titles */
+    --text-4xl: 2.25rem;     /* 36px - Hero titles */
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 99%;
+    --sidebar-foreground: 215 25% 15%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 210 40% 96%;
-
-    --sidebar-accent-foreground: 222 47% 11%;
-
-    --sidebar-border: 214 32% 91%;
-
-    --sidebar-ring: 217 91% 60%;
-  }
-
-  /* Age group themes */
-  .theme-young {
-    --primary: var(--young-primary);
-    --secondary: var(--young-secondary);
-    --accent: var(--young-accent);
-    --background: var(--young-bg);
-  }
-
-  .theme-middle {
-    --primary: var(--middle-primary);
-    --secondary: var(--middle-secondary);
-    --accent: var(--middle-accent);
-    --background: var(--middle-bg);
-  }
-
-  .theme-high {
-    --primary: var(--high-primary);
-    --secondary: var(--high-secondary);
-    --accent: var(--high-accent);
-    --background: var(--high-bg);
+    --sidebar-accent: 210 17% 95%;
+    --sidebar-accent-foreground: 215 25% 15%;
+    --sidebar-border: 210 17% 90%;
+    --sidebar-ring: 221 83% 53%;
   }
 }
 html::-webkit-scrollbar {
@@ -140,32 +146,86 @@ html {
   }
 }
 
+@layer components {
+  /* === Professional Layout Components === */
+  .page-container {
+    width: 100%;
+    max-width: var(--content-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--page-padding-x);
+    padding-right: var(--page-padding-x);
+  }
+
+  .page-container-narrow {
+    width: 100%;
+    max-width: var(--content-width-narrow);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--page-padding-x);
+    padding-right: var(--page-padding-x);
+  }
+
+  /* Professional Card Styles */
+  .card-bordered {
+    border: 1px solid hsl(var(--border-card));
+  }
+
+  .card-interactive {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-interactive:hover {
+    border-color: hsl(var(--border-interactive) / 0.3);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Professional Elevation Levels */
+  .elevation-0 {
+    box-shadow: none;
+  }
+
+  .elevation-1 {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .elevation-2 {
+    box-shadow: var(--shadow-base);
+  }
+
+  .elevation-3 {
+    box-shadow: var(--shadow-md);
+  }
+
+  .elevation-4 {
+    box-shadow: var(--shadow-lg);
+  }
+}
+
 @layer utilities {
-  .bounce-in {
-    animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Professional animations */
+  .fade-in {
+    animation: fade-in 0.3s ease-out;
   }
 
   .fade-in-up {
-    animation: fade-in-up 0.5s ease-out;
+    animation: fade-in-up 0.4s ease-out;
   }
 
-  .glow {
-    box-shadow: 0 0 20px hsla(var(--primary), 0.4);
+  .slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
   }
 
-  @keyframes bounce-in {
-    0% {
-      transform: scale(0.3);
+  @keyframes fade-in {
+    from {
       opacity: 0;
     }
-    50% {
-      transform: scale(1.05);
-    }
-    70% {
-      transform: scale(0.9);
-    }
-    100% {
-      transform: scale(1);
+    to {
       opacity: 1;
     }
   }
@@ -173,11 +233,22 @@ html {
   @keyframes fade-in-up {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translateY(12px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
     }
   }
 }

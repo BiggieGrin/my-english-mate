@@ -2,23 +2,26 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
-import { BarChart3, User, Plus } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { TopicOption } from "@/data/englishTopics";
 import OnboardingModal from "@/components/OnboardingModal";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
 import { useGetUserQuery } from "@/store/api/authApi";
-import { useGetProfileQuery, useUpdateProfileMutation } from "@/store/api/profileApi";
+import { PageContainer, PageHeader } from "@/components/layout";
+import {
+  useGetProfileQuery,
+} from "@/store/api/profileApi";
 import {
   useGetUserTopicsQuery,
   useGetCurriculumTopicsQuery,
   useEnrollInTopicMutation,
 } from "@/store/api/topicsApi";
-import { useGetRecentConversationQuery, useCreateConversationMutation } from "@/store/api/conversationsApi";
+import {
+  useGetRecentConversationQuery,
+  useCreateConversationMutation,
+} from "@/store/api/conversationsApi";
 import {
   selectAgeGroup,
   setAgeGroupFromGrade,
@@ -42,7 +45,7 @@ const Dashboard = () => {
   const isDialogOpen = useAppSelector(selectTopicDialogOpen);
   const showOnboardingModal = useAppSelector(selectOnboardingModalOpen);
 
-  // Local state (for non-cached data)
+  // Local state
   const [userName, setUserName] = useState("");
 
   // RTK Query hooks
@@ -57,32 +60,32 @@ const Dashboard = () => {
     skip: !userId,
   });
 
-  const {
-    data: topics = [],
-    isLoading: isTopicsLoading,
-  } = useGetUserTopicsQuery(userId, {
+  const { data: topics = [], isLoading: isTopicsLoading } =
+    useGetUserTopicsQuery(userId, {
+      skip: !userId,
+    });
+
+  const { data: recentConversation } = useGetRecentConversationQuery(userId, {
     skip: !userId,
   });
 
-  const {
-    data: recentConversation,
-  } = useGetRecentConversationQuery(userId, {
-    skip: !userId,
-  });
-
-  const {
-    data: availableTopics = [],
-  } = useGetCurriculumTopicsQuery(profile?.grade || 0, {
-    skip: !profile?.grade,
-  });
+  const { data: availableTopics = [] } = useGetCurriculumTopicsQuery(
+    profile?.grade || 0,
+    {
+      skip: !profile?.grade,
+    }
+  );
 
   const [enrollInTopic] = useEnrollInTopicMutation();
   const [createConversation] = useCreateConversationMutation();
 
-  // Filter available topics to show only ones user hasn't enrolled in
-  const unenrolledTopics = availableTopics.filter(
-    (availableTopic) => !topics.some((userTopic) => userTopic.id === availableTopic.id)
-  );
+  // Filter available topics to show only ones user hasn't enrolled in (max 3)
+  const unenrolledTopics = availableTopics
+    .filter(
+      (availableTopic) =>
+        !topics.some((userTopic) => userTopic.id === availableTopic.id)
+    )
+    .slice(0, 3);
 
   // Check onboarding status
   useEffect(() => {
@@ -94,10 +97,7 @@ const Dashboard = () => {
     if (isProfileLoading) return;
 
     // If profile doesn't exist or onboarding not completed
-    if (
-      profileError ||
-      (profile && !profile.onboarding_completed)
-    ) {
+    if (profileError || (profile && !profile.onboarding_completed)) {
       dispatch(setOnboardingModalOpen(true));
       return;
     }
@@ -231,445 +231,29 @@ const Dashboard = () => {
     }
   };
 
-  // --- Young Version (Grades 1-3) ---
-  if (ageGroup === "young") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 theme-young">
-        <header className="bg-white shadow-sm border-b sticky top-0 z-10 w-full max-w-full overflow-x-hidden">
-          <div className="container mx-auto px-4 sm:px-6 py-4 max-w-full">
-            <div className="flex justify-between items-center gap-2 sm:gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-purple-200 to-pink-200 rounded-xl"></div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-purple-100"
-                  onClick={() => navigate("/statistics")}
-                >
-                  <BarChart3 className="w-5 h-5 text-purple-600" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-purple-100"
-                  onClick={() => navigate("/profile")}
-                >
-                  <User className="w-5 h-5 text-purple-600" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl overflow-x-hidden">
-          <div className="mb-12 text-right">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-purple-900 mb-3 break-words">
-              {greeting}, {userName} 👋
-            </h1>
-            <p className="text-lg sm:text-xl text-purple-600 font-medium opacity-90 break-words">
-              בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.
-            </p>
-          </div>
-
-          {recentConversation && (
-            <div className="mb-12 w-full max-w-full ">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-                  <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
-                    <div className="text-5xl sm:text-7xl animate-bounce-slow">
-                      {recentConversation.topics?.icon || "🎯"}
-                    </div>
-                    <div className="text-white text-center sm:text-right">
-                      <h2 className="text-xl sm:text-2xl font-bold mb-2">
-                        המשך מאיפה שהפסקת
-                      </h2>
-                      <p className="text-purple-50 text-base sm:text-lg break-words">
-                        {recentConversation.topics?.title ||
-                          recentConversation.title}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    size="lg"
-                    className="bg-white text-purple-600 hover:bg-purple-50 font-bold text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 rounded-2xl shadow-lg whitespace-nowrap"
-                    onClick={() => navigate(`/lesson/${recentConversation.id}`, {
-                      state: {
-                        mode: recentConversation.mode || 'לימוד',
-                        topic: recentConversation.topics?.title || recentConversation.title,
-                        topicId: recentConversation.topic_id,
-                        conversationId: recentConversation.id,
-                      }
-                    })}
-                  >
-                    המשך ללמוד
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {unenrolledTopics.length > 0 && (
-            <div className="mb-12 w-full max-w-full">
-              <h2 className="text-2xl sm:text-3xl font-bold text-purple-900 mb-6 text-right">
-                נושאים חדשים ללמידה
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {unenrolledTopics.map((topic, index) => (
-                  <Card
-                    key={index}
-                    className="cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-100 to-pink-100 border-purple-300 border-2"
-                    onClick={() => handleStartLearning(topic)}
-                  >
-                    <div className="p-6 text-center">
-                      <div className="text-5xl mb-4">{topic.icon}</div>
-                      <h3 className="font-bold text-xl mb-2 text-purple-900">
-                        {topic.title}
-                      </h3>
-                      <p className="text-sm text-purple-700 mb-4">
-                        לחץ להתחלת לימוד
-                      </p>
-                      <div className="bg-purple-500 text-white px-4 py-2 rounded-full text-sm font-bold">
-                        התחל ללמוד
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full">
-            <Card
-              className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200 border-2 border-dashed"
-              onClick={handleOpenDialog}
-            >
-              <div className="p-4 sm:p-6 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px]">
-                <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-purple-500 mb-2 sm:mb-3" />
-                <h3 className="text-base sm:text-lg font-bold text-purple-600">
-                  נושא חדש
-                </h3>
-                <p className="text-xs sm:text-sm text-purple-400 mt-1 sm:mt-2">
-                  צור נושא חדש ללמידה
-                </p>
-              </div>
-            </Card>
-
-            <Dialog open={isDialogOpen} onOpenChange={(open) => dispatch(setTopicDialogOpen(open))}>
-              <DialogContent
-                className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide [&>button]:hidden"
-                dir="rtl"
-              >
-                <div className="grid grid-cols-2 gap-4">
-                  {availableTopics.map((topic, index) => (
-                    <Card
-                      key={index}
-                      className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-purple-300"
-                      onClick={() => handleCreateTopic(topic)}
-                    >
-                      <div className="p-4 text-center">
-                        <div className="text-4xl mb-2">{topic.icon}</div>
-                        <h3 className="font-bold text-lg mb-1">
-                          {topic.title}
-                        </h3>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {isLoading ? (
-              <div className="col-span-full text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
-              </div>
-            ) : (
-              topics.map((topic) => (
-                <Card
-                  key={topic.id}
-                  className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-purple-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
-                  onClick={() => navigate(`/topic/${topic.id}`)}
-                >
-                  <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
-                    <div className="flex flex-row-reverse items-center gap-3 mb-3 sm:mb-4">
-                      <span className="text-3xl sm:text-4xl md:text-5xl">
-                        {topic.icon}
-                      </span>
-                    </div>
-                    <div className="mb-3">
-                      <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-2">
-                        {topic.title}
-                      </h3>
-                    </div>
-                    {topic.description && (
-                      <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">
-                        {topic.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <p className="text-2xl sm:text-3xl font-bold text-blue-500">
-                        {topic.conversationCount}
-                      </p>
-                      <p className="text-xs sm:text-sm text-slate-500">שיחות</p>
-                    </div>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-        {showOnboardingModal && (
-          <OnboardingModal isOpen={showOnboardingModal} userId={userId} />
-        )}
-      </div>
-    );
-  }
-
-  // --- Middle Version (Grades 4-6) ---
-  if (ageGroup === "middle") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 theme-middle">
-        <header className="bg-white shadow-sm border-b sticky top-0 z-10 w-full max-w-full overflow-x-hidden">
-          <div className="container mx-auto px-4 sm:px-6 py-4 max-w-full">
-            <div className="flex justify-between items-center gap-2 sm:gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-slate-200 to-slate-300 rounded-lg"></div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-slate-100"
-                  onClick={() => navigate("/statistics")}
-                >
-                  <BarChart3 className="w-5 h-5 text-slate-600" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full bg-slate-100"
-                  onClick={() => navigate("/profile")}
-                >
-                  <User className="w-5 h-5 text-slate-600" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl overflow-x-hidden">
-          <div className="mb-12 text-right">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-800 mb-3 break-words">
-              {greeting}, {userName} 👋
-            </h1>
-            <p className="text-lg sm:text-xl text-slate-600 font-medium break-words">
-              בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.
-            </p>
-          </div>
-
-          {recentConversation && (
-            <div className="mb-12 w-full max-w-full ">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-                  <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
-                    <div className="text-5xl sm:text-7xl">
-                      {recentConversation.topics?.icon || "🎯"}
-                    </div>
-                    <div className="text-white text-center sm:text-right ">
-                      <h2 className="text-xl sm:text-2xl font-bold mb-2">
-                        המשך מאיפה שהפסקת
-                      </h2>
-                      <p className="text-blue-50 text-base sm:text-lg break-words">
-                        {recentConversation.topics?.title ||
-                          recentConversation.title}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    size="lg"
-                    className="bg-white text-blue-600 hover:bg-blue-50 font-bold text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 rounded-2xl shadow-lg whitespace-nowrap"
-                    onClick={() => navigate(`/lesson/${recentConversation.id}`, {
-                      state: {
-                        mode: recentConversation.mode || 'לימוד',
-                        topic: recentConversation.topics?.title || recentConversation.title,
-                        topicId: recentConversation.topic_id,
-                        conversationId: recentConversation.id,
-                      }
-                    })}
-                  >
-                    המשך ללמוד
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {unenrolledTopics.length > 0 && (
-            <div className="mb-12 w-full max-w-full">
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-6 text-right">
-                נושאים חדשים ללמידה
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {unenrolledTopics.map((topic, index) => (
-                  <Card
-                    key={index}
-                    className="cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-300 border-2"
-                    onClick={() => handleStartLearning(topic)}
-                  >
-                    <div className="p-6 text-center">
-                      <div className="text-5xl mb-4">{topic.icon}</div>
-                      <h3 className="font-bold text-xl mb-2 text-slate-800">
-                        {topic.title}
-                      </h3>
-                      <p className="text-sm text-slate-600 mb-4">
-                        לחץ להתחלת לימוד
-                      </p>
-                      <div className="bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-bold">
-                        התחל ללמוד
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full">
-            <Card
-              className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
-              onClick={handleOpenDialog}
-            >
-              <div className="p-4 sm:p-6 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px]">
-                <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-blue-500 mb-2 sm:mb-3" />
-                <h3 className="text-base sm:text-lg font-bold text-blue-600">
-                  נושא חדש
-                </h3>
-                <p className="text-xs sm:text-sm text-blue-400 mt-1 sm:mt-2">
-                  צור נושא חדש ללמידה
-                </p>
-              </div>
-            </Card>
-
-            <Dialog open={isDialogOpen} onOpenChange={(open) => dispatch(setTopicDialogOpen(open))}>
-              <DialogContent
-                className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide [&>button]:hidden"
-                dir="rtl"
-              >
-                <div className="grid grid-cols-2 gap-4">
-                  {availableTopics.map((topic, index) => (
-                    <Card
-                      key={index}
-                      className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-300"
-                      onClick={() => handleCreateTopic(topic)}
-                    >
-                      <div className="p-4 text-center">
-                        <div className="text-4xl mb-2">{topic.icon}</div>
-                        <h3 className="font-bold text-lg mb-1">
-                          {topic.title}
-                        </h3>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {isLoading ? (
-              <div className="col-span-full text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-              </div>
-            ) : (
-              topics.map((topic) => (
-                <Card
-                  key={topic.id}
-                  className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-500 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
-                  onClick={() => navigate(`/topic/${topic.id}`)}
-                >
-                  <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
-                    <div className="flex flex-row-reverse items-center gap-3 mb-3 sm:mb-4">
-                      <span className="text-3xl sm:text-4xl md:text-5xl">
-                        {topic.icon}
-                      </span>
-                      <h3 className="text-base sm:text-lg font-bold text-slate-800">
-                        {topic.title}
-                      </h3>
-                    </div>
-                    {topic.description && (
-                      <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">
-                        {topic.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <p className="text-2xl sm:text-3xl font-bold text-blue-500">
-                        {topic.conversationCount}
-                      </p>
-                      <p className="text-xs sm:text-sm text-slate-500">שיחות</p>
-                    </div>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-        {showOnboardingModal && (
-          <OnboardingModal isOpen={showOnboardingModal} userId={userId} />
-        )}
-      </div>
-    );
-  }
-
-  // --- High Version (Grades 7-12) ---
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 theme-high">
-      <header className="bg-white shadow-sm border-b sticky top-0 z-10 w-full max-w-full overflow-x-hidden">
-        <div className="container mx-auto px-4 sm:px-6 py-4 max-w-full">
-          <div className="flex-row flex items-center justify-between gap-2 sm:gap-4">
-            <div className="flex items-center gap-4"></div>
-            <div className="gap-3 flex items-center justify-start">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full bg-slate-100"
-                onClick={() => navigate("/statistics")}
-              >
-                <BarChart3 className="w-5 h-5 text-slate-600" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full bg-slate-100"
-                onClick={() => navigate("/profile")}
-              >
-                <User className="w-5 h-5 text-slate-600" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-      <div className="container mx-auto px-4 sm:px-6 py-12 max-w-7xl overflow-x-hidden">
-        <div className="mb-12 text-right">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-3 break-words">
-            {greeting}, {userName} 👋
-          </h1>
-          <p className="text-lg sm:text-xl text-slate-600 font-light break-words">
-            בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך.
-          </p>
-        </div>
+    <div className="min-h-screen bg-background">
+      <PageContainer>
+        {/* Page Header */}
+        <PageHeader
+          title={`${greeting}, ${userName}`}
+          subtitle="בלי לחץ. פשוט ללמוד ולהשתפר בקצב שלך."
+        />
 
+        {/* Recent Conversation - Continue Learning */}
         {recentConversation && (
-          <div className="mb-12 w-full max-w-full ">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-4 sm:p-8 shadow-xl transition-transform hover:scale-[1.01] w-full max-w-full">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-                <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
-                  <div className="text-5xl sm:text-7xl">
+          <Card className="mb-8 overflow-hidden border-border card-bordered elevation-2 transition-smooth hover:elevation-3">
+            <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-6">
+                  <div className="text-5xl sm:text-6xl">
                     {recentConversation.topics?.icon || "🎯"}
                   </div>
-                  <div className="text-white text-center sm:text-right">
-                    <h2 className="text-xl sm:text-2xl font-bold mb-2">
+                  <div className="text-center sm:text-right">
+                    <h2 className="text-xl font-semibold mb-1 text-foreground">
                       המשך מאיפה שהפסקת
                     </h2>
-                    <p className="text-blue-50 text-base sm:text-lg break-words">
+                    <p className="text-base text-muted-foreground">
                       {recentConversation.topics?.title ||
                         recentConversation.title}
                     </p>
@@ -677,44 +261,50 @@ const Dashboard = () => {
                 </div>
                 <Button
                   size="lg"
-                  className="bg-white text-blue-700 hover:bg-blue-50 font-bold text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 rounded-2xl shadow-lg whitespace-nowrap"
-                  onClick={() => navigate(`/lesson/${recentConversation.id}`, {
-                    state: {
-                      mode: recentConversation.mode || 'לימוד',
-                      topic: recentConversation.topics?.title || recentConversation.title,
-                      topicId: recentConversation.topic_id,
-                      conversationId: recentConversation.id,
-                    }
-                  })}
+                  className="gap-2"
+                  onClick={() =>
+                    navigate(`/lesson/${recentConversation.id}`, {
+                      state: {
+                        mode: recentConversation.mode || "לימוד",
+                        topic:
+                          recentConversation.topics?.title ||
+                          recentConversation.title,
+                        topicId: recentConversation.topic_id,
+                        conversationId: recentConversation.id,
+                      },
+                    })
+                  }
                 >
+                  <ArrowLeft className="w-4 h-4" />
                   המשך ללמוד
                 </Button>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
+        {/* Suggested Topics - New Learning Opportunities */}
         {unenrolledTopics.length > 0 && (
-          <div className="mb-12 w-full max-w-full">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-6 text-right">
+          <div className="mb-12">
+            <h2 className="text-2xl font-semibold mb-6 text-foreground">
               נושאים חדשים ללמידה
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {unenrolledTopics.map((topic, index) => (
                 <Card
                   key={index}
-                  className="cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-slate-100 border-blue-300 border-2"
+                  className="card-bordered card-interactive cursor-pointer elevation-1"
                   onClick={() => handleStartLearning(topic)}
                 >
                   <div className="p-6 text-center">
                     <div className="text-5xl mb-4">{topic.icon}</div>
-                    <h3 className="font-bold text-xl mb-2 text-slate-900">
+                    <h3 className="font-semibold text-lg mb-2 text-foreground">
                       {topic.title}
                     </h3>
-                    <p className="text-sm text-slate-600 mb-4">
+                    <p className="text-sm text-muted-foreground mb-4">
                       לחץ להתחלת לימוד
                     </p>
-                    <div className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold">
+                    <div className="inline-flex items-center justify-center bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium">
                       התחל ללמוד
                     </div>
                   </div>
@@ -724,82 +314,99 @@ const Dashboard = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 w-full max-w-full">
-          <Card
-            className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 border-2 border-dashed"
-            onClick={handleOpenDialog}
-          >
-            <div className="p-4 sm:p-6 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px]">
-              <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 mb-2 sm:mb-3" />
-              <h3 className="text-base sm:text-lg font-bold text-blue-700">
-                נושא חדש
-              </h3>
-              <p className="text-xs sm:text-sm text-blue-500 mt-1 sm:mt-2">
-                צור נושא חדש ללמידה
-              </p>
-            </div>
-          </Card>
+        {/* My Topics Grid */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-6 text-foreground">
+            הנושאים שלי
+          </h2>
 
-          <Dialog open={isDialogOpen} onOpenChange={(open) => dispatch(setTopicDialogOpen(open))}>
-            <DialogContent
-              className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide [&>button]:hidden"
-              dir="rtl"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* Add New Topic Card */}
+            <Card
+              className="card-bordered card-interactive cursor-pointer border-dashed elevation-0"
+              onClick={handleOpenDialog}
             >
-              <div className="grid grid-cols-2 gap-4">
-                {availableTopics.map((topic, index) => (
-                  <Card
-                    key={index}
-                    className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-blue-300"
-                    onClick={() => handleCreateTopic(topic)}
-                  >
-                    <div className="p-4 text-center">
-                      <div className="text-4xl mb-2">{topic.icon}</div>
-                      <h3 className="font-bold text-lg mb-1">{topic.title}</h3>
-                    </div>
-                  </Card>
-                ))}
+              <div className="p-6 flex flex-col items-center justify-center min-h-[180px]">
+                <Plus className="w-10 h-10 text-muted-foreground mb-3" />
+                <h3 className="text-base font-semibold text-foreground">
+                  נושא חדש
+                </h3>
+                <p className="text-sm text-muted-foreground mt-2 text-center">
+                  צור נושא חדש ללמידה
+                </p>
               </div>
-            </DialogContent>
-          </Dialog>
+            </Card>
 
-          {isLoading ? (
-            <div className="col-span-full text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            </div>
-          ) : (
-            topics.map((topic) => (
-              <Card
-                key={topic.id}
-                className="relative overflow-hidden cursor-pointer hover:shadow-xl transition-all hover:-translate-y-1 bg-white border-slate-200 before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-blue-600 before:scale-x-0 before:origin-left before:transition-transform before:duration-300 hover:before:scale-x-100"
-                onClick={() => navigate(`/topic/${topic.id}`)}
+            {/* Topic Selection Dialog */}
+            <Dialog
+              open={isDialogOpen}
+              onOpenChange={(open) => dispatch(setTopicDialogOpen(open))}
+            >
+              <DialogContent
+                className="sm:max-w-2xl max-h-[80vh] overflow-y-auto scrollbar-hide [&>button]:hidden"
+                dir="rtl"
               >
-                <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
-                  <div className="flex flex-row-reverse items-center gap-3 mb-3 sm:mb-4">
-                    <span className="text-3xl sm:text-4xl md:text-5xl">
-                      {topic.icon}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-800">
-                      {topic.title}
-                    </h3>
-                  </div>
-                  {topic.description && (
-                    <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-3 [direction:ltr] line-clamp-2">
-                      {topic.description}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <p className="text-2xl sm:text-3xl font-bold text-blue-600">
-                      {topic.conversationCount}
-                    </p>
-                    <p className="text-xs sm:text-sm text-slate-500">שיחות</p>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {availableTopics.map((topic, index) => (
+                    <Card
+                      key={index}
+                      className="cursor-pointer card-interactive card-bordered elevation-1"
+                      onClick={() => handleCreateTopic(topic)}
+                    >
+                      <div className="p-4 text-center">
+                        <div className="text-4xl mb-2">{topic.icon}</div>
+                        <h3 className="font-semibold text-base mb-1">
+                          {topic.title}
+                        </h3>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </Card>
-            ))
-          )}
-        </div>
-      </div>
+              </DialogContent>
+            </Dialog>
 
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="col-span-full text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              </div>
+            ) : (
+              /* User's Topics */
+              topics.map((topic) => (
+                <Card
+                  key={topic.id}
+                  className="card-bordered card-interactive cursor-pointer elevation-1"
+                  onClick={() => navigate(`/topic/${topic.id}`)}
+                >
+                  <div className="p-6 h-full flex flex-col">
+                    <div className="flex items-start gap-3 mb-4">
+                      <span className="text-4xl">{topic.icon}</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        {topic.title}
+                      </h3>
+                      {topic.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {topic.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-auto pt-4 border-t border-border">
+                      <span className="text-2xl font-bold text-primary">
+                        {topic.conversationCount}
+                      </span>
+                      <span className="text-sm text-muted-foreground">שיחות</span>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      </PageContainer>
+
+      {/* Onboarding Modal */}
       {showOnboardingModal && (
         <OnboardingModal isOpen={showOnboardingModal} userId={userId} />
       )}

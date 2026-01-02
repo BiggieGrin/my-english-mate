@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Provider } from "react-redux";
 import { store } from "@/store";
 import { useGetSessionQuery } from "@/store/api/authApi";
+import { AppShell } from "@/components/layout";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
 import Auth from "./pages/Auth";
@@ -35,7 +36,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   if (isLoading || !authChecked) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return session?.user ? <>{children}</> : <Navigate to="/auth" replace />;
@@ -48,18 +53,20 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/topic/:topicId" element={<ProtectedRoute><Topic /></ProtectedRoute>} />
-            <Route path="/lesson/:lessonId" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
-            <Route path="/parent" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
-            <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppShell>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/topic/:topicId" element={<ProtectedRoute><Topic /></ProtectedRoute>} />
+              <Route path="/lesson/:lessonId" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
+              <Route path="/parent" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
+              <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppShell>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
