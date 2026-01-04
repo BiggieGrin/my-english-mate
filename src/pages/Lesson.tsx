@@ -824,56 +824,48 @@ const Lesson = () => {
             )}
 
             {/* Camera Button (Mobile - opens camera) */}
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (cameraInputRef.current) {
-                  cameraInputRef.current.click();
-                }
-              }}
-              disabled={isLoading}
-              className="shrink-0 sm:hidden"
+            <label
+              htmlFor="camera-input"
+              className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0 sm:hidden ${
+                isLoading ? "pointer-events-none opacity-50" : "cursor-pointer"
+              }`}
               title="פתח מצלמה"
             >
               <Camera className="w-4 h-4" />
-            </Button>
+            </label>
             <input
+              id="camera-input"
               ref={cameraInputRef}
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp"
               capture="environment"
               onChange={handleImageSelect}
+              disabled={isLoading}
               className="hidden"
               tabIndex={-1}
+              aria-hidden="true"
             />
 
             {/* Gallery/File Upload Button */}
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (fileInputRef.current) {
-                  fileInputRef.current.click();
-                }
-              }}
-              disabled={isLoading}
-              className="shrink-0"
+            <label
+              htmlFor="file-input"
+              className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0 ${
+                isLoading ? "pointer-events-none opacity-50" : "cursor-pointer"
+              }`}
               title="בחר תמונה"
             >
               <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5" />
-            </Button>
+            </label>
             <input
+              id="file-input"
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/jpg,image/png,image/webp"
               onChange={handleImageSelect}
+              disabled={isLoading}
               className="hidden"
               tabIndex={-1}
+              aria-hidden="true"
             />
 
             <Input
