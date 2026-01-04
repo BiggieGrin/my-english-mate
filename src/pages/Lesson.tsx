@@ -76,25 +76,18 @@ const Lesson = () => {
   };
 
   // Force scroll to bottom
-  const scrollToBottom = () => {
-    const endMarker = messagesEndRef.current;
-    if (!endMarker) return;
+  const scrollToBottom = (smooth = false) => {
+    const container = chatContainerRef.current;
+    if (!container) return;
 
-    isAutoScrollingRef.current = true;
-
-    // Use double requestAnimationFrame to ensure DOM is fully updated
+    // Use double requestAnimationFrame to ensure DOM has updated
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        endMarker.scrollIntoView({
-          behavior: "auto",
-          block: "nearest",
-          inline: "nearest",
-        });
-
-        // Reset flag after a short delay
-        setTimeout(() => {
-          isAutoScrollingRef.current = false;
-        }, 100);
+        const before = container.scrollTop;
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        container.scrollTop = maxScroll;
+        const after = container.scrollTop;
+        console.log(`Scroll: ${before} -> ${after}, maxScroll: ${maxScroll}, scrollHeight: ${container.scrollHeight}, clientHeight: ${container.clientHeight}`);
       });
     });
   };
@@ -104,22 +97,54 @@ const Lesson = () => {
     const container = chatContainerRef.current;
     if (!container) return;
 
-    const handleScroll = () => {
-      // Ignore scroll events we triggered
-      if (isAutoScrollingRef.current) return;
+    let lastKnownScrollTop = container.scrollTop;
+    let userScrollTimeout: NodeJS.Timeout | null = null;
 
-      // User manually scrolled - check if at bottom
-      const atBottom = isAtBottom();
-
-      if (atBottom) {
-        shouldAutoScrollRef.current = true;
-      } else {
+    // Detect when user starts scrolling with wheel
+    const handleWheel = (e: WheelEvent) => {
+      // Scrolling up (negative deltaY)
+      if (e.deltaY < 0) {
         shouldAutoScrollRef.current = false;
       }
     };
 
+    const handleTouchStart = () => {
+      lastKnownScrollTop = container.scrollTop;
+    };
+
+    const handleTouchMove = () => {
+      const currentScroll = container.scrollTop;
+      // If user dragged up (scroll position decreased)
+      if (currentScroll < lastKnownScrollTop) {
+        shouldAutoScrollRef.current = false;
+      }
+      lastKnownScrollTop = currentScroll;
+    };
+
+    const handleScroll = () => {
+      // Clear any pending check
+      if (userScrollTimeout) clearTimeout(userScrollTimeout);
+
+      // Debounce to check if user returned to bottom
+      userScrollTimeout = setTimeout(() => {
+        if (isAtBottom()) {
+          shouldAutoScrollRef.current = true;
+        }
+      }, 150);
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: true });
+    container.addEventListener("touchstart", handleTouchStart, { passive: true });
+    container.addEventListener("touchmove", handleTouchMove, { passive: true });
     container.addEventListener("scroll", handleScroll, { passive: true });
-    return () => container.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      container.removeEventListener("wheel", handleWheel);
+      container.removeEventListener("touchstart", handleTouchStart);
+      container.removeEventListener("touchmove", handleTouchMove);
+      container.removeEventListener("scroll", handleScroll);
+      if (userScrollTimeout) clearTimeout(userScrollTimeout);
+    };
   }, []);
 
   // Use MutationObserver to watch for content changes
@@ -128,7 +153,9 @@ const Lesson = () => {
     if (!container) return;
 
     const observer = new MutationObserver(() => {
+      console.log('Mutation detected, shouldAutoScroll:', shouldAutoScrollRef.current);
       if (shouldAutoScrollRef.current) {
+        console.log('Scrolling to bottom');
         scrollToBottom();
       }
     });
@@ -425,7 +452,8 @@ const Lesson = () => {
     setSelectedImage(null);
     setIsLoading(true);
 
-    // Immediately scroll to bottom when user sends message
+    // Force auto-scroll when user sends message
+    shouldAutoScrollRef.current = true;
     setTimeout(() => scrollToBottom(), 0);
 
     abortControllerRef.current = new AbortController();
@@ -617,7 +645,7 @@ const Lesson = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
