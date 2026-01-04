@@ -74,6 +74,15 @@ export const CustomTypewriter = ({
   // Pre-parse the content once to get the cleaned version
   const cleanedContent = useRef(stripMarkdown(content)).current;
 
+  // Store callbacks in refs to avoid dependency issues
+  const onCompleteRef = useRef(onComplete);
+  const onTypingUpdateRef = useRef(onTypingUpdate);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+    onTypingUpdateRef.current = onTypingUpdate;
+  });
+
   // Main typing effect
   useEffect(() => {
     // Reset state when content changes
@@ -89,11 +98,11 @@ export const CustomTypewriter = ({
       if (indexRef.current < cleanedContent.length) {
         setDisplayedContent(cleanedContent.slice(0, indexRef.current + 1));
         indexRef.current += 1;
-        onTypingUpdate?.();
+        onTypingUpdateRef.current?.();
         timeoutRef.current = window.setTimeout(typeNextCharacter, speed);
       } else {
         setIsComplete(true);
-        onComplete();
+        onCompleteRef.current();
       }
     };
 
@@ -104,7 +113,7 @@ export const CustomTypewriter = ({
         window.clearTimeout(timeoutRef.current);
       }
     };
-  }, [content, cleanedContent, speed, onComplete, onTypingUpdate]);
+  }, [content, cleanedContent, speed]);
 
   // Scrolling during typing is handled by the parent via onTypingUpdate
 

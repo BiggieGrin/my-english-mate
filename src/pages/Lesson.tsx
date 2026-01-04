@@ -63,6 +63,7 @@ const Lesson = () => {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const shouldAutoScrollRef = useRef(true);
   const isAutoScrollingRef = useRef(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Check if user is at the bottom of the chat
   const isAtBottom = () => {
@@ -586,6 +587,8 @@ const Lesson = () => {
     } finally {
       setIsLoading(false);
       abortControllerRef.current = null;
+      // Focus input after loading completes
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   };
 
@@ -601,8 +604,8 @@ const Lesson = () => {
   };
 
   const handleSend = () => {
-    // Can send if there's text OR an image
-    if ((!input.trim() && !selectedImage) || isLoading) return;
+    // Can send if there's text OR an image, and not currently loading or typing
+    if ((!input.trim() && !selectedImage) || isLoading || isTypingRef.current) return;
     streamChat(input || "", false, selectedImage);
   };
 
@@ -680,12 +683,15 @@ const Lesson = () => {
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <CustomTypewriter
+                          key={`typewriter-${index}`}
                           content={cleanContent}
                           onComplete={() => {
                             setCompletedTyping((prev) =>
                               new Set(prev).add(index)
                             );
                             isTypingRef.current = false;
+                            // Focus input when typing completes
+                            setTimeout(() => inputRef.current?.focus(), 0);
                           }}
                           speed={20}
                           onTypingUpdate={() => {
@@ -808,7 +814,7 @@ const Lesson = () => {
               <Button
                 size="icon"
                 onClick={handleSend}
-                disabled={(!input.trim() && !selectedImage) || isLoading}
+                disabled={(!input.trim() && !selectedImage) || isLoading || isTypingRef.current}
                 className="shrink-0"
               >
                 <Send className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -855,13 +861,17 @@ const Lesson = () => {
             />
 
             <Input
+              ref={inputRef}
               placeholder="הקלד/י את התשובה שלך כאן..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              onKeyPress={(e) => {
+                if (e.key === "Enter" && !isLoading && !isTypingRef.current) {
+                  handleSend();
+                }
+              }}
               onPaste={handlePaste}
               className="flex-1 min-w-0 text-base sm:text-lg"
-              disabled={isLoading}
               dir="auto"
             />
           </div>
