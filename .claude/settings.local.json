@@ -23,7 +23,11 @@
       "Bash(do npx supabase migration repair $version --status applied)",
       "Bash(done)",
       "Bash(wait)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(ping:*)",
+      "Bash(nslookup:*)",
+      "Bash(ssh:*)",
+      "Bash(git pull:*)"
     ]
   }
 }

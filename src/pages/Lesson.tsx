@@ -252,7 +252,9 @@ const Lesson = () => {
     processImageFile(file);
 
     // Reset the input so the same file can be selected again
-    event.target.value = "";
+    if (event.target) {
+      event.target.value = "";
+    }
   };
 
   // Handle paste events for desktop
@@ -825,7 +827,13 @@ const Lesson = () => {
             <Button
               size="icon"
               variant="outline"
-              onClick={() => cameraInputRef.current?.click()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (cameraInputRef.current) {
+                  cameraInputRef.current.click();
+                }
+              }}
               disabled={isLoading}
               className="shrink-0 sm:hidden"
               title="פתח מצלמה"
@@ -839,13 +847,20 @@ const Lesson = () => {
               capture="environment"
               onChange={handleImageSelect}
               className="hidden"
+              tabIndex={-1}
             />
 
             {/* Gallery/File Upload Button */}
             <Button
               size="icon"
               variant="outline"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (fileInputRef.current) {
+                  fileInputRef.current.click();
+                }
+              }}
               disabled={isLoading}
               className="shrink-0"
               title="בחר תמונה"
@@ -858,6 +873,7 @@ const Lesson = () => {
               accept="image/jpeg,image/jpg,image/png,image/webp"
               onChange={handleImageSelect}
               className="hidden"
+              tabIndex={-1}
             />
 
             <Input
