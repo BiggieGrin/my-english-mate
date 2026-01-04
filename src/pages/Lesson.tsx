@@ -662,7 +662,7 @@ const Lesson = () => {
       <div
         ref={chatContainerRef}
         id="chat"
-        className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 pb-16 overflow-y-auto overflow-x-hidden"
+        className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 pb-16 overflow-y-auto overflow-x-hidden scrollbar-hide"
       >
         <div className="space-y-4">
           {!isInitialized && messages.length === 0 && (
