@@ -105,10 +105,10 @@ const Register = () => {
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      let errorMessage = "אנא נסו שוב או פנו לתמיכה";
-      if (error.message?.includes("already registered")) {
-        errorMessage = "המייל כבר רשום במערכת. נסו להתחבר במקום.";
-      }
+      const errorMessage =
+        (typeof error?.message === "string" && error.message.trim()) ||
+        error?.error_description ||
+        "אנא נסו שוב או פנו לתמיכה";
 
       toast({
         title: "ההרשמה נכשלה",
@@ -134,9 +134,13 @@ const Register = () => {
 
       if (error) throw error;
     } catch (error: any) {
+      const errorMessage =
+        (typeof error?.message === "string" && error.message.trim()) ||
+        error?.error_description ||
+        "אנא נסו שוב";
       toast({
         title: "ההרשמה נכשלה",
-        description: "אנא נסו שוב",
+        description: errorMessage,
         variant: "destructive",
       });
       setIsLoading(false);
