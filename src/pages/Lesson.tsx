@@ -657,79 +657,77 @@ const Lesson = () => {
         </div>
       </header>
 
-      {/* Chat Area */}
+      {/* Lesson board — one continuous board; teacher content + student sticky notes */}
       <div
         ref={chatContainerRef}
-        id="chat"
-        className="flex-1 w-full max-w-4xl mx-auto px-4 py-6 pb-16 overflow-y-auto overflow-x-hidden scrollbar-hide"
+        id="lesson-board"
+        className="flex-1 w-full max-w-4xl mx-auto overflow-y-auto overflow-x-hidden scrollbar-hide"
       >
-        <div className="space-y-4">
-          {!isInitialized && messages.length === 0 && (
-            <div className="flex justify-center items-center h-full text-muted-foreground">
-              <Loader2 className="w-8 h-8 animate-spin" />
-            </div>
-          )}
-          {messages.map((message, index) => {
-            const cleanContent =
-              message.role === "assistant"
-                ? cleanMessageContent(message.content)
-                : message.content;
-            const isStreamingMessage =
-              message.role === "assistant" &&
-              index === messages.length - 1 &&
-              isLoading;
-            const hasCompletedTyping = completedTyping.has(index);
+        {/* Board surface: frame + content */}
+        <div className="mx-3 sm:mx-4 mt-4 mb-24 rounded-2xl border-[3px] border-[hsl(210,18%,85%)] bg-[linear-gradient(180deg,hsl(210,22%,96%)_0%,hsl(210,20%,92%)_100%)] shadow-[inset_0_2px_8px_rgba(0,0,0,0.06)] min-h-[60vh]">
+          <div className="p-4 sm:p-6 md:p-8 space-y-6">
+            {!isInitialized && messages.length === 0 && (
+              <div className="flex justify-center items-center min-h-[40vh] text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            )}
+            {messages.map((message, index) => {
+              const cleanContent =
+                message.role === "assistant"
+                  ? cleanMessageContent(message.content)
+                  : message.content;
+              const isStreamingMessage =
+                message.role === "assistant" &&
+                index === messages.length - 1 &&
+                isLoading;
+              const hasCompletedTyping = completedTyping.has(index);
 
-            // User message: compact bubble
-            if (message.role === "user") {
-              return (
-                <div key={index} className="flex w-full justify-start">
-                  <div className="flex flex-col items-start gap-1 max-w-[85%] sm:max-w-[75%]">
-                    <span className="text-xs text-muted-foreground px-1" aria-hidden>את/ה</span>
-                    <div className="rounded-2xl rounded-br-md px-4 py-3 bg-primary text-primary-foreground shadow-sm break-words overflow-wrap-anywhere w-full">
-                      {message.image && (
-                        <div className="mb-2 w-full">
-                          <img
-                            src={message.image}
-                            alt="תמונה שהועלתה"
-                            className="w-full max-w-full h-auto max-h-48 rounded-lg object-contain"
-                          />
-                        </div>
-                      )}
-                      {message.imageId && !message.image && (
-                        <div dir="rtl">
-                          <p className="text-sm leading-relaxed text-primary-foreground/80">[תמונה מצורפת]</p>
-                          {message.content && message.content.trim() && (
-                            <div className="mt-2">
-                              {splitByLanguage(message.content).map((segment, idx) => (
-                                <p key={idx} className="text-base leading-relaxed" dir={segment.direction} style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}>
-                                  {segment.text || "\u00A0"}
-                                </p>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {!(message.imageId && !message.image) && message.content && message.content.trim() &&
-                        splitByLanguage(message.content).map((segment, idx) => (
-                          <p key={idx} className="text-base leading-relaxed" dir={segment.direction} style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}>
-                            {segment.text || "\u00A0"}
-                          </p>
-                        ))}
+              // Student answer: sticky note on the board
+              if (message.role === "user") {
+                return (
+                  <div key={index} className="flex justify-start">
+                    <div
+                      className="relative max-w-[85%] sm:max-w-sm"
+                      style={{ transform: "rotate(-1.5deg)" }}
+                    >
+                      <div className="absolute -top-1 right-4 w-5 h-2 bg-amber-200/80 rounded-sm shadow-sm -z-10" aria-hidden />
+                      <div className="bg-[#fef9c3] border border-amber-200/60 shadow-md rounded-sm px-4 py-3 text-amber-950 break-words">
+                        <span className="text-[10px] uppercase tracking-wide text-amber-700/80 font-medium" aria-hidden>תשובה שלי</span>
+                        {message.image && (
+                          <div className="mt-2 w-full">
+                            <img
+                              src={message.image}
+                              alt="תמונה שהועלתה"
+                              className="w-full max-w-full h-auto max-h-40 rounded object-contain"
+                            />
+                          </div>
+                        )}
+                        {message.imageId && !message.image && (
+                          <div dir="rtl" className="mt-1">
+                            <p className="text-sm text-amber-800/70">[תמונה מצורפת]</p>
+                            {message.content && message.content.trim() && (
+                              <div className="mt-2">
+                                {splitByLanguage(message.content).map((seg, idx) => (
+                                  <p key={idx} className="text-sm leading-relaxed" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {!(message.imageId && !message.image) && message.content && message.content.trim() &&
+                          splitByLanguage(message.content).map((seg, idx) => (
+                            <p key={idx} className="text-sm leading-relaxed mt-1 first:mt-0" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
+                          ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            }
+                );
+              }
 
-            // Assistant: teaching board (full-width)
-            return (
-              <div key={index} className="w-full">
-                <div className="rounded-xl border-2 border-border bg-[hsl(210,20%,97%)] shadow-sm overflow-hidden">
-                  <div className="px-3 py-2 border-b border-border bg-[hsl(210,17%,95%)] flex items-center gap-2">
-                    <span className="text-muted-foreground text-sm font-medium" aria-hidden>הלוח</span>
-                  </div>
-                  <div className="p-4 sm:p-5 min-h-[3rem]">
+              // Teacher content on the board (no card; part of the board)
+              return (
+                <div key={index} className="board-content">
+                  <div className="min-h-[2rem]">
                     {hasCompletedTyping ? (
                       <>
                         {cleanContent.includes("___") ? (
@@ -745,7 +743,7 @@ const Lesson = () => {
                     ) : isStreamingMessage ? (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="w-5 h-5 animate-spin shrink-0" />
-                        <span className="text-sm">המורה כותבת...</span>
+                        <span className="text-sm">כותבת על הלוח...</span>
                       </div>
                     ) : (
                       <CustomTypewriter
@@ -764,29 +762,22 @@ const Lesson = () => {
                     )}
                   </div>
                 </div>
+              );
+            })}
+            {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
+              <div className="flex items-center gap-2 text-muted-foreground py-2">
+                <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+                <span className="text-sm">כותבת על הלוח...</span>
               </div>
-            );
-          })}
-          {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
-            <div className="w-full">
-              <div className="rounded-xl border-2 border-border bg-[hsl(210,20%,97%)] shadow-sm overflow-hidden">
-                <div className="px-3 py-2 border-b border-border bg-[hsl(210,17%,95%)]">
-                  <span className="text-muted-foreground text-sm font-medium">הלוח</span>
-                </div>
-                <div className="p-4 sm:p-5 min-h-[3rem] flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="w-5 h-5 animate-spin shrink-0" />
-                  <span className="text-sm">המורה כותבת...</span>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
       <div ref={messagesEndRef} className="h-4" />
-      {/* Input Area - Fixed at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 w-full bg-card border-t shadow-lg z-50">
+      {/* Answer bar: add your answer (sticky note) to the board */}
+      <div className="fixed bottom-0 left-0 right-0 w-full bg-[hsl(210,20%,94%)] border-t border-[hsl(210,18%,85%)] shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-50">
         <div className="w-full max-w-4xl mx-auto px-4 py-3 sm:py-4">
-          {/* Image Preview */}
+          <p className="text-xs text-muted-foreground mb-2 text-center sm:text-right">כתוב/י תשובה והדבק/י על הלוח</p>
           {selectedImage && (
             <div className="mb-3 relative inline-block max-w-full">
               <img
