@@ -233,6 +233,8 @@ const Lesson = () => {
   const topicId = topicIdFromState || fetchedTopicId;
   const mode = modeFromState || fetchedMode || "לימוד";
 
+  console.log("[Lesson] Current mode:", mode, "Mode is NOT practice?", mode !== "תרגול");
+
   // Convert messages to Learning Board lesson when in "לימוד" (Learn) mode
   const createLessonFromMessages = (): LessonType => {
     const cards: CardType[] = messages
@@ -691,7 +693,11 @@ const Lesson = () => {
   const boardBg = "bg-[#f2f1ec]"; // simple warm board
 
   // If mode is NOT "תרגול" (Practice), show Learning Board instead of chat interface
-  if (mode !== "תרגול") {
+  // Default to Learning Board for ALL lessons unless explicitly set to practice mode
+  const isLearningMode = mode !== "תרגול";
+  console.log("[Lesson] isLearningMode:", isLearningMode, "mode:", mode);
+
+  if (isLearningMode) {
     return (
       <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
         <div className="absolute top-3 left-3 z-50">
