@@ -8,9 +8,3 @@ verify_jwt = true
 
 [functions.ai-assessment]
 verify_jwt = true
-
-[functions.ai-teacher-chat-completion]
-verify_jwt = true
-
-[functions.calculate-topic-progress]
-verify_jwt = true
