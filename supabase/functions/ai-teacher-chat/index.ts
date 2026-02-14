@@ -308,7 +308,7 @@ ${modeInstructions}
     console.log("Gemini request config:", JSON.stringify(geminiRequest, null, 2).substring(0, 500));
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -401,7 +401,7 @@ ${modeInstructions}
                     id: "chatcmpl-" + Date.now(),
                     object: "chat.completion.chunk",
                     created: Date.now(),
-                    model: "gemini-2.0-flash-exp",
+                    model: "gemini-1.5-flash",
                     choices: [{
                       index: 0,
                       delta: { content: text },
@@ -421,7 +421,7 @@ ${modeInstructions}
                     id: "chatcmpl-" + Date.now(),
                     object: "chat.completion.chunk",
                     created: Date.now(),
-                    model: "gemini-2.0-flash-exp",
+                    model: "gemini-1.5-flash",
                     choices: [{
                       index: 0,
                       delta: {},
