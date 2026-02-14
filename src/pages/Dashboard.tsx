@@ -111,12 +111,25 @@ const Dashboard = () => {
       const openTimer = setTimeout(() => {
         dispatch(setOnboardingModalOpen(true));
       }, 300);
-      return () => clearTimeout(openTimer);
+      return () => {
+        clearTimeout(openTimer);
+        // Clean up modal state when component unmounts or dependencies change
+        dispatch(setOnboardingModalOpen(false));
+      };
     }
 
     if (profile?.grade) dispatch(setAgeGroupFromGrade(profile.grade));
     if (profile?.full_name) setUserName(profile.full_name);
   }, [userId, profile, isProfileLoading, isProfileUninitialized, profileError, navigate, dispatch]);
+
+  // Ensure modal is closed on unmount to prevent flashing on next visit
+  useEffect(() => {
+    return () => {
+      // Check if we're leaving the dashboard without completing onboarding
+      // (happens when navigating to other pages)
+      dispatch(setOnboardingModalOpen(false));
+    };
+  }, [dispatch]);
 
   const isLoading = isUserLoading || isProfileLoading || isTopicsLoading;
 

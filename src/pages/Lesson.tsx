@@ -664,7 +664,7 @@ const Lesson = () => {
         id="lesson-board"
         className={`flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide ${boardBg} pb-32`}
       >
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-14 pb-32">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-14 pb-20">
           {!isInitialized && messages.length === 0 && (
             <div className="flex justify-center items-center min-h-[50vh] text-[hsl(215,14%,45%)]">
               <Loader2 className="w-8 h-8 animate-spin" />
@@ -683,14 +683,17 @@ const Lesson = () => {
 
             if (message.role === "user") {
               return (
-                <div key={index} className="flex justify-start my-5">
+                <div key={index} className="flex justify-start my-3">
                   <div
                     className="relative max-w-[88%] sm:max-w-sm"
-                    style={{ transform: "rotate(-1.2deg)" }}
+                    style={{ transform: "rotate(-0.8deg)" }}
                   >
-                    <div className="absolute -top-0.5 right-4 w-5 h-1.5 bg-amber-300/70 rounded-sm -z-10" aria-hidden />
-                    <div className="bg-[#fef9c3] border border-amber-300/50 shadow-sm rounded-sm px-4 py-3 text-amber-950 break-words">
-                      <span className="text-[10px] uppercase tracking-wide text-amber-700/70 board-note" aria-hidden>תשובה שלי</span>
+                    <div className="absolute -inset-0.5 bg-gradient-to-b from-blue-200/20 to-transparent rounded-sm -z-10" aria-hidden />
+                    <div className="bg-white/80 border-l-4 border-blue-400 rounded-sm px-4 py-3 text-gray-800 break-words shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xl">✏️</span>
+                        <span className="text-xs font-semibold text-blue-600 uppercase tracking-widest board-note">תשובתך</span>
+                      </div>
                       {message.image && (
                         <div className="mt-2">
                           <img src={message.image} alt="תמונה שהועלתה" className="w-full max-h-40 rounded object-contain" />
@@ -698,11 +701,11 @@ const Lesson = () => {
                       )}
                       {message.imageId && !message.image && (
                         <div dir="rtl" className="mt-1">
-                          <p className="text-sm text-amber-800/70 board-note">[תמונה מצורפת]</p>
+                          <p className="text-xs text-gray-500 board-note italic">[תמונה מצורפת]</p>
                           {message.content?.trim() && (
                             <div className="mt-2">
                               {splitByLanguage(message.content).map((seg, idx) => (
-                                <p key={idx} className="text-base leading-relaxed board-note text-amber-900" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
+                                <p key={idx} className="text-base leading-relaxed board-note text-gray-700" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
                               ))}
                             </div>
                           )}
@@ -710,7 +713,7 @@ const Lesson = () => {
                       )}
                       {!(message.imageId && !message.image) && message.content?.trim() &&
                         splitByLanguage(message.content).map((seg, idx) => (
-                          <p key={idx} className="text-base leading-relaxed mt-1 first:mt-0 board-note text-amber-900" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
+                          <p key={idx} className="text-lg leading-relaxed mt-2 first:mt-0 board-note text-gray-700" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
                         ))}
                     </div>
                   </div>
@@ -766,61 +769,61 @@ const Lesson = () => {
       <div ref={messagesEndRef} className="h-0" />
 
       {/* Input on the board — same surface, single line, keeps eye on board */}
-      <div className={`sticky bottom-0 left-0 right-0 ${boardBg} border-t border-[hsl(210,12%,88%)] z-40`}>
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3">
+      <div className={`sticky bottom-0 left-0 right-0 ${boardBg} border-t-4 border-dashed border-[hsl(215,30%,70%)] z-40`}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-4">
           {selectedImage && (
             <div className="mb-2 relative inline-block">
-              <img src={selectedImage} alt="תצוגה מקדימה" className="h-14 w-14 object-cover rounded border border-[hsl(210,12%,80%)]" />
+              <img src={selectedImage} alt="תצוגה מקדימה" className="h-12 w-12 object-cover rounded border-2 border-blue-300" />
               <button
                 type="button"
                 onClick={clearSelectedImage}
-                className="absolute -top-1 -right-1 bg-[hsl(0,70%,55%)] text-white rounded-full p-1 hover:opacity-90 text-xs"
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors text-xs shadow"
                 aria-label="הסר תמונה"
               >
                 <X className="w-3 h-3" />
               </button>
             </div>
           )}
-          <div className="flex items-center gap-2 w-full">
+          <div className="flex items-center gap-3 w-full">
             {isLoading ? (
               <button
                 type="button"
                 onClick={handleStop}
-                className="shrink-0 p-2 rounded text-[hsl(0,70%,50%)] hover:bg-black/5"
+                className="shrink-0 p-2 rounded text-red-500 hover:bg-red-50 transition-colors"
                 aria-label="עצור"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={(!input.trim() && !selectedImage) || isLoading || isTypingRef.current}
-                className="shrink-0 p-2 rounded text-[hsl(215,25%,25%)] hover:bg-black/5 disabled:opacity-40"
+                className="shrink-0 p-2 rounded text-blue-500 hover:bg-blue-50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
                 aria-label="שלח"
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-6 h-6" />
               </button>
             )}
-            <label htmlFor="camera-input" className={`shrink-0 p-2 rounded hover:bg-black/5 sm:hidden ${isLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"}`} title="מצלמה">
-              <Camera className="w-5 h-5 text-[hsl(215,20%,35%)]" />
+            <label htmlFor="camera-input" className={`shrink-0 p-2 rounded hover:bg-gray-200 sm:hidden transition-colors ${isLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"}`} title="מצלמה">
+              <Camera className="w-5 h-5 text-gray-600" />
             </label>
             <input id="camera-input" ref={cameraInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" capture="environment" onChange={handleImageSelect} disabled={isLoading} className="hidden" tabIndex={-1} aria-hidden="true" />
-            <label htmlFor="file-input" className={`shrink-0 p-2 rounded hover:bg-black/5 ${isLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"}`} title="בחר תמונה">
-              <ImagePlus className="w-5 h-5 text-[hsl(215,20%,35%)]" />
+            <label htmlFor="file-input" className={`shrink-0 p-2 rounded hover:bg-gray-200 transition-colors ${isLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"}`} title="בחר תמונה">
+              <ImagePlus className="w-5 h-5 text-gray-600" />
             </label>
             <input id="file-input" ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleImageSelect} disabled={isLoading} className="hidden" tabIndex={-1} aria-hidden="true" />
             <input
               ref={inputRef}
               type="text"
-              placeholder="כתוב כאן..."
+              placeholder="כתוב את תשובתך..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !isLoading && !isTypingRef.current) handleSend();
               }}
               onPaste={handlePaste}
-              className={`flex-1 min-w-0 bg-transparent border-b-2 border-[hsl(210,12%,75%)] py-2.5 px-1 text-base focus:outline-none focus:border-[hsl(215,50%,45%)] placeholder:text-[hsl(215,10%,65%)] transition-colors`}
+              className={`flex-1 min-w-0 bg-transparent border-0 border-b-4 border-dashed border-[hsl(215,50%,50%)] py-3 px-2 text-lg font-teacher focus:outline-none focus:border-[hsl(215,70%,45%)] placeholder:text-[hsl(215,30%,60%)] transition-colors`}
               dir="auto"
             />
           </div>
