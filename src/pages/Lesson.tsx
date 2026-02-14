@@ -690,8 +690,8 @@ const Lesson = () => {
   // One board = full screen. Keeps focus (eye contact): single surface, minimal chrome.
   const boardBg = "bg-[#f2f1ec]"; // simple warm board
 
-  // If mode is "לימוד" (Learn), show Learning Board instead of chat interface
-  if (mode !== "תרגול" && isInitialized) {
+  // If mode is NOT "תרגול" (Practice), show Learning Board instead of chat interface
+  if (mode !== "תרגול") {
     return (
       <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
         <div className="absolute top-3 left-3 z-50">
