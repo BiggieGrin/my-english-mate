@@ -96,13 +96,22 @@ const Dashboard = () => {
 
     if (isProfileLoading) return;
 
-    // If profile doesn't exist or onboarding not completed
+    // If profile exists and onboarding is complete, keep modal closed (avoids flash from race)
+    if (profile?.onboarding_completed) {
+      dispatch(setOnboardingModalOpen(false));
+      // Set age group and name from profile
+      if (profile.grade) dispatch(setAgeGroupFromGrade(profile.grade));
+      if (profile.full_name) setUserName(profile.full_name);
+      return;
+    }
+
+    // If profile doesn't exist or onboarding not completed, show modal
     if (profileError || (profile && !profile.onboarding_completed)) {
       dispatch(setOnboardingModalOpen(true));
       return;
     }
 
-    // Set age group from profile grade
+    // Set age group from profile grade (when we have profile but still loading state settled)
     if (profile?.grade) {
       dispatch(setAgeGroupFromGrade(profile.grade));
     }
