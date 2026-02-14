@@ -237,32 +237,47 @@ const Lesson = () => {
 
   // Convert messages to Learning Board lesson when in "לימוד" (Learn) mode
   const createLessonFromMessages = (): LessonType => {
-    const cards: CardType[] = messages
-      .filter((msg) => msg.role === "assistant")
-      .map((msg, index) => {
-        const content = cleanMessageContent(msg.content);
-        // Parse content to extract key information
-        const lines = content.split("\n").filter((line) => line.trim());
+    try {
+      const cards: CardType[] = messages
+        .filter((msg) => msg.role === "assistant")
+        .map((msg, index) => {
+          const content = cleanMessageContent(msg.content);
+          // Parse content to extract key information
+          const lines = content.split("\n").filter((line) => line.trim());
 
-        return {
-          id: `card-${index}`,
-          content: lines[0] || content,
-          category: "Grammar",
-          englishText: lines[0] || content,
-          translation: lines[1] || undefined,
-          pronunciation: lines[0] || undefined,
-          funFact: lines[2] || undefined,
-        };
-      });
+          return {
+            id: `card-${index}`,
+            content: lines[0] || content,
+            category: "Grammar",
+            englishText: lines[0] || content,
+            translation: lines[1] || undefined,
+            pronunciation: lines[0] || undefined,
+            funFact: lines[2] || undefined,
+          };
+        });
 
-    return {
-      id: conversationId || "lesson-default",
-      title: `Learning: ${topic}`,
-      description: `Master ${topic} with interactive cards`,
-      topic: topic,
-      cards: cards.length > 0 ? cards : getDefaultCards(topic),
-      timelineEvents: undefined,
-    };
+      const lesson: LessonType = {
+        id: conversationId || "lesson-default",
+        title: `Learning: ${topic}`,
+        description: `Master ${topic} with interactive cards`,
+        topic: topic,
+        cards: cards.length > 0 ? cards : getDefaultCards(topic),
+        timelineEvents: undefined,
+      };
+
+      console.log("[Lesson] Created lesson:", lesson);
+      return lesson;
+    } catch (error) {
+      console.error("[Lesson] Error creating lesson:", error);
+      return {
+        id: conversationId || "lesson-default",
+        title: `Learning: ${topic}`,
+        description: `Master ${topic} with interactive cards`,
+        topic: topic,
+        cards: getDefaultCards(topic),
+        timelineEvents: undefined,
+      };
+    }
   };
 
   // Default cards for initial load
@@ -698,31 +713,41 @@ const Lesson = () => {
   console.log("[Lesson] isLearningMode:", isLearningMode, "mode:", mode);
 
   if (isLearningMode) {
-    return (
-      <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
-        <div className="absolute top-3 left-3 z-50">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="text-sm text-[hsl(215,15%,40%)] hover:text-foreground transition-colors py-1 px-2 rounded"
-            aria-label="חזרה"
-          >
-            חזרה
-          </button>
+    try {
+      console.log("[Lesson] Rendering LearningBoard component");
+      const lesson = createLessonFromMessages();
+      console.log("[Lesson] Created lesson object:", lesson);
+      
+      return (
+        <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
+          <div className="absolute top-3 left-3 z-50">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="text-sm text-[hsl(215,15%,40%)] hover:text-foreground transition-colors py-1 px-2 rounded"
+              aria-label="חזרה"
+            >
+              חזרה
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <LearningBoard
+              lesson={lesson}
+              onCardInteraction={(cardId) => {
+                console.log(`Card interaction: ${cardId}`);
+              }}
+              onAIQuery={(query) => {
+                streamChat(query, false);
+              }}
+            />
+          </div>
         </div>
-        <div className="flex-1 overflow-hidden">
-          <LearningBoard
-            lesson={createLessonFromMessages()}
-            onCardInteraction={(cardId) => {
-              console.log(`Card interaction: ${cardId}`);
-            }}
-            onAIQuery={(query) => {
-              streamChat(query, false);
-            }}
-          />
-        </div>
-      </div>
-    );
+      );
+    } catch (error) {
+      console.error("[Lesson] Error rendering LearningBoard:", error);
+      console.error("[Lesson] Stack trace:", error instanceof Error ? error.stack : String(error));
+      // Fall through to chat interface if LearningBoard errors
+    }
   }
 
   return (
