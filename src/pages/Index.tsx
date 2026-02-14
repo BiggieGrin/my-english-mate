@@ -30,9 +30,6 @@ const Index = () => {
             <Button variant="outline" onClick={() => navigate("/auth")}>
               התחברות
             </Button>
-            <Button variant="outline" onClick={() => navigate("/parent")}>
-              הורים
-            </Button>
           </div>
         </div>
       </header>
@@ -105,7 +102,7 @@ const Index = () => {
               <ul className="space-y-2 text-muted-foreground">
                 <li>✓ מותאם לתכנית הלימודים בבתי הספר</li>
                 <li>✓ בטוח וידידותי לילדים</li>
-                <li>✓ מעקב התקדמות להורים</li>
+                <li>✓ מעקב התקדמות</li>
                 <li>✓ זמין 24/7</li>
               </ul>
             </div>

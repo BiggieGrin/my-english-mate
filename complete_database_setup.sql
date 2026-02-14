@@ -27,7 +27,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   full_name TEXT,
   grade INTEGER CHECK (grade >= 1 AND grade <= 12),
   english_level TEXT CHECK (english_level IN ('beginner', 'intermediate', 'advanced')),
-  parent_email TEXT,
   total_points INTEGER DEFAULT 0,
   level INTEGER DEFAULT 1,
   lessons_completed INTEGER DEFAULT 0,
@@ -78,13 +77,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, grade, english_level, parent_email)
+  INSERT INTO public.profiles (id, full_name, grade, english_level)
   VALUES (
     NEW.id,
     NEW.raw_user_meta_data->>'full_name',
     (NEW.raw_user_meta_data->>'grade')::INTEGER,
-    NEW.raw_user_meta_data->>'english_level',
-    NEW.raw_user_meta_data->>'parent_email'
+    NEW.raw_user_meta_data->>'english_level'
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;

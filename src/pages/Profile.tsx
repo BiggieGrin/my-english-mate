@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, GraduationCap, LogOut, Edit, Save, X } from 'lucide-react';
+import { User, GraduationCap, LogOut, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatGrade } from '@/lib/gradeUtils';
 import { useGetUserQuery, useSignOutMutation } from '@/store/api/authApi';
@@ -17,7 +17,6 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: '',
-    parent_email: '',
     grade: 0
   });
 
@@ -40,7 +39,6 @@ const Profile = () => {
     if (profile) {
       setEditForm({
         full_name: profile.full_name,
-        parent_email: profile.parent_email,
         grade: profile.grade
       });
     }
@@ -54,7 +52,6 @@ const Profile = () => {
         userId,
         updates: {
           full_name: editForm.full_name,
-          parent_email: editForm.parent_email,
           grade: editForm.grade
         }
       }).unwrap();
@@ -156,19 +153,6 @@ const Profile = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="parent_email" className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
-                    <Mail className="w-4 h-4" />
-                    אימייל הורה
-                  </Label>
-                  <Input
-                    id="parent_email"
-                    type="email"
-                    value={editForm.parent_email}
-                    onChange={(e) => setEditForm({ ...editForm, parent_email: e.target.value })}
-                    className="text-base"
-                  />
-                </div>
-                <div>
                   <Label htmlFor="grade" className="flex items-center gap-2 mb-2 text-sm text-muted-foreground">
                     <GraduationCap className="w-4 h-4" />
                     כיתה
@@ -189,13 +173,6 @@ const Profile = () => {
                   <div className="flex-1">
                     <p className="text-xs text-muted-foreground mb-1">שם מלא</p>
                     <p className="text-base font-medium text-foreground">{profile.full_name}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-4 bg-accent rounded-lg">
-                  <Mail className="w-5 h-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-1">אימייל הורה</p>
-                    <p className="text-base font-medium text-foreground">{profile.parent_email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-accent rounded-lg">

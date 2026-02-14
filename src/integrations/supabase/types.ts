@@ -162,7 +162,6 @@ export type Database = {
           last_assessment_time: string | null
           last_chat_date: string | null
           lessons_completed: number | null
-          parent_email: string
           total_points: number | null
           total_study_minutes: number | null
           updated_at: string | null
@@ -177,7 +176,6 @@ export type Database = {
           last_assessment_time?: string | null
           last_chat_date?: string | null
           lessons_completed?: number | null
-          parent_email: string
           total_points?: number | null
           total_study_minutes?: number | null
           updated_at?: string | null
@@ -192,7 +190,6 @@ export type Database = {
           last_assessment_time?: string | null
           last_chat_date?: string | null
           lessons_completed?: number | null
-          parent_email?: string
           total_points?: number | null
           total_study_minutes?: number | null
           updated_at?: string | null

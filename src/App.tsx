@@ -16,7 +16,6 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Topic from "./pages/Topic";
 import Lesson from "./pages/Lesson";
-import ParentDashboard from "./pages/ParentDashboard";
 import Statistics from "./pages/Statistics";
 import NotFound from "./pages/NotFound";
 
@@ -62,7 +61,6 @@ const App = () => (
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/topic/:topicId" element={<ProtectedRoute><Topic /></ProtectedRoute>} />
               <Route path="/lesson/:lessonId" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
-              <Route path="/parent" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
               <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>

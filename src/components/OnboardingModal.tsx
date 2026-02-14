@@ -33,11 +33,6 @@ const onboardingSchema = z.object({
     const num = parseInt(val);
     return !isNaN(num) && num >= 1 && num <= 12;
   }, "יש לבחור כיתה תקינה"),
-  parentEmail: z
-    .string()
-    .trim()
-    .email("כתובת מייל הורה לא תקינה")
-    .max(255, "כתובת מייל ארוכה מדי"),
 });
 
 interface OnboardingModalProps {
@@ -60,7 +55,6 @@ export default function OnboardingModal({
   const [formData, setFormData] = useState({
     name: "",
     grade: "",
-    parentEmail: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,7 +86,6 @@ export default function OnboardingModal({
         .update({
           full_name: formData.name,
           grade: parseInt(formData.grade),
-          parent_email: formData.parentEmail,
           onboarding_completed: true,
         })
         .eq("id", userId);
@@ -198,28 +191,6 @@ export default function OnboardingModal({
             {validationErrors.grade && (
               <p className="text-sm text-destructive mt-1">
                 {validationErrors.grade}
-              </p>
-            )}
-          </div>
-
-          {/* Parent Email Field */}
-          <div>
-            <Input
-              id="parentEmail"
-              type="email"
-              placeholder="מייל הורה"
-              className="rtl:text-right"
-              value={formData.parentEmail}
-              onChange={(e) => {
-                setFormData({ ...formData, parentEmail: e.target.value });
-                setValidationErrors({ ...validationErrors, parentEmail: "" });
-              }}
-              disabled={isLoading}
-              dir="ltr"
-            />
-            {validationErrors.parentEmail && (
-              <p className="text-sm text-destructive mt-1">
-                {validationErrors.parentEmail}
               </p>
             )}
           </div>
