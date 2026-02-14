@@ -31,7 +31,7 @@ const Index = () => {
               התחברות
             </Button>
             <Button variant="outline" onClick={() => navigate("/parent")}>
-              כניסת הורים
+              הורים
             </Button>
           </div>
         </div>
