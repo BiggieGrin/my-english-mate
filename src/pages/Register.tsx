@@ -10,6 +10,39 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { Separator } from "@/components/ui/separator";
 
+// Maps auth errors to user-friendly Hebrew messages for Israeli students
+const getAuthErrorHebrew = (error: any): string => {
+  const code = error?.code?.toLowerCase?.();
+  const message = (error?.message || error?.error_description || "").toLowerCase();
+
+  const errorMap: Record<string, string> = {
+    over_email_send_rate_limit: "נשלחו יותר מדי מיילים לכתובת הזו. חכו כמה דקות ונסו שוב",
+    over_request_rate_limit: "נשלחו יותר מדי בקשות. נסו שוב בעוד כמה דקות",
+    user_already_exists: "המייל כבר רשום במערכת. נסו להתחבר במקום",
+    email_exists: "המייל כבר רשום במערכת. נסו להתחבר במקום",
+    email_not_confirmed: "כתובת המייל טרם אושרה. בדקו את המייל לאישור",
+    invalid_credentials: "כתובת מייל או סיסמה שגויים",
+    weak_password: "הסיסמה חלשה מדי. וודאו שיש לפחות 8 תווים, אות גדולה וספרה",
+    signup_disabled: "ההרשמה כרגע אינה זמינה",
+    email_provider_disabled: "ההרשמה במייל כרגע אינה זמינה",
+    provider_disabled: "שגיאה בהתחברות. נסו שוב מאוחר יותר",
+    email_address_invalid: "כתובת המייל לא תקינה",
+    email_address_not_authorized: "לא ניתן לשלוח מייל לכתובת הזו",
+  };
+
+  if (code && errorMap[code]) return errorMap[code];
+  if (message.includes("rate limit") || message.includes("rate_limit"))
+    return errorMap.over_email_send_rate_limit;
+  if (message.includes("already") && (message.includes("registered") || message.includes("exists")))
+    return errorMap.user_already_exists;
+  if (message.includes("weak") && message.includes("password"))
+    return errorMap.weak_password;
+  if (message.includes("invalid") && message.includes("credentials"))
+    return errorMap.invalid_credentials;
+
+  return "אירעה שגיאה. נסו שוב או פנו לתמיכה";
+};
+
 // Simplified schema - only email and password for registration
 // Profile data will be collected in onboarding modal after first login
 const registerSchema = z.object({
@@ -105,14 +138,9 @@ const Register = () => {
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      const errorMessage =
-        (typeof error?.message === "string" && error.message.trim()) ||
-        error?.error_description ||
-        "אנא נסו שוב או פנו לתמיכה";
-
       toast({
         title: "ההרשמה נכשלה",
-        description: errorMessage,
+        description: getAuthErrorHebrew(error),
         variant: "destructive",
       });
     } finally {
@@ -134,13 +162,9 @@ const Register = () => {
 
       if (error) throw error;
     } catch (error: any) {
-      const errorMessage =
-        (typeof error?.message === "string" && error.message.trim()) ||
-        error?.error_description ||
-        "אנא נסו שוב";
       toast({
         title: "ההרשמה נכשלה",
-        description: errorMessage,
+        description: getAuthErrorHebrew(error),
         variant: "destructive",
       });
       setIsLoading(false);
