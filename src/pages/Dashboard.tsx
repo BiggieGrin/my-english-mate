@@ -30,8 +30,6 @@ import {
   selectGreeting,
   selectTopicDialogOpen,
   setTopicDialogOpen,
-  setOnboardingModalOpen,
-  selectOnboardingModalOpen,
 } from "@/store/slices/uiSlice";
 
 const Dashboard = () => {
@@ -43,10 +41,10 @@ const Dashboard = () => {
   const ageGroup = useAppSelector(selectAgeGroup);
   const greeting = useAppSelector(selectGreeting);
   const isDialogOpen = useAppSelector(selectTopicDialogOpen);
-  const showOnboardingModal = useAppSelector(selectOnboardingModalOpen);
 
   // Local state
   const [userName, setUserName] = useState("");
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   // RTK Query hooks
   const { data: user, isLoading: isUserLoading } = useGetUserQuery();
@@ -96,11 +94,14 @@ const Dashboard = () => {
     }
 
     // Don't decide until profile has been fetched (avoids opening on first frame when skip flips)
-    if (isProfileUninitialized || isProfileLoading) return;
+    if (isProfileUninitialized || isProfileLoading) {
+      setShowOnboardingModal(false);
+      return;
+    }
 
     // If profile exists and onboarding is complete, keep modal closed
     if (profile?.onboarding_completed) {
-      dispatch(setOnboardingModalOpen(false));
+      setShowOnboardingModal(false);
       if (profile.grade) dispatch(setAgeGroupFromGrade(profile.grade));
       if (profile.full_name) setUserName(profile.full_name);
       return;
@@ -109,12 +110,10 @@ const Dashboard = () => {
     // Need onboarding: only open after a short delay so transient errors don't flash the modal
     if (profileError || (profile && !profile.onboarding_completed)) {
       const openTimer = setTimeout(() => {
-        dispatch(setOnboardingModalOpen(true));
+        setShowOnboardingModal(true);
       }, 300);
       return () => {
         clearTimeout(openTimer);
-        // Clean up modal state when component unmounts or dependencies change
-        dispatch(setOnboardingModalOpen(false));
       };
     }
 
@@ -125,11 +124,9 @@ const Dashboard = () => {
   // Ensure modal is closed on unmount to prevent flashing on next visit
   useEffect(() => {
     return () => {
-      // Check if we're leaving the dashboard without completing onboarding
-      // (happens when navigating to other pages)
-      dispatch(setOnboardingModalOpen(false));
+      setShowOnboardingModal(false);
     };
-  }, [dispatch]);
+  }, []);
 
   const isLoading = isUserLoading || isProfileLoading || isTopicsLoading;
 
