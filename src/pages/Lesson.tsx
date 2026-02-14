@@ -691,7 +691,7 @@ const Lesson = () => {
   const boardBg = "bg-[#f2f1ec]"; // simple warm board
 
   // If mode is "לימוד" (Learn), show Learning Board instead of chat interface
-  if (mode === "לימוד" && isInitialized) {
+  if (mode !== "תרגול" && isInitialized) {
     return (
       <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
         <div className="absolute top-3 left-3 z-50">
