@@ -142,7 +142,7 @@ export const CustomTypewriter = ({
         segments.map((segment, idx) => (
           <p
             key={idx}
-            className="text-lg leading-relaxed"
+            className="text-lg leading-relaxed font-teacher text-[hsl(215,20%,30%)]"
             dir={segment.direction}
             style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
           >
@@ -150,7 +150,7 @@ export const CustomTypewriter = ({
           </p>
         ))
       ) : (
-        <p className="text-lg leading-relaxed">&nbsp;</p>
+        <p className="text-lg leading-relaxed font-teacher text-[hsl(215,20%,30%)]">&nbsp;</p>
       )}
     </div>
   );

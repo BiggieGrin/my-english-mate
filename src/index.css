@@ -125,6 +125,8 @@ html {
 }
 
 @layer base {
+  @import url('https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Indie+Flower&family=Patrick+Hand&display=swap');
+
   * {
     @apply border-border;
   }
@@ -203,6 +205,20 @@ html {
 }
 
 @layer utilities {
+  /* Handwriting-style font for teacher responses */
+  .font-teacher {
+    font-family: 'Caveat Brush', 'Indie Flower', 'Patrick Hand', cursive;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  /* Board-style notes (user answers) */
+  .board-note {
+    font-family: 'Caveat Brush', 'Indie Flower', 'Patrick Hand', cursive;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
   /* Smooth transitions */
   .transition-smooth {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

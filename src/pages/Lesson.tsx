@@ -662,7 +662,7 @@ const Lesson = () => {
       <div
         ref={chatContainerRef}
         id="lesson-board"
-        className={`flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide ${boardBg}`}
+        className={`flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide ${boardBg} pb-32`}
       >
         <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-14 pb-32">
           {!isInitialized && messages.length === 0 && (
@@ -690,7 +690,7 @@ const Lesson = () => {
                   >
                     <div className="absolute -top-0.5 right-4 w-5 h-1.5 bg-amber-300/70 rounded-sm -z-10" aria-hidden />
                     <div className="bg-[#fef9c3] border border-amber-300/50 shadow-sm rounded-sm px-4 py-3 text-amber-950 break-words">
-                      <span className="text-[10px] uppercase tracking-wide text-amber-700/70" aria-hidden>תשובה שלי</span>
+                      <span className="text-[10px] uppercase tracking-wide text-amber-700/70 board-note" aria-hidden>תשובה שלי</span>
                       {message.image && (
                         <div className="mt-2">
                           <img src={message.image} alt="תמונה שהועלתה" className="w-full max-h-40 rounded object-contain" />
@@ -698,11 +698,11 @@ const Lesson = () => {
                       )}
                       {message.imageId && !message.image && (
                         <div dir="rtl" className="mt-1">
-                          <p className="text-sm text-amber-800/70">[תמונה מצורפת]</p>
+                          <p className="text-sm text-amber-800/70 board-note">[תמונה מצורפת]</p>
                           {message.content?.trim() && (
                             <div className="mt-2">
                               {splitByLanguage(message.content).map((seg, idx) => (
-                                <p key={idx} className="text-sm leading-relaxed" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
+                                <p key={idx} className="text-base leading-relaxed board-note text-amber-900" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
                               ))}
                             </div>
                           )}
@@ -710,7 +710,7 @@ const Lesson = () => {
                       )}
                       {!(message.imageId && !message.image) && message.content?.trim() &&
                         splitByLanguage(message.content).map((seg, idx) => (
-                          <p key={idx} className="text-sm leading-relaxed mt-1 first:mt-0" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
+                          <p key={idx} className="text-base leading-relaxed mt-1 first:mt-0 board-note text-amber-900" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
                         ))}
                     </div>
                   </div>
@@ -766,7 +766,7 @@ const Lesson = () => {
       <div ref={messagesEndRef} className="h-0" />
 
       {/* Input on the board — same surface, single line, keeps eye on board */}
-      <div className={`absolute bottom-0 left-0 right-0 ${boardBg} border-t border-[hsl(210,12%,88%)] z-40`}>
+      <div className={`sticky bottom-0 left-0 right-0 ${boardBg} border-t border-[hsl(210,12%,88%)] z-40`}>
         <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3">
           {selectedImage && (
             <div className="mb-2 relative inline-block">

@@ -96,7 +96,7 @@ export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
           return (
             <p
               key={lineIdx}
-              className="text-lg leading-relaxed"
+              className="text-lg leading-relaxed font-teacher text-[hsl(215,20%,30%)]"
               dir={lineDir}
               style={{ textAlign: lineDir === "rtl" ? "right" : "left" }}
             >
@@ -117,7 +117,7 @@ export const FillInTheBlankInput = ({ content }: FillInTheBlankInputProps) => {
         return (
           <p
             key={lineIdx}
-            className={cn("text-lg leading-relaxed", questionDir === "rtl" ? "text-right" : "text-left")}
+            className={cn("text-lg leading-relaxed font-teacher text-[hsl(215,20%,30%)]", questionDir === "rtl" ? "text-right" : "text-left")}
             dir={questionDir}
           >
             <span className="inline whitespace-pre-wrap">

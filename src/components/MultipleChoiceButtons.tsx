@@ -112,7 +112,7 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
         {splitByLanguage(cleanContent).map((segment, idx) => (
           <p
             key={idx}
-            className="text-lg leading-relaxed"
+            className="text-lg leading-relaxed font-teacher text-[hsl(215,20%,30%)]"
             dir={segment.direction}
             style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
           >
@@ -141,7 +141,7 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
           {splitByLanguage(cleanBeforeText).map((segment, idx) => (
             <p
               key={idx}
-              className="text-lg leading-relaxed"
+              className="text-lg leading-relaxed font-teacher text-[hsl(215,20%,30%)]"
               dir={segment.direction}
               style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
             >
@@ -194,7 +194,7 @@ export const MultipleChoiceButtons = ({ content, onSelect, disabled }: MultipleC
           {splitByLanguage(cleanAfterText).map((segment, idx) => (
             <p
               key={idx}
-              className="text-lg leading-relaxed"
+              className="text-lg leading-relaxed font-teacher text-[hsl(215,20%,30%)]"
               dir={segment.direction}
               style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}
             >

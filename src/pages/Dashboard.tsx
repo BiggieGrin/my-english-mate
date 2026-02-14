@@ -55,6 +55,7 @@ const Dashboard = () => {
   const {
     data: profile,
     isLoading: isProfileLoading,
+    isUninitialized: isProfileUninitialized,
     error: profileError,
   } = useGetProfileQuery(userId, {
     skip: !userId,
@@ -87,40 +88,35 @@ const Dashboard = () => {
     )
     .slice(0, 3);
 
-  // Check onboarding status
+  // Check onboarding status - only after profile query has settled to avoid flash on refresh
   useEffect(() => {
     if (!userId) {
       navigate("/auth");
       return;
     }
 
-    if (isProfileLoading) return;
+    // Don't decide until profile has been fetched (avoids opening on first frame when skip flips)
+    if (isProfileUninitialized || isProfileLoading) return;
 
-    // If profile exists and onboarding is complete, keep modal closed (avoids flash from race)
+    // If profile exists and onboarding is complete, keep modal closed
     if (profile?.onboarding_completed) {
       dispatch(setOnboardingModalOpen(false));
-      // Set age group and name from profile
       if (profile.grade) dispatch(setAgeGroupFromGrade(profile.grade));
       if (profile.full_name) setUserName(profile.full_name);
       return;
     }
 
-    // If profile doesn't exist or onboarding not completed, show modal
+    // Need onboarding: only open after a short delay so transient errors don't flash the modal
     if (profileError || (profile && !profile.onboarding_completed)) {
-      dispatch(setOnboardingModalOpen(true));
-      return;
+      const openTimer = setTimeout(() => {
+        dispatch(setOnboardingModalOpen(true));
+      }, 300);
+      return () => clearTimeout(openTimer);
     }
 
-    // Set age group from profile grade (when we have profile but still loading state settled)
-    if (profile?.grade) {
-      dispatch(setAgeGroupFromGrade(profile.grade));
-    }
-
-    // Set user name from profile
-    if (profile?.full_name) {
-      setUserName(profile.full_name);
-    }
-  }, [userId, profile, isProfileLoading, profileError, navigate, dispatch]);
+    if (profile?.grade) dispatch(setAgeGroupFromGrade(profile.grade));
+    if (profile?.full_name) setUserName(profile.full_name);
+  }, [userId, profile, isProfileLoading, isProfileUninitialized, profileError, navigate, dispatch]);
 
   const isLoading = isUserLoading || isProfileLoading || isTopicsLoading;
 
