@@ -1,6 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ArrowRight, Send, Loader2, X, ImagePlus, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -643,236 +641,186 @@ const Lesson = () => {
     navigate(topicId ? `/topic/${topicId}` : "/dashboard");
   };
 
-  return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-end items-center">
-            <Button variant="ghost" onClick={handleBack}>
-              <ArrowRight className="ml-2" />
-              חזרה
-            </Button>
-          </div>
-        </div>
-      </header>
+  // One board = full screen. Keeps focus (eye contact): single surface, minimal chrome.
+  const boardBg = "bg-[#f2f1ec]"; // simple warm board
 
-      {/* Lesson board — one continuous board; teacher content + student sticky notes */}
+  return (
+    <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
+      {/* Minimal back — corner only, so board keeps focus */}
+      <div className="absolute top-3 left-3 z-50">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="text-sm text-[hsl(215,15%,40%)] hover:text-foreground transition-colors py-1 px-2 rounded"
+          aria-label="חזרה"
+        >
+          חזרה
+        </button>
+      </div>
+
+      {/* The board is the scrollable viewport — no inner container */}
       <div
         ref={chatContainerRef}
         id="lesson-board"
-        className="flex-1 w-full max-w-4xl mx-auto overflow-y-auto overflow-x-hidden scrollbar-hide"
+        className={`flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide ${boardBg}`}
       >
-        {/* Board surface: frame + content */}
-        <div className="mx-3 sm:mx-4 mt-4 mb-24 rounded-2xl border-[3px] border-[hsl(210,18%,85%)] bg-[linear-gradient(180deg,hsl(210,22%,96%)_0%,hsl(210,20%,92%)_100%)] shadow-[inset_0_2px_8px_rgba(0,0,0,0.06)] min-h-[60vh]">
-          <div className="p-4 sm:p-6 md:p-8 space-y-6">
-            {!isInitialized && messages.length === 0 && (
-              <div className="flex justify-center items-center min-h-[40vh] text-muted-foreground">
-                <Loader2 className="w-8 h-8 animate-spin" />
-              </div>
-            )}
-            {messages.map((message, index) => {
-              const cleanContent =
-                message.role === "assistant"
-                  ? cleanMessageContent(message.content)
-                  : message.content;
-              const isStreamingMessage =
-                message.role === "assistant" &&
-                index === messages.length - 1 &&
-                isLoading;
-              const hasCompletedTyping = completedTyping.has(index);
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-14 pb-32">
+          {!isInitialized && messages.length === 0 && (
+            <div className="flex justify-center items-center min-h-[50vh] text-[hsl(215,14%,45%)]">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+          )}
+          {messages.map((message, index) => {
+            const cleanContent =
+              message.role === "assistant"
+                ? cleanMessageContent(message.content)
+                : message.content;
+            const isStreamingMessage =
+              message.role === "assistant" &&
+              index === messages.length - 1 &&
+              isLoading;
+            const hasCompletedTyping = completedTyping.has(index);
 
-              // Student answer: sticky note on the board
-              if (message.role === "user") {
-                return (
-                  <div key={index} className="flex justify-start">
-                    <div
-                      className="relative max-w-[85%] sm:max-w-sm"
-                      style={{ transform: "rotate(-1.5deg)" }}
-                    >
-                      <div className="absolute -top-1 right-4 w-5 h-2 bg-amber-200/80 rounded-sm shadow-sm -z-10" aria-hidden />
-                      <div className="bg-[#fef9c3] border border-amber-200/60 shadow-md rounded-sm px-4 py-3 text-amber-950 break-words">
-                        <span className="text-[10px] uppercase tracking-wide text-amber-700/80 font-medium" aria-hidden>תשובה שלי</span>
-                        {message.image && (
-                          <div className="mt-2 w-full">
-                            <img
-                              src={message.image}
-                              alt="תמונה שהועלתה"
-                              className="w-full max-w-full h-auto max-h-40 rounded object-contain"
-                            />
-                          </div>
-                        )}
-                        {message.imageId && !message.image && (
-                          <div dir="rtl" className="mt-1">
-                            <p className="text-sm text-amber-800/70">[תמונה מצורפת]</p>
-                            {message.content && message.content.trim() && (
-                              <div className="mt-2">
-                                {splitByLanguage(message.content).map((seg, idx) => (
-                                  <p key={idx} className="text-sm leading-relaxed" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {!(message.imageId && !message.image) && message.content && message.content.trim() &&
-                          splitByLanguage(message.content).map((seg, idx) => (
-                            <p key={idx} className="text-sm leading-relaxed mt-1 first:mt-0" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              // Teacher content on the board (no card; part of the board)
+            if (message.role === "user") {
               return (
-                <div key={index} className="board-content">
-                  <div className="min-h-[2rem]">
-                    {hasCompletedTyping ? (
-                      <>
-                        {cleanContent.includes("___") ? (
-                          <FillInTheBlankInput content={cleanContent} />
-                        ) : (
-                          <MultipleChoiceButtons
-                            content={cleanContent}
-                            onSelect={(choice) => streamChat(choice)}
-                            disabled={isLoading}
-                          />
-                        )}
-                      </>
-                    ) : isStreamingMessage ? (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Loader2 className="w-5 h-5 animate-spin shrink-0" />
-                        <span className="text-sm">כותבת על הלוח...</span>
-                      </div>
-                    ) : (
-                      <CustomTypewriter
-                        key={`typewriter-${index}`}
-                        content={cleanContent}
-                        onComplete={() => {
-                          setCompletedTyping((prev) => new Set(prev).add(index));
-                          isTypingRef.current = false;
-                          setTimeout(() => inputRef.current?.focus(), 0);
-                        }}
-                        speed={20}
-                        onTypingUpdate={() => {
-                          isTypingRef.current = true;
-                        }}
-                      />
-                    )}
+                <div key={index} className="flex justify-start my-5">
+                  <div
+                    className="relative max-w-[88%] sm:max-w-sm"
+                    style={{ transform: "rotate(-1.2deg)" }}
+                  >
+                    <div className="absolute -top-0.5 right-4 w-5 h-1.5 bg-amber-300/70 rounded-sm -z-10" aria-hidden />
+                    <div className="bg-[#fef9c3] border border-amber-300/50 shadow-sm rounded-sm px-4 py-3 text-amber-950 break-words">
+                      <span className="text-[10px] uppercase tracking-wide text-amber-700/70" aria-hidden>תשובה שלי</span>
+                      {message.image && (
+                        <div className="mt-2">
+                          <img src={message.image} alt="תמונה שהועלתה" className="w-full max-h-40 rounded object-contain" />
+                        </div>
+                      )}
+                      {message.imageId && !message.image && (
+                        <div dir="rtl" className="mt-1">
+                          <p className="text-sm text-amber-800/70">[תמונה מצורפת]</p>
+                          {message.content?.trim() && (
+                            <div className="mt-2">
+                              {splitByLanguage(message.content).map((seg, idx) => (
+                                <p key={idx} className="text-sm leading-relaxed" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {!(message.imageId && !message.image) && message.content?.trim() &&
+                        splitByLanguage(message.content).map((seg, idx) => (
+                          <p key={idx} className="text-sm leading-relaxed mt-1 first:mt-0" dir={seg.direction} style={{ textAlign: seg.direction === "rtl" ? "right" : "left" }}>{seg.text || "\u00A0"}</p>
+                        ))}
+                    </div>
                   </div>
                 </div>
               );
-            })}
-            {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
-              <div className="flex items-center gap-2 text-muted-foreground py-2">
-                <Loader2 className="w-5 h-5 animate-spin shrink-0" />
-                <span className="text-sm">כותבת על הלוח...</span>
+            }
+
+            return (
+              <div key={index} className="my-5 min-h-[2rem]">
+                {hasCompletedTyping ? (
+                  <>
+                    {cleanContent.includes("___") ? (
+                      <FillInTheBlankInput content={cleanContent} />
+                    ) : (
+                      <MultipleChoiceButtons
+                        content={cleanContent}
+                        onSelect={(choice) => streamChat(choice)}
+                        disabled={isLoading}
+                      />
+                    )}
+                  </>
+                ) : isStreamingMessage ? (
+                  <div className="flex items-center gap-2 text-[hsl(215,14%,45%)]">
+                    <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+                    <span className="text-sm">כותבת...</span>
+                  </div>
+                ) : (
+                  <CustomTypewriter
+                    key={`typewriter-${index}`}
+                    content={cleanContent}
+                    onComplete={() => {
+                      setCompletedTyping((prev) => new Set(prev).add(index));
+                      isTypingRef.current = false;
+                      setTimeout(() => inputRef.current?.focus(), 0);
+                    }}
+                    speed={20}
+                    onTypingUpdate={() => {
+                      isTypingRef.current = true;
+                    }}
+                  />
+                )}
               </div>
-            )}
-          </div>
+            );
+          })}
+          {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
+            <div className="flex items-center gap-2 text-[hsl(215,14%,45%)] py-2">
+              <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+              <span className="text-sm">כותבת...</span>
+            </div>
+          )}
         </div>
       </div>
-      <div ref={messagesEndRef} className="h-4" />
-      {/* Answer bar: add your answer (sticky note) to the board */}
-      <div className="fixed bottom-0 left-0 right-0 w-full bg-[hsl(210,20%,94%)] border-t border-[hsl(210,18%,85%)] shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-50">
-        <div className="w-full max-w-4xl mx-auto px-4 py-3 sm:py-4">
-          <p className="text-xs text-muted-foreground mb-2 text-center sm:text-right">כתוב/י תשובה והדבק/י על הלוח</p>
+      <div ref={messagesEndRef} className="h-0" />
+
+      {/* Input on the board — same surface, single line, keeps eye on board */}
+      <div className={`absolute bottom-0 left-0 right-0 ${boardBg} border-t border-[hsl(210,12%,88%)] z-40`}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3">
           {selectedImage && (
-            <div className="mb-3 relative inline-block max-w-full">
-              <img
-                src={selectedImage}
-                alt="תצוגה מקדימה"
-                className="h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-lg border-2 border-primary"
-              />
+            <div className="mb-2 relative inline-block">
+              <img src={selectedImage} alt="תצוגה מקדימה" className="h-14 w-14 object-cover rounded border border-[hsl(210,12%,80%)]" />
               <button
+                type="button"
                 onClick={clearSelectedImage}
-                className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80 transition-colors shadow-md"
+                className="absolute -top-1 -right-1 bg-[hsl(0,70%,55%)] text-white rounded-full p-1 hover:opacity-90 text-xs"
                 aria-label="הסר תמונה"
               >
-                <X className="w-3 h-3 sm:w-4 sm:h-4" />
+                <X className="w-3 h-3" />
               </button>
             </div>
           )}
-
           <div className="flex items-center gap-2 w-full">
             {isLoading ? (
-              <Button
-                size="icon"
-                variant="destructive"
+              <button
+                type="button"
                 onClick={handleStop}
-                className="shrink-0"
+                className="shrink-0 p-2 rounded text-[hsl(0,70%,50%)] hover:bg-black/5"
+                aria-label="עצור"
               >
-                <X className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Button>
+                <X className="w-5 h-5" />
+              </button>
             ) : (
-              <Button
-                size="icon"
+              <button
+                type="button"
                 onClick={handleSend}
                 disabled={(!input.trim() && !selectedImage) || isLoading || isTypingRef.current}
-                className="shrink-0"
+                className="shrink-0 p-2 rounded text-[hsl(215,25%,25%)] hover:bg-black/5 disabled:opacity-40"
+                aria-label="שלח"
               >
-                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Button>
+                <Send className="w-5 h-5" />
+              </button>
             )}
-
-            {/* Camera Button (Mobile - opens camera) */}
-            <label
-              htmlFor="camera-input"
-              className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0 sm:hidden ${
-                isLoading ? "pointer-events-none opacity-50" : "cursor-pointer"
-              }`}
-              title="פתח מצלמה"
-            >
-              <Camera className="w-4 h-4" />
+            <label htmlFor="camera-input" className={`shrink-0 p-2 rounded hover:bg-black/5 sm:hidden ${isLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"}`} title="מצלמה">
+              <Camera className="w-5 h-5 text-[hsl(215,20%,35%)]" />
             </label>
-            <input
-              id="camera-input"
-              ref={cameraInputRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
-              capture="environment"
-              onChange={handleImageSelect}
-              disabled={isLoading}
-              className="hidden"
-              tabIndex={-1}
-              aria-hidden="true"
-            />
-
-            {/* Gallery/File Upload Button */}
-            <label
-              htmlFor="file-input"
-              className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10 shrink-0 ${
-                isLoading ? "pointer-events-none opacity-50" : "cursor-pointer"
-              }`}
-              title="בחר תמונה"
-            >
-              <ImagePlus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <input id="camera-input" ref={cameraInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" capture="environment" onChange={handleImageSelect} disabled={isLoading} className="hidden" tabIndex={-1} aria-hidden="true" />
+            <label htmlFor="file-input" className={`shrink-0 p-2 rounded hover:bg-black/5 ${isLoading ? "opacity-50 pointer-events-none" : "cursor-pointer"}`} title="בחר תמונה">
+              <ImagePlus className="w-5 h-5 text-[hsl(215,20%,35%)]" />
             </label>
+            <input id="file-input" ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleImageSelect} disabled={isLoading} className="hidden" tabIndex={-1} aria-hidden="true" />
             <input
-              id="file-input"
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
-              onChange={handleImageSelect}
-              disabled={isLoading}
-              className="hidden"
-              tabIndex={-1}
-              aria-hidden="true"
-            />
-
-            <Input
               ref={inputRef}
-              placeholder="הקלד/י את התשובה שלך כאן..."
+              type="text"
+              placeholder="כתוב כאן..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === "Enter" && !isLoading && !isTypingRef.current) {
-                  handleSend();
-                }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isLoading && !isTypingRef.current) handleSend();
               }}
               onPaste={handlePaste}
-              className="flex-1 min-w-0 text-base sm:text-lg"
+              className={`flex-1 min-w-0 bg-transparent border-b-2 border-[hsl(210,12%,75%)] py-2.5 px-1 text-base focus:outline-none focus:border-[hsl(215,50%,45%)] placeholder:text-[hsl(215,10%,65%)] transition-colors`}
               dir="auto"
             />
           </div>
