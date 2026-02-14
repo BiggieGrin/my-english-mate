@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ArrowRight, Send, Loader2, X, ImagePlus, Camera } from "lucide-react";
@@ -681,131 +680,106 @@ const Lesson = () => {
               isLoading;
             const hasCompletedTyping = completedTyping.has(index);
 
-            return (
-              <div
-                key={index}
-                className={`flex w-full ${
-                  message.role === "user" ? "justify-start" : "justify-end"
-                }`}
-              >
-                <Card
-                  className={`p-4 max-w-[85%] sm:max-w-[80%] break-words overflow-wrap-anywhere ${
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card"
-                  }`}
-                >
-                  {message.role === "assistant" ? (
-                    <div className="space-y-3">
-                      {hasCompletedTyping ? (
-                        <>
-                          {cleanContent.includes("___") ? (
-                            <FillInTheBlankInput content={cleanContent} />
-                          ) : (
-                            <MultipleChoiceButtons
-                              content={cleanContent}
-                              onSelect={(choice) => streamChat(choice)}
-                              disabled={isLoading}
-                            />
-                          )}
-                        </>
-                      ) : isStreamingMessage ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <CustomTypewriter
-                          key={`typewriter-${index}`}
-                          content={cleanContent}
-                          onComplete={() => {
-                            setCompletedTyping((prev) =>
-                              new Set(prev).add(index)
-                            );
-                            isTypingRef.current = false;
-                            // Focus input when typing completes
-                            setTimeout(() => inputRef.current?.focus(), 0);
-                          }}
-                          speed={20}
-                          onTypingUpdate={() => {
-                            isTypingRef.current = true;
-                          }}
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {/* Display image if found in database */}
+            // User message: compact bubble
+            if (message.role === "user") {
+              return (
+                <div key={index} className="flex w-full justify-start">
+                  <div className="flex flex-col items-start gap-1 max-w-[85%] sm:max-w-[75%]">
+                    <span className="text-xs text-muted-foreground px-1" aria-hidden>את/ה</span>
+                    <div className="rounded-2xl rounded-br-md px-4 py-3 bg-primary text-primary-foreground shadow-sm break-words overflow-wrap-anywhere w-full">
                       {message.image && (
                         <div className="mb-2 w-full">
                           <img
                             src={message.image}
                             alt="תמונה שהועלתה"
-                            className="w-full max-w-full h-auto max-h-64 rounded-lg object-contain"
+                            className="w-full max-w-full h-auto max-h-48 rounded-lg object-contain"
                           />
                         </div>
                       )}
-
-                      {/* If image was deleted (has imageId but no image data), show fallback text */}
                       {message.imageId && !message.image && (
                         <div dir="rtl">
-                          <p className="text-lg leading-relaxed text-muted-foreground">
-                            [תמונה מצורפת]
-                          </p>
-                          {/* If there's also text content, add line break and show it */}
+                          <p className="text-sm leading-relaxed text-primary-foreground/80">[תמונה מצורפת]</p>
                           {message.content && message.content.trim() && (
                             <div className="mt-2">
-                              {splitByLanguage(message.content).map(
-                                (segment, idx) => (
-                                  <p
-                                    key={idx}
-                                    className="text-lg leading-relaxed"
-                                    dir={segment.direction}
-                                    style={{
-                                      textAlign:
-                                        segment.direction === "rtl"
-                                          ? "right"
-                                          : "left",
-                                    }}
-                                  >
-                                    {segment.text || "\u00A0"}
-                                  </p>
-                                )
-                              )}
+                              {splitByLanguage(message.content).map((segment, idx) => (
+                                <p key={idx} className="text-base leading-relaxed" dir={segment.direction} style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}>
+                                  {segment.text || "\u00A0"}
+                                </p>
+                              ))}
                             </div>
                           )}
                         </div>
                       )}
-
-                      {/* Display text content only if there's no deleted image (otherwise it's shown above) */}
-                      {!(message.imageId && !message.image) &&
-                        message.content &&
-                        message.content.trim() &&
+                      {!(message.imageId && !message.image) && message.content && message.content.trim() &&
                         splitByLanguage(message.content).map((segment, idx) => (
-                          <p
-                            key={idx}
-                            className="text-lg leading-relaxed"
-                            dir={segment.direction}
-                            style={{
-                              textAlign:
-                                segment.direction === "rtl" ? "right" : "left",
-                            }}
-                          >
+                          <p key={idx} className="text-base leading-relaxed" dir={segment.direction} style={{ textAlign: segment.direction === "rtl" ? "right" : "left" }}>
                             {segment.text || "\u00A0"}
                           </p>
                         ))}
                     </div>
-                  )}
-                </Card>
+                  </div>
+                </div>
+              );
+            }
+
+            // Assistant: teaching board (full-width)
+            return (
+              <div key={index} className="w-full">
+                <div className="rounded-xl border-2 border-border bg-[hsl(210,20%,97%)] shadow-sm overflow-hidden">
+                  <div className="px-3 py-2 border-b border-border bg-[hsl(210,17%,95%)] flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm font-medium" aria-hidden>הלוח</span>
+                  </div>
+                  <div className="p-4 sm:p-5 min-h-[3rem]">
+                    {hasCompletedTyping ? (
+                      <>
+                        {cleanContent.includes("___") ? (
+                          <FillInTheBlankInput content={cleanContent} />
+                        ) : (
+                          <MultipleChoiceButtons
+                            content={cleanContent}
+                            onSelect={(choice) => streamChat(choice)}
+                            disabled={isLoading}
+                          />
+                        )}
+                      </>
+                    ) : isStreamingMessage ? (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+                        <span className="text-sm">המורה כותבת...</span>
+                      </div>
+                    ) : (
+                      <CustomTypewriter
+                        key={`typewriter-${index}`}
+                        content={cleanContent}
+                        onComplete={() => {
+                          setCompletedTyping((prev) => new Set(prev).add(index));
+                          isTypingRef.current = false;
+                          setTimeout(() => inputRef.current?.focus(), 0);
+                        }}
+                        speed={20}
+                        onTypingUpdate={() => {
+                          isTypingRef.current = true;
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })}
-          {isLoading &&
-            messages.length > 0 &&
-            messages[messages.length - 1].role === "user" && (
-              <div className="flex justify-end">
-                <Card className="p-4 max-w-[80%] bg-card">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                </Card>
+          {isLoading && messages.length > 0 && messages[messages.length - 1].role === "user" && (
+            <div className="w-full">
+              <div className="rounded-xl border-2 border-border bg-[hsl(210,20%,97%)] shadow-sm overflow-hidden">
+                <div className="px-3 py-2 border-b border-border bg-[hsl(210,17%,95%)]">
+                  <span className="text-muted-foreground text-sm font-medium">הלוח</span>
+                </div>
+                <div className="p-4 sm:p-5 min-h-[3rem] flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+                  <span className="text-sm">המורה כותבת...</span>
+                </div>
               </div>
-            )}
+            </div>
+          )}
         </div>
       </div>
       <div ref={messagesEndRef} className="h-4" />
