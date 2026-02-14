@@ -135,22 +135,6 @@ const Profile = () => {
           }
         />
 
-        {/* Profile Avatar Card */}
-        <Card className="mb-6 overflow-hidden card-bordered elevation-1">
-          <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 p-8">
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center elevation-3">
-                <User className="w-12 h-12 text-white" />
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-foreground mb-1">{profile.full_name}</h2>
-                <p className="text-base text-muted-foreground">כיתה {formatGrade(profile.grade)}</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Personal Info Card */}
         <Card className="p-6 card-bordered elevation-1 mb-6">
           <h3 className="text-xl font-semibold mb-6 text-foreground">
             פרטים אישיים
