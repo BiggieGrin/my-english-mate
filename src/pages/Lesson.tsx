@@ -40,8 +40,18 @@ interface ChatMessage {
 const Lesson = () => {
   const navigate = useNavigate();
   const { lessonId, mode: urlMode } = useParams();
-  // Decode URL mode if present (for Hebrew characters)
-  const decodedUrlMode = urlMode ? decodeURIComponent(urlMode) : undefined;
+  
+  // Map URL mode (English) to Hebrew mode
+  const getModeFromUrl = (urlMode?: string): string => {
+    const modeMap: Record<string, string> = {
+      learn: "לימוד",
+      practice: "תרגול",
+      homework: "שיעורי בית",
+    };
+    return urlMode ? modeMap[urlMode.toLowerCase()] || "לימוד" : "לימוד";
+  };
+  
+  const decodedUrlMode = getModeFromUrl(urlMode);
   const location = useLocation();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -235,7 +245,7 @@ const Lesson = () => {
   const topicId = topicIdFromState || fetchedTopicId;
   const mode = decodedUrlMode || modeFromState || fetchedMode || "לימוד";
 
-  console.log("[Lesson] Mode from URL:", decodedUrlMode, "Mode from state:", modeFromState, "Mode from fetched:", fetchedMode, "Final mode:", mode);
+  console.log("[Lesson] Mode from URL:", urlMode, "-> Hebrew:", decodedUrlMode, "Mode from state:", modeFromState, "Final mode:", mode);
 
   // Convert messages to Learning Board lesson when in "לימוד" (Learn) mode
   const createLessonFromMessages = (): LessonType => {
