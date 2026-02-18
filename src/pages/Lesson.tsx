@@ -39,7 +39,9 @@ interface ChatMessage {
 
 const Lesson = () => {
   const navigate = useNavigate();
-  const { lessonId } = useParams();
+  const { lessonId, mode: urlMode } = useParams();
+  // Decode URL mode if present (for Hebrew characters)
+  const decodedUrlMode = urlMode ? decodeURIComponent(urlMode) : undefined;
   const location = useLocation();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -231,9 +233,9 @@ const Lesson = () => {
 
   // Use fetched values if state values are not available
   const topicId = topicIdFromState || fetchedTopicId;
-  const mode = modeFromState || fetchedMode || "לימוד";
+  const mode = decodedUrlMode || modeFromState || fetchedMode || "לימוד";
 
-  console.log("[Lesson] Current mode:", mode, "Mode is NOT practice?", mode !== "תרגול");
+  console.log("[Lesson] Mode from URL:", decodedUrlMode, "Mode from state:", modeFromState, "Mode from fetched:", fetchedMode, "Final mode:", mode);
 
   // Convert messages to Learning Board lesson when in "לימוד" (Learn) mode
   const createLessonFromMessages = (): LessonType => {
