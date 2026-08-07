@@ -1,3 +1,22 @@
+> [!WARNING]
+> **HISTORICAL — this document describes an architecture that no longer exists.**
+>
+> The adaptive pedagogical engine was built and then removed. Every file and
+> table referenced below is gone:
+>
+> - `lesson_sessions` — dropped in `20251226000001_remove_lesson_sessions.sql`
+> - `user_topics` progress/score columns — dropped in `20251225000001_remove_progress_tracking.sql`
+> - `profiles.level` / `profiles.current_xp` — dropped in `20251227000002_remove_level_system.sql`
+> - `useSessionTracking.ts`, `SessionSummaryModal.tsx`, and the
+>   `ai-teacher-chat-completion` / `calculate-topic-progress` /
+>   `generate-session-summary` edge functions — never present in the tree
+>
+> There is no mastery, accuracy, XP or difficulty signal in the system today:
+> `ai-teacher-chat` streams plain prose and its system prompt explicitly
+> forbids emitting scores. Kept for historical context only — do not plan
+> against it. See `src/hooks/useSessionProgress.ts` for what is actually
+> measured (participation, and nothing more).
+
 # Adaptive Pedagogical Engine Implementation Summary
 
 ## Overview
