@@ -8,4 +8,19 @@
   status = 200
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
+
+  # Vite inlines VITE_* at build time, so the build needs them present.
+  # These were previously supplied by a committed .env; that file is now
+  # gitignored, so they live here instead.
+  #
+  # Safe to commit: both already ship inside the public JS bundle. The
+  # publishable key is Supabase's anon key, which is public by design and
+  # gated by row-level security -- it is not a secret.
+  #
+  # GEMINI_API_KEY is deliberately absent. It is read by the edge functions
+  # via Deno.env, never by the client, and belongs in Supabase's function
+  # secrets. Do not add it here.
+  VITE_SUPABASE_URL = "https://ynzwbttkyjhrqeloquhu.supabase.co"
+  VITE_SUPABASE_PROJECT_ID = "ynzwbttkyjhrqeloquhu"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InluendidHRreWpocnFlbG9xdWh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MzEwNDYsImV4cCI6MjA4MTMwNzA0Nn0.Bfc26QYiJf_Bul0nM_ZeaCYqNi9cA2zlkeHP9lWHv0c"
