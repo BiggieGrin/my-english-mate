@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import { Send, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QuickReplyChips } from "./QuickReplyChips";
-import { ImageAttachButton, useImageProcessor } from "./ImageAttachButton";
+import { ImageAttachButton } from "./ImageAttachButton";
+import { useImageProcessor } from "@/hooks/useImageProcessor";
 import type { LessonMode } from "@/lib/lessonModes";
 
 interface AnswerComposerProps {

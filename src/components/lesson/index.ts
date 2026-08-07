@@ -10,5 +10,5 @@ export { MilestoneChip } from "./MilestoneChip";
 export { LessonCompleteCard } from "./LessonCompleteCard";
 export { AnswerComposer } from "./AnswerComposer";
 export { QuickReplyChips } from "./QuickReplyChips";
-export { ImageAttachButton, useImageProcessor } from "./ImageAttachButton";
+export { ImageAttachButton } from "./ImageAttachButton";
 export { LessonSkeleton } from "./LessonSkeleton";
