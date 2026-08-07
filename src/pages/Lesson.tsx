@@ -6,8 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { MultipleChoiceButtons } from "@/components/MultipleChoiceButtons";
 import { FillInTheBlankInput } from "@/components/FillInTheBlankInput";
 import { CustomTypewriter } from "@/components/CustomTypewriter";
-import { LearningBoard } from "@/components/LearningBoard";
-import { Lesson as LessonType, Card as CardType } from "@/components/LearningBoard/types";
 
 // Detect if text is primarily Hebrew (RTL) or English (LTR)
 const detectTextDirection = (text: string): "rtl" | "ltr" => {
@@ -246,65 +244,6 @@ const Lesson = () => {
   const mode = decodedUrlMode || modeFromState || fetchedMode || "לימוד";
 
   console.log("[Lesson] Mode from URL:", urlMode, "-> Hebrew:", decodedUrlMode, "Mode from state:", modeFromState, "Final mode:", mode);
-
-  // Convert messages to Learning Board lesson when in "לימוד" (Learn) mode
-  const createLessonFromMessages = (): LessonType => {
-    try {
-      const cards: CardType[] = messages
-        .filter((msg) => msg.role === "assistant")
-        .map((msg, index) => {
-          const content = cleanMessageContent(msg.content);
-          // Parse content to extract key information
-          const lines = content.split("\n").filter((line) => line.trim());
-
-          return {
-            id: `card-${index}`,
-            content: lines[0] || content,
-            category: "Grammar",
-            englishText: lines[0] || content,
-            translation: lines[1] || undefined,
-            pronunciation: lines[0] || undefined,
-            funFact: lines[2] || undefined,
-          };
-        });
-
-      const lesson: LessonType = {
-        id: conversationId || "lesson-default",
-        title: `Learning: ${topic}`,
-        description: `Master ${topic} with interactive cards`,
-        topic: topic,
-        cards: cards.length > 0 ? cards : getDefaultCards(topic),
-        timelineEvents: undefined,
-      };
-
-      console.log("[Lesson] Created lesson:", lesson);
-      return lesson;
-    } catch (error) {
-      console.error("[Lesson] Error creating lesson:", error);
-      return {
-        id: conversationId || "lesson-default",
-        title: `Learning: ${topic}`,
-        description: `Master ${topic} with interactive cards`,
-        topic: topic,
-        cards: getDefaultCards(topic),
-        timelineEvents: undefined,
-      };
-    }
-  };
-
-  // Default cards for initial load
-  const getDefaultCards = (topicName: string): CardType[] => {
-    return [
-      {
-        id: "welcome-1",
-        content: `Welcome to ${topicName}`,
-        category: "Fun Fact",
-        englishText: `Learn about ${topicName}`,
-        translation: `למד על ${topicName}`,
-        funFact: `${topicName} is an important part of English learning!`,
-      },
-    ];
-  };
 
   // Process image file (used by both file input and paste)
   const processImageFile = (file: File) => {
@@ -718,49 +657,6 @@ const Lesson = () => {
 
   // One board = full screen. Keeps focus (eye contact): single surface, minimal chrome.
   const boardBg = "bg-[#f2f1ec]"; // simple warm board
-
-  // If mode is NOT "תרגול" (Practice), show Learning Board instead of chat interface
-  // Default to Learning Board for ALL lessons unless explicitly set to practice mode
-  const isLearningMode = mode !== "תרגול";
-  console.log("[Lesson] isLearningMode:", isLearningMode, "mode:", mode);
-
-  if (isLearningMode) {
-    try {
-      console.log("[Lesson] Rendering LearningBoard component");
-      const lesson = createLessonFromMessages();
-      console.log("[Lesson] Created lesson object:", lesson);
-      
-      return (
-        <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
-          <div className="absolute top-3 left-3 z-50">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="text-sm text-[hsl(215,15%,40%)] hover:text-foreground transition-colors py-1 px-2 rounded"
-              aria-label="חזרה"
-            >
-              חזרה
-            </button>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <LearningBoard
-              lesson={lesson}
-              onCardInteraction={(cardId) => {
-                console.log(`Card interaction: ${cardId}`);
-              }}
-              onAIQuery={(query) => {
-                streamChat(query, false);
-              }}
-            />
-          </div>
-        </div>
-      );
-    } catch (error) {
-      console.error("[Lesson] Error rendering LearningBoard:", error);
-      console.error("[Lesson] Stack trace:", error instanceof Error ? error.stack : String(error));
-      // Fall through to chat interface if LearningBoard errors
-    }
-  }
 
   return (
     <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
