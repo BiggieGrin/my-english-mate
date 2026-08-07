@@ -659,7 +659,7 @@ const Lesson = () => {
   const boardBg = "bg-[#f2f1ec]"; // simple warm board
 
   return (
-    <div className={`h-screen flex flex-col overflow-hidden ${boardBg}`}>
+    <div className={`h-dvh flex flex-col overflow-hidden ${boardBg}`}>
       {/* Minimal back — corner only, so board keeps focus */}
       <div className="absolute top-3 left-3 z-50">
         <button

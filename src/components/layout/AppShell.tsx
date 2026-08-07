@@ -18,7 +18,13 @@ export const AppShell = ({ children }: AppShellProps) => {
   // Don't show shell on auth pages
   const isAuthPage = ["/", "/auth", "/register"].includes(location.pathname);
 
-  if (isAuthPage) {
+  // The lesson is a focus mode: it owns the full viewport and carries its own
+  // exit affordance, so the global nav would be redundant chrome competing
+  // with the learning content. It also let the 64px header stack on top of
+  // the lesson's own full-height layout.
+  const isFocusRoute = location.pathname.startsWith("/lesson/");
+
+  if (isAuthPage || isFocusRoute) {
     return <>{children}</>;
   }
 
