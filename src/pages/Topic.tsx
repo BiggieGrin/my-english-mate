@@ -14,6 +14,12 @@ import { useGetUserQuery } from "@/store/api/authApi";
 import { useGetCurriculumTopicByIdQuery, useGetUserTopicByTopicIdQuery } from "@/store/api/topicsApi";
 import { useGetConversationsQuery, useCreateConversationMutation } from "@/store/api/conversationsApi";
 import { PageContainer, PageHeader } from "@/components/layout";
+import {
+  hebrewForMode,
+  LESSON_MODES,
+  modeFromHebrew,
+  type LessonMode,
+} from "@/lib/lessonModes";
 
 const Topic = () => {
   const navigate = useNavigate();
@@ -60,9 +66,8 @@ const Topic = () => {
     return null;
   }
 
-  const handleStartNewConversation = async (mode: string) => {
+  const handleStartNewConversation = async (mode: LessonMode) => {
     try {
-      console.log('[Topic] Starting new conversation', { userId, topicId: topic?.id, mode });
 
       if (!userId || !topic) {
         console.error('[Topic] Missing userId or topic', { userId, topic });
@@ -74,24 +79,17 @@ const Topic = () => {
         return;
       }
 
-      // Create a new conversation
-      console.log('[Topic] Creating conversation...');
       const result = await createConversation({
         userId,
         topicId: topic.id,
-        title: `${mode} - ${topic.title}`,
-        mode: mode,
+        title: `${LESSON_MODES[mode].label} - ${topic.title}`,
+        mode: hebrewForMode(mode),
       }).unwrap();
-
-      console.log('[Topic] Conversation mutation result:', result);
 
       // Handle array response (RTK Query might return an array)
       const conversation = Array.isArray(result) ? result[0] : result;
 
-      console.log('[Topic] Extracted conversation:', conversation);
-
       if (!conversation || !conversation.id) {
-        console.error('[Topic] Invalid conversation returned:', conversation);
         toast({
           title: "שגיאה",
           description: "לא הצלחנו ליצור שיחה חדשה.",
@@ -100,13 +98,11 @@ const Topic = () => {
         return;
       }
 
-      // Navigate to the lesson page with the conversation ID
-      console.log('[Topic] Navigating to lesson:', `/lesson/${conversation.id}`);
-      navigate(`/lesson/${conversation.id}`, {
+      navigate(`/lesson/${conversation.id}/${mode}`, {
         state: {
           topic: topic.title,
           topicId: topic.id,
-          mode: mode,
+          mode,
           conversationId: conversation.id,
         },
       });
@@ -169,7 +165,7 @@ const Topic = () => {
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             {/* Learn Topic Card */}
-            <Card className="card-bordered card-interactive cursor-pointer elevation-1" onClick={() => handleStartNewConversation("לימוד")}>
+            <Card className="card-bordered card-interactive cursor-pointer elevation-1" onClick={() => handleStartNewConversation("learn")}>
               <div className="p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -188,7 +184,7 @@ const Topic = () => {
             </Card>
 
             {/* Homework Card */}
-            <Card className="card-bordered card-interactive cursor-pointer elevation-1" onClick={() => handleStartNewConversation("שיעורי בית")}>
+            <Card className="card-bordered card-interactive cursor-pointer elevation-1" onClick={() => handleStartNewConversation("homework")}>
               <div className="p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center shrink-0">
@@ -207,7 +203,7 @@ const Topic = () => {
             </Card>
 
             {/* Test Prep Card */}
-            <Card className="card-bordered card-interactive cursor-pointer elevation-1" onClick={() => handleStartNewConversation("הכנה למבחן")}>
+            <Card className="card-bordered card-interactive cursor-pointer elevation-1" onClick={() => handleStartNewConversation("exam_prep")}>
               <div className="p-6">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
@@ -238,13 +234,17 @@ const Topic = () => {
                   key={conversation.id}
                   className="card-bordered card-interactive cursor-pointer elevation-1"
                   onClick={() =>
-                    navigate(`/lesson/${conversation.id}`, {
-                      state: {
-                        topic: topic.title,
-                        topicId: topic.id,
-                        conversationId: conversation.id,
-                      },
-                    })
+                    navigate(
+                      `/lesson/${conversation.id}/${modeFromHebrew(conversation.mode) ?? "learn"}`,
+                      {
+                        state: {
+                          topic: topic.title,
+                          topicId: topic.id,
+                          mode: conversation.mode,
+                          conversationId: conversation.id,
+                        },
+                      }
+                    )
                   }
                 >
                   <div className="p-4">
