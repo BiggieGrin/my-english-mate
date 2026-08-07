@@ -79,7 +79,7 @@ export const modeFromSlug = (slug?: string | null): LessonMode | null =>
   slug && slug in LESSON_MODES ? (slug as LessonMode) : null;
 
 export const modeFromHebrew = (hebrew?: string | null): LessonMode | null =>
-  (hebrew && HEBREW_TO_MODE[hebrew]) ?? null;
+  hebrew ? HEBREW_TO_MODE[hebrew] ?? null : null;
 
 export const hebrewForMode = (mode: LessonMode): string =>
   LESSON_MODES[mode].hebrew;
