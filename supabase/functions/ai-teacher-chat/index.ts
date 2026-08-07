@@ -302,13 +302,16 @@ ${modeInstructions}
         topP: 0.95,
         topK: 40,
         maxOutputTokens: 8192,
+        // Gemini 3.x thinks by default, which adds latency and cost on every
+        // chat turn. "low" is the minimum for this model family.
+        thinkingConfig: { thinkingLevel: "low" },
       },
     };
 
     console.log("Gemini request config:", JSON.stringify(geminiRequest, null, 2).substring(0, 500));
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: {
@@ -401,7 +404,7 @@ ${modeInstructions}
                     id: "chatcmpl-" + Date.now(),
                     object: "chat.completion.chunk",
                     created: Date.now(),
-                    model: "gemini-2.5-flash",
+                    model: "gemini-3.6-flash",
                     choices: [{
                       index: 0,
                       delta: { content: text },
@@ -421,7 +424,7 @@ ${modeInstructions}
                     id: "chatcmpl-" + Date.now(),
                     object: "chat.completion.chunk",
                     created: Date.now(),
-                    model: "gemini-2.5-flash",
+                    model: "gemini-3.6-flash",
                     choices: [{
                       index: 0,
                       delta: {},
