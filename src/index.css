@@ -82,22 +82,27 @@
     --page-padding-y: 2rem;
 
     /* === Border Radius System === */
-    --radius-sm: 0.375rem;
     --radius: 0.5rem;
-    --radius-md: 0.75rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.5rem;
+    --radius-bubble: 1.25rem;
 
-    /* === Typography Scale === */
-    /* Following the Type Scale Rule: exactly 4 sizes */
-    --text-xs: 0.75rem;      /* 12px - Labels, captions */
-    --text-sm: 0.875rem;     /* 14px - Secondary text */
-    --text-base: 1rem;       /* 16px - Body text */
-    --text-lg: 1.125rem;     /* 18px - Emphasized body */
-    --text-xl: 1.25rem;      /* 20px - Section headings */
-    --text-2xl: 1.5rem;      /* 24px - Card titles */
-    --text-3xl: 1.875rem;    /* 30px - Page titles */
-    --text-4xl: 2.25rem;     /* 36px - Hero titles */
+    /* === Lesson surface (warm, focused) ===
+       The lesson is a focus mode: a warm paper canvas, one accent colour
+       reserved exclusively for progress/streak/quick-replies, and two
+       high-contrast bubbles as the only prominent objects on screen. */
+    --lesson-canvas: 40 33% 97%;
+    --warm: 28 90% 52%;
+    --warm-foreground: 24 45% 20%;
+    --warm-soft: 33 100% 96%;
+    --warm-border: 30 62% 87%;
+
+    /* Chat bubbles.
+       --student-bubble is deliberately darker than --primary (53% L): white
+       text on --primary is ~4.6:1, marginal for 16px body copy in a kids'
+       app. 45% L gives ~6.5:1. */
+    --teacher-bubble: 0 0% 100%;
+    --teacher-bubble-border: 30 40% 91%;
+    --student-bubble: 221 78% 45%;
+    --student-bubble-foreground: 0 0% 100%;
 
     /* Sidebar */
     --sidebar-background: 0 0% 99%;
@@ -125,8 +130,6 @@ html {
 }
 
 @layer base {
-  @import url('https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Indie+Flower&family=Patrick+Hand&display=swap');
-
   * {
     @apply border-border;
   }
@@ -205,18 +208,13 @@ html {
 }
 
 @layer utilities {
-  /* Handwriting-style font for teacher responses */
-  .font-teacher {
-    font-family: 'Caveat Brush', 'Indie Flower', 'Patrick Hand', cursive;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-  }
-
-  /* Board-style notes (user answers) */
-  .board-note {
-    font-family: 'Caveat Brush', 'Indie Flower', 'Patrick Hand', cursive;
-    font-weight: 700;
-    letter-spacing: 0.5px;
+  /* Bidirectional prose.
+     Lets the browser resolve direction per paragraph from the first strong
+     character. Replaces hand-rolled Hebrew/English detection, and is correct
+     for lines that open with digits, quotes or "A)". */
+  .bidi-plaintext {
+    unicode-bidi: plaintext;
+    text-align: start;
   }
 
   /* Smooth transitions */
@@ -266,5 +264,18 @@ html {
       opacity: 1;
       transform: translateX(0);
     }
+  }
+}
+
+/* Respect the OS "reduce motion" setting. Kept outside every @layer so it
+   always wins over animation utilities. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -58,6 +58,22 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        /* Lesson surface */
+        canvas: "hsl(var(--lesson-canvas))",
+        warm: {
+          DEFAULT: "hsl(var(--warm))",
+          foreground: "hsl(var(--warm-foreground))",
+          soft: "hsl(var(--warm-soft))",
+          border: "hsl(var(--warm-border))",
+        },
+        teacher: {
+          DEFAULT: "hsl(var(--teacher-bubble))",
+          border: "hsl(var(--teacher-bubble-border))",
+        },
+        student: {
+          DEFAULT: "hsl(var(--student-bubble))",
+          foreground: "hsl(var(--student-bubble-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -73,6 +89,7 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        bubble: "var(--radius-bubble)",
       },
       keyframes: {
         "accordion-down": {
@@ -101,11 +118,38 @@ export default {
             opacity: "1",
           },
         },
+        /* Lesson */
+        "message-in": {
+          "0%": { opacity: "0", transform: "translateY(8px) scale(0.985)" },
+          "100%": { opacity: "1", transform: "none" },
+        },
+        "caret-blink": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0" },
+        },
+        "dot-bounce": {
+          "0%, 80%, 100%": { transform: "translateY(0)", opacity: "0.45" },
+          "40%": { transform: "translateY(-4px)", opacity: "1" },
+        },
+        "pop-in": {
+          "0%": { transform: "scale(0.82)", opacity: "0" },
+          "60%": { transform: "scale(1.05)", opacity: "1" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "ring-pulse": {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.07)", opacity: "0.92" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "scale-in": "scale-in 0.3s ease-out",
+        "message-in": "message-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both",
+        "caret-blink": "caret-blink 1s step-end infinite",
+        "dot-bounce": "dot-bounce 1.2s ease-in-out infinite",
+        "pop-in": "pop-in 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both",
+        "ring-pulse": "ring-pulse 1.8s ease-in-out infinite",
       },
     },
   },
