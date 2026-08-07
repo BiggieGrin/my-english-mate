@@ -24,6 +24,7 @@ import {
   useUpdateProfileMutation,
 } from "@/store/api/profileApi";
 import { useGetMessagesByUserQuery } from "@/store/api/messagesApi";
+import { hasActivityToday, resolveStreak } from "@/lib/streak";
 
 const Statistics = () => {
   const navigate = useNavigate();
@@ -96,17 +97,20 @@ const Statistics = () => {
     setDailyStudyData(last7Days);
 
     // Calculate day streak based on incremental logic
-    const { newStreak, shouldUpdate } = calculateDayStreak();
-    setCurrentStreak(newStreak);
+    const { streak, shouldPersist, todayKey } = resolveStreak({
+      currentStreak: profile?.current_streak || 0,
+      lastChatDate: profile?.last_chat_date,
+      studiedToday: hasActivityToday(messages),
+    });
+    setCurrentStreak(streak);
 
     // Update profile if streak changed
-    if (shouldUpdate) {
-      const todayStr = new Date().toISOString().split("T")[0];
+    if (shouldPersist) {
       await updateProfile({
         userId,
         updates: {
-          current_streak: newStreak,
-          last_chat_date: todayStr,
+          current_streak: streak,
+          last_chat_date: todayKey,
         },
       });
     }
@@ -126,79 +130,6 @@ const Statistics = () => {
     if (profile?.ai_assessment) {
       setAiAssessment(profile.ai_assessment);
     }
-  };
-
-  const calculateDayStreak = () => {
-    const currentStreak = profile?.current_streak || 0;
-    const lastChatDate = profile?.last_chat_date;
-
-    if (!messages || messages.length === 0) {
-      return { newStreak: currentStreak, shouldUpdate: false };
-    }
-
-    // Get today's date (normalized to midnight)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split("T")[0];
-
-    // Get yesterday's date
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
-
-    // Check if there are any messages from today
-    const hasMessagesToday = messages.some((msg) => {
-      const msgDate = new Date(msg.created_at);
-      msgDate.setHours(0, 0, 0, 0);
-      return msgDate.toISOString().split("T")[0] === todayStr;
-    });
-
-    // If no messages today, keep current streak (don't break it yet)
-    if (!hasMessagesToday) {
-      // Check if last chat was yesterday - if so, streak is still valid
-      // If last chat was 2+ days ago, reset streak
-      if (lastChatDate) {
-        const lastDate = new Date(lastChatDate);
-        const daysDiff = Math.floor(
-          (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        if (daysDiff > 1) {
-          // More than 1 day gap, reset streak
-          return { newStreak: 0, shouldUpdate: true };
-        }
-      }
-      return { newStreak: currentStreak, shouldUpdate: false };
-    }
-
-    // User has messages today
-    // If last_chat_date is already today, don't increment (already counted)
-    if (lastChatDate === todayStr) {
-      return { newStreak: currentStreak, shouldUpdate: false };
-    }
-
-    // If last chat was yesterday, increment streak
-    if (lastChatDate === yesterdayStr) {
-      return { newStreak: currentStreak + 1, shouldUpdate: true };
-    }
-
-    // If last chat was more than 1 day ago (or never), reset to 1
-    if (!lastChatDate) {
-      return { newStreak: 1, shouldUpdate: true };
-    }
-
-    const lastDate = new Date(lastChatDate);
-    const daysDiff = Math.floor(
-      (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    if (daysDiff > 1) {
-      // Gap in streak, reset to 1 (today is day 1)
-      return { newStreak: 1, shouldUpdate: true };
-    }
-
-    // Fallback
-    return { newStreak: currentStreak, shouldUpdate: false };
   };
 
   const loading = profileLoading;
